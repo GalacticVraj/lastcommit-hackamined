@@ -1,0 +1,4 @@
+﻿backend/prisma/schema.prisma
+backend/src/controllers/simulationController.js
+backend/src/routes/simulation.js
+frontend/src/pages/SimulationPage.jsx

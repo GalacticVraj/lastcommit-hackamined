@@ -10,7 +10,14 @@ const { successResponse, paginatedResponse, errorResponse, parseListQuery, build
 const ctrl = {
     async runSimulation(req, res, next) {
         try {
-            const { inputs, shiftHours = 10, workerCount = 50, laborRate = 250, kwhRate = 8 } = req.body;
+            // allow two body formats: { inputs: [{productId,targetQty}], shiftHours, workerCount, laborRate, kwhRate }
+            // or legacy spec: { mps: [{product_id,target_qty}], shift_hours, worker_count }
+            let { inputs, mps, shiftHours = 10, workerCount = 50, laborRate = 250, kwhRate = 8 } = req.body;
+            if (mps && !inputs) {
+                inputs = mps.map(i => ({ productId: i.product_id, targetQty: i.target_qty }));
+                shiftHours = req.body.shift_hours ?? shiftHours;
+                workerCount = req.body.worker_count ?? workerCount;
+            }
             // inputs: [{ productId, targetQty }]
 
             if (!inputs || !inputs.length) return errorResponse(res, 'At least one product input is required', 422);
@@ -126,6 +133,14 @@ const ctrl = {
                 materialReadinessPercent: +materialReadiness.toFixed(2),
                 mrpBreakdown: resultData
             }, 'Simulation completed');
+        } catch (e) { next(e); }
+    },
+
+    async saveSimulation(req, res, next) {
+        try {
+            const id = parseInt(req.params.id);
+            await prisma.simulationRun.update({ where: { id }, data: { isSaved: true } });
+            return successResponse(res, null, 'Simulation marked saved');
         } catch (e) { next(e); }
     },
 

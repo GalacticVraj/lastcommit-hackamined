@@ -795,6 +795,7 @@ model SimulationRun {
   materialCost    Float     @default(0)
   totalCost       Float     @default(0)
   materialReadiness Float   @default(0) // percentage
+  isSaved         Boolean   @default(false)
   createdBy       Int?
   createdAt       DateTime  @default(now())
 
