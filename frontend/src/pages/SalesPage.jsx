@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -97,6 +97,7 @@ const TAB_CONFIG = {
             { label: 'Mark Sent', status: 'Sent', confirmMessage: 'Send this quotation to the customer?', icon: CheckCircle, class: 'btn-primary' },
             { label: 'Mark Accepted', status: 'Accepted', confirmMessage: 'Mark this quotation as Accepted?', icon: CheckCircle, class: 'btn-success' },
         ],
+        hasPrint: true,
     },
     'sale-orders': {
         endpoint: '/sales/sale-orders',
@@ -152,6 +153,7 @@ const TAB_CONFIG = {
             { name: 'placeOfSupply', label: 'Place of Supply' }, { name: 'ewayBillNo', label: 'E-Way Bill No.' },
         ],
         deletePermission: 'sales.invoice.delete',
+        hasPrint: true,
     },
     receipts: {
         endpoint: '/sales/receipts',
@@ -394,6 +396,14 @@ export default function SalesPage() {
                                                         <Edit size={14} />
                                                     </button>
                                                 </PermissionGate>
+
+                                                {/* Print */}
+                                                {cfg.hasPrint && (
+                                                    <button className="btn btn-ghost btn-sm" title="Print" style={{ padding: '4px 8px' }}
+                                                        onClick={() => window.open(`/print/${tab.replace(/s$/, '')}/${item.id}`, '_blank')}>
+                                                        <Printer size={14} />
+                                                    </button>
+                                                )}
 
                                                 {/* Status actions */}
                                                 {(cfg.statusActions || []).map(action => (

@@ -10,6 +10,7 @@ import SimulationPage from './pages/SimulationPage';
 import ReportsPage from './pages/ReportsPage';
 import GenericModulePage from './pages/GenericModulePage';
 import TopProgressBar from './components/TopProgressBar';
+import PrintPage from './pages/PrintPage';
 
 import CustomerProfilePage from './pages/CustomerProfilePage';
 import VendorProfilePage from './pages/VendorProfilePage';
@@ -148,6 +149,7 @@ export default function App() {
       }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/print/:type/:id" element={<ProtectedRoute><PrintPage /></ProtectedRoute>} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route index element={<DashboardPage />} />
           <Route path="sales" element={<SalesPage />} />
