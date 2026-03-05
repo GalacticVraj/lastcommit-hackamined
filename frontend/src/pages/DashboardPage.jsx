@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Users, FileText, DollarSign, AlertTriangle, Package, Factory, Warehouse as WarehouseIcon, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+
 import api from '../lib/api';
 
-const COLORS = ['#2563EB', '#0D9488', '#D97706', '#DC2626', '#8B5CF6', '#EC4899'];
+const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#EC4899'];
 
 export default function DashboardPage() {
     const [stats, setStats] = useState(null);
@@ -71,13 +72,13 @@ export default function DashboardPage() {
                     <div className="card-header"><span className="card-title">Monthly Sales vs Purchase</span></div>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={barData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="month" stroke="var(--text-muted)" />
-                            <YAxis stroke="var(--text-muted)" tickFormatter={v => `₹${v / 1000}K`} />
-                            <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                            <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
+                            <YAxis stroke="#6B7280" fontSize={12} tickFormatter={v => `₹${v / 1000}K`} />
+                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
                             <Legend />
                             <Bar dataKey="sales" fill="#2563EB" radius={[4, 4, 0, 0]} name="Sales" />
-                            <Bar dataKey="purchase" fill="#0D9488" radius={[4, 4, 0, 0]} name="Purchase" />
+                            <Bar dataKey="purchase" fill="#059669" radius={[4, 4, 0, 0]} name="Purchase" />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -89,7 +90,7 @@ export default function DashboardPage() {
                             <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                                 {pieData.map((_, index) => <Cell key={index} fill={COLORS[index]} />)}
                             </Pie>
-                            <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
@@ -99,16 +100,16 @@ export default function DashboardPage() {
                 <div className="card-header">
                     <span className="card-title">Quick Actions</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                <div className="quick-actions-grid">
                     {[
-                        { label: 'New Inquiry', to: '/sales', color: 'var(--blue)' },
-                        { label: 'New Purchase Order', to: '/purchase', color: 'var(--teal)' },
-                        { label: 'Production Report', to: '/production', color: 'var(--amber)' },
-                        { label: 'Run Simulation', to: '/simulation', color: 'var(--red)' },
-                        { label: 'Generate Payroll', to: '/hr', color: 'var(--blue)' },
-                        { label: 'View Reports', to: '/reports', color: 'var(--teal)' },
+                        { label: 'New Inquiry', to: '/sales' },
+                        { label: 'New Purchase Order', to: '/purchase' },
+                        { label: 'Production Report', to: '/production' },
+                        { label: 'Run Simulation', to: '/simulation' },
+                        { label: 'Generate Payroll', to: '/hr' },
+                        { label: 'View Reports', to: '/reports' },
                     ].map(action => (
-                        <a href={action.to} key={action.label} className="btn btn-ghost" style={{ justifyContent: 'center', borderColor: action.color, color: action.color }}>
+                        <a href={action.to} key={action.label} className="btn btn-ghost quick-action-btn">
                             {action.label}
                         </a>
                     ))}

@@ -29,7 +29,7 @@ export default function LoginPage() {
         <div className="login-page">
             <div className="login-card">
                 <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                    <BarChart3 size={48} style={{ color: 'var(--blue-light)' }} />
+                    <BarChart3 size={40} style={{ color: '#FF9F43' }} />
                 </div>
                 <h1>TechMicra ERP</h1>
                 <p>Manufacturing Enterprise Resource Planning</p>
@@ -46,11 +46,11 @@ export default function LoginPage() {
                         {loading ? <Loader2 size={20} className="spin" /> : 'Sign In'}
                     </button>
                 </form>
-                <div style={{ marginTop: '24px', padding: '16px', borderRadius: 'var(--radius-sm)', background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                        <strong style={{ color: 'var(--blue-light)' }}>Demo Credentials:</strong><br />
-                        Super Admin: admin@erp.com / password<br />
-                        Sales User: sales@erp.com / password
+                <div style={{ marginTop: '20px', padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 255, 255, 0.3)', border: '1px solid rgba(0, 0, 0, 0.1)' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--gray-600)', margin: 0 }}>
+                        <strong style={{ color: 'var(--gray-800)' }}>Demo Credentials:</strong><br />
+                        Admin: admin@erp.com / password<br />
+                        Sales: sales@erp.com / password
                     </p>
                 </div>
             </div>

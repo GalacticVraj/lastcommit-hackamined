@@ -55,7 +55,7 @@ export default function AppLayout() {
         <div className="app-layout">
             <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
                 <div className="sidebar-logo">
-                    <BarChart3 size={28} style={{ color: 'var(--blue-light)' }} />
+                    <BarChart3 size={22} strokeWidth={1.5} style={{ color: 'var(--gray-700)' }} />
                     {sidebarOpen && <h1>TechMicra ERP</h1>}
                 </div>
                 <nav className="sidebar-nav">
@@ -64,7 +64,7 @@ export default function AppLayout() {
                             {sidebarOpen && <div className="nav-group-label">{group.label}</div>}
                             {group.items.filter(item => !item.permission || hasPermission(item.permission)).map((item) => (
                                 <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                    <item.icon size={20} />
+                                    <item.icon size={18} strokeWidth={1.5} />
                                     {sidebarOpen && <span>{item.label}</span>}
                                 </NavLink>
                             ))}
@@ -73,11 +73,11 @@ export default function AppLayout() {
                 </nav>
             </aside>
 
-            <div className="main-content">
+            <div className={`main-content ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
                 <header className="top-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '8px' }}>
-                            <Menu size={20} />
+                            <Menu size={18} strokeWidth={1.5} />
                         </button>
                         <div className="breadcrumb">
                             <span>TechMicra ERP</span>
@@ -87,14 +87,14 @@ export default function AppLayout() {
                     </div>
                     <div className="header-right">
                         <button className="btn btn-ghost btn-sm" style={{ position: 'relative', padding: '8px' }}>
-                            <Bell size={20} />
+                            <Bell size={18} strokeWidth={1.5} />
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="avatar">{user?.name?.[0] || 'A'}</div>
                             {sidebarOpen && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}
                         </div>
                         <button className="btn btn-ghost btn-sm" onClick={handleLogout} style={{ padding: '8px' }}>
-                            <LogOut size={18} />
+                            <LogOut size={16} strokeWidth={1.5} />
                         </button>
                     </div>
                 </header>

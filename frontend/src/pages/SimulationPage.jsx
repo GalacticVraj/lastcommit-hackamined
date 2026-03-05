@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Play, Calculator, Loader2 } from 'lucide-react';
+import { Calculator, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
-const COLORS = ['#2563EB', '#0D9488', '#D97706', '#DC2626', '#8B5CF6'];
+const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
 export default function SimulationPage() {
     const [products, setProducts] = useState([]);
@@ -95,7 +95,7 @@ export default function SimulationPage() {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={addRow}>+ Add Product</button>
                     <button className="btn btn-primary" onClick={runSimulation} disabled={loading}>
-                        {loading ? <Loader2 size={18} className="spin" /> : <Play size={18} />}
+                        {loading && <Loader2 size={18} className="spin" />}
                         Run Simulation
                     </button>
                 </div>

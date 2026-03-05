@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
-const COLORS = ['#2563EB', '#0D9488', '#D97706', '#DC2626', '#8B5CF6'];
+const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
 export default function GenericModulePage({ title, apiBase, statCards = [], tabs = [] }) {
     const [activeTab, setActiveTab] = useState(tabs[0]?.key || 'list');

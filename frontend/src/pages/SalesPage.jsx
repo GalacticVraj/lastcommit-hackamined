@@ -5,7 +5,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { PermissionGate } from '../hooks/usePermission';
 
-const COLORS = ['#2563EB', '#0D9488', '#D97706', '#DC2626', '#8B5CF6'];
+const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
 const statusClass = (s) => {
     const map = { New: 'badge-new', Processing: 'badge-processing', Quoted: 'badge-active', Lost: 'badge-overdue', Draft: 'badge-draft', Sent: 'badge-active', Accepted: 'badge-completed', Rejected: 'badge-rejected', Pending: 'badge-pending', Dispatched: 'badge-active', Closed: 'badge-closed', Unpaid: 'badge-pending', Partial: 'badge-partial', Paid: 'badge-paid', Overdue: 'badge-overdue' };
