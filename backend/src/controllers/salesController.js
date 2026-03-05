@@ -265,9 +265,16 @@ const salesController = {
 
     async updateQuotation(req, res, next) {
         try {
+            // Only pick updatable scalar fields to avoid Prisma relation errors
+            const { paymentTerms, status, validUntil } = req.body;
+            const updateData = { updatedBy: req.user.id };
+            if (paymentTerms !== undefined) updateData.paymentTerms = paymentTerms;
+            if (status !== undefined) updateData.status = status;
+            if (validUntil !== undefined) updateData.validUntil = new Date(validUntil);
+
             const quotation = await prisma.quotation.update({
                 where: { id: parseInt(req.params.id) },
-                data: { ...req.body, updatedBy: req.user.id }
+                data: updateData
             });
             return successResponse(res, quotation, 'Quotation updated');
         } catch (e) { next(e); }
@@ -393,7 +400,7 @@ const salesController = {
 
             // Get customer for GST calculation
             const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-            const companyGSTIN = '24AABCU9603R1ZM'; // configurable
+            const companyGSTIN = process.env.COMPANY_GSTIN || '24XXXXX0000X1ZX'; // set in .env
 
             let taxableValue = 0, cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
 

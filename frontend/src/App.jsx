@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './lib/auth';
@@ -19,8 +20,17 @@ import SalesmanProfilePage from './pages/SalesmanProfilePage';
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const token = useAuthStore(s => s.token) || localStorage.getItem('erp_token');
+  const rehydrate = useAuthStore(s => s.rehydrate);
+  const permissionsLoaded = useAuthStore(s => s.permissionsLoaded);
 
-  useSessionTimeout(60); // 60 minutes timeout
+  useSessionTimeout(60);
+
+  // Rehydrate permissions from backend on page refresh
+  useEffect(() => {
+    if (token && !permissionsLoaded) {
+      rehydrate();
+    }
+  }, [token, permissionsLoaded, rehydrate]);
 
   return (isAuthenticated && token) ? children : <Navigate to="/login" replace />;
 }

@@ -352,7 +352,7 @@ export default function SalesPage() {
                 <div className="table-toolbar">
                     <input className="table-search" placeholder="Search…" value={search}
                         onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadData()} />
-                    <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                    <PermissionGate permission="sales.create">
                         <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}><Plus size={16} /> New</button>
                     </PermissionGate>
                 </div>
@@ -388,7 +388,7 @@ export default function SalesPage() {
                                                 </button>
 
                                                 {/* Edit */}
-                                                <PermissionGate permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                <PermissionGate permission="sales.edit">
                                                     <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}
                                                         onClick={() => setEditRecord(item)}>
                                                         <Edit size={14} />
@@ -398,7 +398,7 @@ export default function SalesPage() {
                                                 {/* Status actions */}
                                                 {(cfg.statusActions || []).map(action => (
                                                     item.status !== action.status && (
-                                                        <PermissionGate key={action.label} permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                        <PermissionGate key={action.label} permission="sales.edit">
                                                             <button
                                                                 className={`btn btn-sm ${action.class || 'btn-ghost'}`}
                                                                 title={action.label}
@@ -412,7 +412,7 @@ export default function SalesPage() {
                                                 ))}
 
                                                 {/* Delete */}
-                                                <PermissionGate permission={cfg.deletePermission}>
+                                                <PermissionGate permission="sales.delete">
                                                     <button className="btn btn-ghost btn-sm" title="Delete" style={{ padding: '4px 8px', color: 'var(--danger)' }}
                                                         onClick={() => handleDelete(item)}>
                                                         <Trash2 size={14} />
@@ -485,7 +485,7 @@ export default function SalesPage() {
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-                                <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                                <PermissionGate permission="sales.create">
                                     <button type="submit" className="btn btn-primary">Create</button>
                                 </PermissionGate>
                             </div>
