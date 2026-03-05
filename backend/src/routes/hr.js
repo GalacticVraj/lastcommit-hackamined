@@ -28,6 +28,8 @@ router.post('/employees', checkPermission('hr.employee.create'), async (req, res
 router.get('/employees/:id', checkPermission('hr.view'), async (req, res, next) => {
     try {
         const emp = await prisma.employee.findUnique({ where: { id: parseInt(req.params.id) }, include: { salaryStructures: true, salarySheets: { take: 12, orderBy: { createdAt: 'desc' } }, advanceMemos: true } });
+        // attendance summary currently not tracked; return placeholder values
+        emp.attendanceSummary = { presentDays: 0, absentDays: 0, leaves: 0 };
         return successResponse(res, emp);
     } catch (e) { next(e); }
 });

@@ -32,5 +32,6 @@ router.post('/job-challans', checkPermission('production.challan.create'), ctrl.
 router.post('/job-bills', checkPermission('production.bill.create'), ctrl.createJobBill);
 
 router.get('/dashboard', checkPermission('production.view'), ctrl.dashboard);
+router.get('/stats', checkPermission('production.view'), ctrl.stats);
 
 module.exports = router;

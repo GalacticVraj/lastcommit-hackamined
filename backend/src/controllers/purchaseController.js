@@ -38,6 +38,28 @@ const ctrl = {
         } catch (e) { next(e); }
     },
 
+    async getVendorProfile(req, res, next) {
+        try {
+            const id = parseInt(req.params.id);
+            const [vendor, purchaseOrders, bills, payments] = await Promise.all([
+                prisma.vendor.findUnique({ where: { id } }),
+                prisma.purchaseOrder.findMany({ where: { vendorId: id, deletedAt: null }, orderBy: { createdAt: 'desc' } }),
+                prisma.purchaseBill.findMany({ where: { vendorId: id, deletedAt: null }, orderBy: { createdAt: 'desc' } }),
+                prisma.purchasePaymentVoucher.findMany({ where: { vendorId: id }, orderBy: { paymentDate: 'desc' } }),
+            ]);
+            if (!vendor) return errorResponse(res, 'Vendor not found', 404);
+
+            const totalPurchases = bills.reduce((s, b) => s + Number(b.totalAmount || 0), 0);
+            const totalPaid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+            const outstanding = totalPurchases - totalPaid;
+
+            return successResponse(res, {
+                vendor, purchaseOrders, bills, payments,
+                metrics: { totalPurchases, totalPaid, outstanding, totalOrders: purchaseOrders.length }
+            });
+        } catch (e) { next(e); }
+    },
+
     async deleteVendor(req, res, next) {
         try {
             await prisma.vendor.update({ where: { id: parseInt(req.params.id) }, data: { deletedAt: new Date(), isActive: false } });
@@ -127,6 +149,32 @@ const ctrl = {
         } catch (e) { next(e); }
     },
 
+    async updateGRN(req, res, next) {
+        try {
+            const id = parseInt(req.params.id);
+            const grn = await prisma.$transaction(async (tx) => {
+                const updated = await tx.gRN.update({
+                    where: { id },
+                    data: { ...req.body, updatedBy: req.user.id },
+                    include: { items: true }
+                });
+
+                // Cascade: when GRN is approved (Passed), add quantities to warehouse stock
+                if (req.body.status === 'Passed') {
+                    for (const item of updated.items) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { currentStock: { increment: item.quantity } }
+                        });
+                    }
+                }
+                return updated;
+            });
+            return successResponse(res, grn, 'GRN updated — stock incremented');
+        } catch (e) { next(e); }
+    },
+
+
     async createIQC(req, res, next) {
         try {
             const iqc = await prisma.iQCRecord.create({ data: { ...req.body, createdBy: req.user.id } });
@@ -138,14 +186,23 @@ const ctrl = {
         try {
             const receiptNo = await generateDocNumber('MR', 'MR');
             const { grnId, storageLocation, batchNo, items } = req.body;
-            const receipt = await prisma.materialReceipt.create({
-                data: { receiptNo, grnId, storageLocation, batchNo, createdBy: req.user.id, items: { create: items || [] } },
-                include: { items: true }
+
+            const receipt = await prisma.$transaction(async (tx) => {
+                const newReceipt = await tx.materialReceipt.create({
+                    data: { receiptNo, grnId, storageLocation, batchNo, createdBy: req.user.id, items: { create: items || [] } },
+                    include: { items: true }
+                });
+
+                // Update stock for each item
+                for (const item of (items || [])) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { currentStock: { increment: item.quantity } }
+                    });
+                }
+                return newReceipt;
             });
-            // Update stock for each item
-            for (const item of (items || [])) {
-                await prisma.product.update({ where: { id: item.productId }, data: { currentStock: { increment: item.quantity } } });
-            }
+
             return successResponse(res, receipt, 'Material Receipt created — stock updated', 201);
         } catch (e) { next(e); }
     },
@@ -186,6 +243,23 @@ const ctrl = {
                 prisma.gRN.count({ where: { status: 'Pending IQC' } })
             ]);
             return successResponse(res, { stats: { totalVendors, totalPOs, totalSpend: totalBills._sum.totalAmount || 0, pendingGRNs } });
+        } catch (e) { next(e); }
+    },
+
+    async stats(req, res, next) {
+        try {
+            const now = new Date();
+            const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endPrev = startThis;
+            const [thisCount, prevCount, breakdown] = await Promise.all([
+                prisma.purchaseOrder.count({ where: { poDate: { gte: startThis, lt: startNext } } }),
+                prisma.purchaseOrder.count({ where: { poDate: { gte: startPrev, lt: endPrev } } }),
+                prisma.purchaseOrder.groupBy({ by: ['status'], _count: { status: true } })
+            ]);
+            const change = prevCount ? ((thisCount - prevCount) / prevCount) * 100 : null;
+            return successResponse(res, { thisMonth: thisCount, lastMonth: prevCount, changePct: change, breakdown: breakdown.map(b => ({ status: b.status, count: b._count.status })) });
         } catch (e) { next(e); }
     }
 };

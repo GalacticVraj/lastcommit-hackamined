@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { generateDocNumber } = require('../utils/autoNumber');
+const { checkStockBatch } = require('../utils/stockGuard');
 const { successResponse, paginatedResponse, errorResponse, parseListQuery, buildPagination } = require('../utils/responseHelper');
 
 const ctrl = {
@@ -93,8 +94,27 @@ const ctrl = {
         try {
             const issueNo = await generateDocNumber('MIS', 'MIS');
             const { routeCardId, items } = req.body;
-            const mi = await prisma.materialIssue.create({ data: { issueNo, routeCardId, createdBy: req.user.id, items: { create: items || [] } }, include: { items: true } });
-            for (const item of (items || [])) { await prisma.product.update({ where: { id: item.productId }, data: { currentStock: { decrement: item.qtyIssued } } }); }
+            const issueItems = items || [];
+
+            // Check stock availability for all items before any writes
+            const stockItems = issueItems.map(i => ({ productId: i.productId, quantity: i.qtyIssued }));
+            if (await checkStockBatch(res, stockItems)) return;
+
+            const mi = await prisma.$transaction(async (tx) => {
+                const newIssue = await tx.materialIssue.create({
+                    data: { issueNo, routeCardId, createdBy: req.user.id, items: { create: issueItems } },
+                    include: { items: true }
+                });
+                // Decrement stock for each item
+                for (const item of issueItems) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { currentStock: { decrement: item.qtyIssued } }
+                    });
+                }
+                return newIssue;
+            });
+
             return successResponse(res, mi, 'Material Issue created — stock deducted', 201);
         } catch (e) { next(e); }
     },
@@ -163,6 +183,23 @@ const ctrl = {
                 prisma.jobOrder.count({ where: { status: { not: 'Closed' } } })
             ]);
             return successResponse(res, { stats: { totalProducts, activeRouteCards: activeCards, totalProduction: totalProduction._sum.productionQty || 0, activeJobOrders: totalJobOrders } });
+        } catch (e) { next(e); }
+    },
+
+    async stats(req, res, next) {
+        try {
+            const now = new Date();
+            const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endPrev = startThis;
+            const [thisCount, prevCount, breakdown] = await Promise.all([
+                prisma.productionRouteCard.count({ where: { startDate: { gte: startThis, lt: startNext } } }),
+                prisma.productionRouteCard.count({ where: { startDate: { gte: startPrev, lt: endPrev } } }),
+                prisma.productionRouteCard.groupBy({ by: ['status'], _count: { status: true } })
+            ]);
+            const change = prevCount ? ((thisCount - prevCount) / prevCount) * 100 : null;
+            return successResponse(res, { thisMonth: thisCount, lastMonth: prevCount, changePct: change, breakdown: breakdown.map(b => ({ status: b.status, count: b._count.status })) });
         } catch (e) { next(e); }
     }
 };

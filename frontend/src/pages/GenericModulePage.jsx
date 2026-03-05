@@ -1,57 +1,218 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import DataTable from '../components/DataTable';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import PermissionGate from '../components/PermissionGate';
+import RecordViewPanel from '../components/RecordViewPanel';
+import RecordEditModal from '../components/RecordEditModal';
+import ConfirmDialog from '../components/ConfirmDialog';
+import ProfileLink from '../components/ProfileLink';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
+/**
+ * GenericModulePage — used for Purchase, HR, Finance, Quality, Production etc.
+ * 
+ * Props:
+ *   title       string
+ *   apiBase     string          e.g. "/purchase"
+ *   statCards   []              dashboard stat config
+ *   tabs        [{key, label, endpoint, columns, viewFields, editFields, formFields, sections?, deletePermission?, statusActions?}]
+ */
 export default function GenericModulePage({ title, apiBase, statCards = [], tabs = [] }) {
     const [activeTab, setActiveTab] = useState(tabs[0]?.key || 'list');
     const [data, setData] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({});
+    const [total, setTotal] = useState(0);
 
-    useEffect(() => { loadData(); }, [activeTab]);
+    // Query params
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState('');
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState('desc');
 
-    const loadData = async () => {
+    // Create
+    const [showCreate, setShowCreate] = useState(false);
+    const [createForm, setCreateForm] = useState({});
+    const [submitting, setSubmitting] = useState(false);
+
+    // View
+    const [viewRecord, setViewRecord] = useState(null);
+
+    // Edit
+    const [editRecord, setEditRecord] = useState(null);
+
+    // Confirm dialog
+    const [confirm, setConfirm] = useState({ open: false, loading: false });
+
+    const currentTab = tabs.find(t => t.key === activeTab) || {};
+    const moduleName = apiBase.replace('/', '');
+
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
             if (activeTab === 'dashboard') {
                 const res = await api.get(`${apiBase}/dashboard`);
                 setStats(res.data.data.stats);
-            } else {
-                const tab = tabs.find(t => t.key === activeTab);
-                if (tab?.endpoint) {
-                    const res = await api.get(`${apiBase}${tab.endpoint}`);
-                    setData(res.data.data || []);
-                }
+            } else if (currentTab?.endpoint) {
+                const params = {
+                    page,
+                    per_page: 25,
+                    search,
+                    sort_by: sortBy,
+                    sort_order: sortOrder
+                };
+                const res = await api.get(`${apiBase}${currentTab.endpoint}`, { params });
+                setData(res.data.data || []);
+                setTotal(res.data.pagination?.total || (res.data.data?.length || 0));
             }
-        } catch (e) { console.error(e); }
+        } catch { console.error('Failed to load'); }
         setLoading(false);
+    }, [activeTab, page, search, sortBy, sortOrder, currentTab.endpoint, apiBase]);
+
+    useEffect(() => {
+        setPage(1); // Reset page on tab change
+    }, [activeTab]);
+
+    useEffect(() => { loadData(); }, [loadData]);
+
+    // Fetch full record for view panel
+    const handleViewOpen = async (item) => {
+        setViewRecord(item);
+        try {
+            const res = await api.get(`${apiBase}${currentTab.endpoint}/${item.id}`);
+            setViewRecord(res.data.data);
+        } catch { /* keep partial */ }
     };
 
     const handleCreate = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
-            const tab = tabs.find(t => t.key === activeTab);
-            await api.post(`${apiBase}${tab?.endpoint || ''}`, form);
+            await api.post(`${apiBase}${currentTab?.endpoint || ''}`, createForm);
             toast.success('Created successfully');
-            setShowModal(false);
-            setForm({});
+            setShowCreate(false);
+            setCreateForm({});
             loadData();
-        } catch (e) { toast.error(e.response?.data?.message || 'Error'); }
+        } catch (err) { toast.error(err.response?.data?.message || 'Error'); }
+        setSubmitting(false);
     };
 
-    const currentTab = tabs.find(t => t.key === activeTab) || {};
+    const handleDelete = (item) => {
+        setConfirm({
+            open: true, loading: false,
+            title: 'Delete Record',
+            message: 'Are you sure you want to delete this record? This cannot be undone.',
+            confirmLabel: 'Delete', confirmClass: 'btn-danger',
+            onConfirm: async () => {
+                setConfirm(c => ({ ...c, loading: true }));
+                try {
+                    await api.delete(`${apiBase}${currentTab.endpoint}/${item.id}`);
+                    toast.success('Record deleted');
+                    setConfirm({ open: false, loading: false });
+                    loadData();
+                } catch (err) {
+                    toast.error(err.response?.data?.message || 'Error deleting');
+                    setConfirm(c => ({ ...c, loading: false }));
+                }
+            }
+        });
+    };
+
+    const handleStatusAction = (item, action) => {
+        setConfirm({
+            open: true, loading: false,
+            title: action.label,
+            message: action.confirmMessage,
+            confirmLabel: action.label, confirmClass: action.class || 'btn-primary',
+            onConfirm: async () => {
+                setConfirm(c => ({ ...c, loading: true }));
+                try {
+                    await api.put(`${apiBase}${currentTab.endpoint}/${item.id}`, { status: action.status });
+                    toast.success(`Status updated to ${action.status}`);
+                    setConfirm({ open: false, loading: false });
+                    setData(prev => prev.map(r => r.id === item.id ? { ...r, status: action.status } : r));
+                } catch (err) {
+                    toast.error(err.response?.data?.message || 'Error updating status');
+                    setConfirm(c => ({ ...c, loading: false }));
+                }
+            }
+        });
+    };
+
+    const getNestedValue = (obj, path) => path?.split('.').reduce((o, k) => o?.[k], obj);
+
+    // Prepare columns for DataTable component
+    const columns = currentTab.columns?.map(colKey => ({
+        key: colKey,
+        label: colKey.split('.').pop().replace(/([A-Z])/g, ' $1').replace(/^\w/, ch => ch.toUpperCase()),
+        sortable: true,
+        render: (item) => {
+            const val = colKey.includes('.') ? getNestedValue(item, colKey) : item[colKey];
+
+            if (colKey === 'vendor.name') return <ProfileLink id={item.vendorId} name={val} type="vendor" />;
+            if (activeTab === 'vendors' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="vendor" />;
+            if (colKey === 'employee.name') return <ProfileLink id={item.employeeId} name={val} type="employee" />;
+            if (activeTab === 'employees' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="employee" />;
+            if (colKey === 'customer.name') return <ProfileLink id={item.customerId} name={val} type="customer" />;
+            if (activeTab === 'customers' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="customer" />;
+            if (colKey === 'salesman.name' || colKey === 'salesPerson') return <ProfileLink id={item.salesmanId || item.salesPerson} name={val} type="salesman" />;
+            if (activeTab === 'salesmen' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="salesman" />;
+
+            if (colKey === 'status') return <span className="badge badge-active">{val}</span>;
+            if (typeof val === 'number' && val > 999) return `₹${val.toLocaleString()}`;
+            return val ?? '—';
+        }
+    })) || [];
+
+    const actions = (item) => (
+        <div style={{ display: 'flex', gap: '4px' }}>
+            <button className="btn btn-ghost btn-sm" title="View" style={{ padding: '4px 8px' }}
+                onClick={() => handleViewOpen(item)}>
+                <Eye size={14} />
+            </button>
+
+            <PermissionGate permission={`${moduleName}.edit`}>
+                <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}
+                    onClick={() => setEditRecord(item)}>
+                    <Edit size={14} />
+                </button>
+            </PermissionGate>
+
+            {(currentTab.statusActions || []).map(action => (
+                item.status !== action.status && (
+                    <PermissionGate key={action.label} permission={`${moduleName}.edit`}>
+                        <button className={`btn btn-sm ${action.class || 'btn-ghost'}`}
+                            title={action.label} style={{ padding: '4px 8px', fontSize: '12px' }}
+                            onClick={() => handleStatusAction(item, action)}>
+                            {action.label}
+                        </button>
+                    </PermissionGate>
+                )
+            ))}
+
+            <PermissionGate permission={currentTab.deletePermission || `${moduleName}.delete`}>
+                <button className="btn btn-ghost btn-sm" title="Delete"
+                    style={{ padding: '4px 8px', color: 'var(--danger)' }}
+                    onClick={() => handleDelete(item)}>
+                    <Trash2 size={14} />
+                </button>
+            </PermissionGate>
+        </div>
+    );
 
     return (
         <div>
             <div className="page-header">
                 <h1>{title}</h1>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}><Plus size={16} /> New</button>
+                {activeTab !== 'dashboard' && (
+                    <PermissionGate permission={`${moduleName}.create`}>
+                        <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}><Plus size={16} /> New</button>
+                    </PermissionGate>
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -62,6 +223,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 ))}
             </div>
 
+            {/* Dashboard stats */}
             {activeTab === 'dashboard' && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
@@ -72,46 +234,84 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 </div>
             )}
 
+            {/* Data table */}
             {activeTab !== 'dashboard' && (
-                <div className="table-container">
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="data-table">
-                            <thead><tr>{(currentTab.columns || ['id']).map(c => <th key={c}>{c.replace(/([A-Z])/g, ' $1').replace(/^\w/, ch => ch.toUpperCase())}</th>)}</tr></thead>
-                            <tbody>
-                                {loading ? [1, 2, 3].map(i => <tr key={i}>{(currentTab.columns || ['id']).map((_, j) => <td key={j}><div className="skeleton" style={{ height: 20 }} /></td>)}</tr>) :
-                                    data.map(item => (
-                                        <tr key={item.id}>{(currentTab.columns || ['id']).map(col => {
-                                            const val = col.includes('.') ? col.split('.').reduce((o, k) => o?.[k], item) : item[col];
-                                            if (col === 'status') return <td key={col}><span className="badge badge-active">{val}</span></td>;
-                                            if (typeof val === 'number' && val > 999) return <td key={col}>₹{val.toLocaleString()}</td>;
-                                            return <td key={col}>{val ?? '—'}</td>;
-                                        })}</tr>
-                                    ))
-                                }
-                                {!loading && !data.length && <tr><td colSpan={currentTab.columns?.length || 1} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No records</td></tr>}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <DataTable
+                    data={data}
+                    columns={columns}
+                    loading={loading}
+                    total={total}
+                    page={page}
+                    perPage={25}
+                    onPageChange={setPage}
+                    onSearch={setSearch}
+                    onSort={(col, dir) => { setSortBy(col); setSortOrder(dir); }}
+                    onNew={() => setShowCreate(true)}
+                    moduleName={moduleName}
+                    actions={actions}
+                    searchValue={search}
+                />
             )}
 
-            {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            {/* View slide-over */}
+            <RecordViewPanel
+                open={!!viewRecord}
+                onClose={() => setViewRecord(null)}
+                onEdit={() => { setEditRecord(viewRecord); setViewRecord(null); }}
+                title={`${currentTab.label || 'Record'} Details`}
+                record={viewRecord}
+                fields={currentTab.viewFields || Object.keys(viewRecord || {}).filter(k => typeof (viewRecord || {})[k] !== 'object').map(k => ({ key: k, label: k.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase()) }))}
+                sections={currentTab.sections || []}
+                canEdit={true}
+            />
+
+            {/* Edit modal */}
+            <RecordEditModal
+                open={!!editRecord}
+                onClose={() => setEditRecord(null)}
+                onSaved={loadData}
+                record={editRecord}
+                endpoint={`${apiBase}${currentTab.endpoint || ''}`}
+                fields={currentTab.editFields || currentTab.formFields || []}
+                title={`Edit ${currentTab.label || 'Record'}`}
+            />
+
+            {/* Confirm dialog */}
+            <ConfirmDialog
+                open={confirm.open}
+                onClose={() => setConfirm({ open: false, loading: false })}
+                onConfirm={confirm.onConfirm}
+                title={confirm.title}
+                message={confirm.message}
+                confirmLabel={confirm.confirmLabel}
+                confirmClass={confirm.confirmClass}
+                loading={confirm.loading}
+            />
+
+            {/* Create modal */}
+            {showCreate && (
+                <div className="modal-overlay" onClick={() => setShowCreate(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header"><h2>New Record</h2><button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button></div>
+                        <div className="modal-header"><h2>New Record</h2><button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>✕</button></div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
                                 {(currentTab.formFields || [{ name: 'name', label: 'Name' }]).map(f => (
                                     <div className="form-group" key={f.name}>
                                         <label className="form-label">{f.label}</label>
                                         <input className="form-input" type={f.type || 'text'} required={f.required}
-                                            value={form[f.name] || ''} onChange={e => setForm({ ...form, [f.name]: f.type === 'number' ? Number(e.target.value) : e.target.value })} />
+                                            value={createForm[f.name] || ''}
+                                            onChange={e => setCreateForm({ ...createForm, [f.name]: f.type === 'number' ? Number(e.target.value) : e.target.value })} />
                                     </div>
                                 ))}
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Create</button>
+                                <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
+                                <PermissionGate permission={`${moduleName}.create`}>
+                                    <button type="submit" className="btn btn-primary" disabled={submitting} style={{ gap: '8px' }}>
+                                        {submitting && <Loader2 size={16} className="animate-spin" />}
+                                        {submitting ? 'Creating...' : 'Create'}
+                                    </button>
+                                </PermissionGate>
                             </div>
                         </form>
                     </div>

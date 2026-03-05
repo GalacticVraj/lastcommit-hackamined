@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './lib/auth';
+import useSessionTimeout from './hooks/useSessionTimeout';
 import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -8,10 +9,20 @@ import SalesPage from './pages/SalesPage';
 import SimulationPage from './pages/SimulationPage';
 import ReportsPage from './pages/ReportsPage';
 import GenericModulePage from './pages/GenericModulePage';
+import TopProgressBar from './components/TopProgressBar';
+
+import CustomerProfilePage from './pages/CustomerProfilePage';
+import VendorProfilePage from './pages/VendorProfilePage';
+import EmployeeProfilePage from './pages/EmployeeProfilePage';
+import SalesmanProfilePage from './pages/SalesmanProfilePage';
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const token = useAuthStore(s => s.token) || localStorage.getItem('erp_token');
+
+  useSessionTimeout(60); // 60 minutes timeout
+
+  return (isAuthenticated && token) ? children : <Navigate to="/login" replace />;
 }
 
 // Module configurations for GenericModulePage
@@ -128,7 +139,13 @@ const statutoryConfig = {
 export default function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #334155' } }} />
+      <TopProgressBar />
+      <Toaster position="top-right" toastOptions={{
+        duration: 3000,
+        style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #334155' },
+        success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } },
+        error: { iconTheme: { primary: '#DC2626', secondary: '#fff' } },
+      }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -147,6 +164,12 @@ export default function App() {
           <Route path="maintenance" element={<GenericModulePage {...maintenanceConfig} />} />
           <Route path="assets" element={<GenericModulePage {...assetsConfig} />} />
           <Route path="reports" element={<ReportsPage />} />
+
+          {/* Profiles */}
+          <Route path="profile/customer/:id" element={<CustomerProfilePage />} />
+          <Route path="profile/vendor/:id" element={<VendorProfilePage />} />
+          <Route path="profile/employee/:id" element={<EmployeeProfilePage />} />
+          <Route path="profile/salesman/:id" element={<SalesmanProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

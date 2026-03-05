@@ -34,8 +34,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(rateLimiter);
 
-// API Routes
+const { authenticate } = require('./middleware/auth');
+
+// Open API Routes (Auth handles its own token validation for endpoints that need it)
 app.use('/api/v1/auth', authRoutes);
+
+// Protected API Routes
+app.use('/api/v1', authenticate);
 app.use('/api/v1/sales', salesRoutes);
 app.use('/api/v1/purchase', purchaseRoutes);
 app.use('/api/v1/production', productionRoutes);
@@ -52,7 +57,7 @@ app.use('/api/v1/assets', assetsRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 
-// Health check
+// Health check (Open)
 app.get('/api/v1/health', (req, res) => {
     res.json({ success: true, message: 'ERP API is running', timestamp: new Date().toISOString() });
 });

@@ -12,10 +12,10 @@ export default function SimulationPage() {
     const [inputs, setInputs] = useState([{ productId: '', targetQty: '' }]);
     const [shiftHours, setShiftHours] = useState(10);
     const [workerCount, setWorkerCount] = useState(50);
-    const [laborRate, setLaborRate] = useState(250);
-    const [kwhRate, setKwhRate] = useState(8);
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [lastRunId, setLastRunId] = useState(null);
+    const [isSaved, setIsSaved] = useState(false);
 
     useEffect(() => {
         api.get('/production/products?per_page=100').then(res => {
@@ -36,8 +36,11 @@ export default function SimulationPage() {
         if (!validInputs.length) return toast.error('Add at least one product with quantity');
         setLoading(true);
         try {
-            const res = await api.post('/simulation/run', { inputs: validInputs, shiftHours, workerCount, laborRate, kwhRate });
+            // send according to spec alias endpoint
+            const res = await api.post('/production-simulation', { mps: validInputs.map(i => ({ product_id: i.productId, target_qty: i.targetQty })), shift_hours: shiftHours, worker_count: workerCount });
             setResult(res.data.data);
+            setLastRunId(res.data.data.simulationId);
+            setIsSaved(false);
             toast.success('Simulation completed!');
         } catch (e) { toast.error(e.response?.data?.message || 'Simulation failed'); }
         setLoading(false);
@@ -49,6 +52,19 @@ export default function SimulationPage() {
         { name: 'Material', value: result.costBreakdown.materialCost },
     ] : [];
 
+    const saveSimulation = async () => {
+        if (!lastRunId) return;
+        setLoading(true);
+        try {
+            await api.post(`/simulation/${lastRunId}/save`);
+            toast.success('Simulation marked as saved');
+            setIsSaved(true);
+        } catch (e) {
+            toast.error(e.response?.data?.message || 'Failed to save');
+        }
+        setLoading(false);
+    };
+
     return (
         <div>
             <div className="page-header">
@@ -58,7 +74,7 @@ export default function SimulationPage() {
             {/* MPS Input Grid */}
             <div className="card" style={{ marginBottom: '20px' }}>
                 <div className="card-header"><span className="card-title">Master Production Schedule (MPS)</span></div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
                     <div className="form-group">
                         <label className="form-label">Shift Hours</label>
                         <input className="form-input" type="number" value={shiftHours} onChange={e => setShiftHours(Number(e.target.value))} />
@@ -66,14 +82,6 @@ export default function SimulationPage() {
                     <div className="form-group">
                         <label className="form-label">Worker Count</label>
                         <input className="form-input" type="number" value={workerCount} onChange={e => setWorkerCount(Number(e.target.value))} />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Labor Rate (₹/hr)</label>
-                        <input className="form-input" type="number" value={laborRate} onChange={e => setLaborRate(Number(e.target.value))} />
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Energy Rate (₹/kWh)</label>
-                        <input className="form-input" type="number" value={kwhRate} onChange={e => setKwhRate(Number(e.target.value))} />
                     </div>
                 </div>
                 <table className="data-table" style={{ marginBottom: '16px' }}>
@@ -101,6 +109,11 @@ export default function SimulationPage() {
                         {loading && <Loader2 size={18} className="spin" />}
                         Run Simulation
                     </button>
+                    {result && (
+                        <button className="btn btn-secondary" onClick={saveSimulation} disabled={loading || isSaved} style={{ marginLeft: '8px' }}>
+                            {isSaved ? 'Saved' : 'Save Simulation'}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -124,7 +137,7 @@ export default function SimulationPage() {
                     </div>
 
                     <div className="charts-grid">
-                        {/* Cost Breakdown Donut */}
+                        {/* Cost Breakdown Table */}
                         <div className="card">
                             <div className="card-header"><span className="card-title">Cost Breakdown</span></div>
                             <ResponsiveContainer width="100%" height={280}>
@@ -167,28 +180,22 @@ export default function SimulationPage() {
                     </div>
 
                     {/* MRP Materials Table */}
-                    <div className="table-container">
-                        <div className="table-toolbar">
-                            <span className="card-title">Material Requirements (MRP Breakdown)</span>
-                        </div>
+                    {/* Cost Breakdown Table */}
+                    <div className="table-container" style={{ marginBottom: 24 }}>
                         <table className="data-table">
-                            <thead><tr><th>Material</th><th>Required Qty</th><th>Available Qty</th><th>Shortfall</th><th>Unit Cost</th><th>Total Cost</th></tr></thead>
+                            <thead><tr><th>Item</th><th>Labor (₹)</th><th>Material (₹)</th><th>Electricity (₹)</th><th>Total (₹)</th></tr></thead>
                             <tbody>
-                                {result.mrpBreakdown.map((mat, i) => (
-                                    <tr key={i} style={mat.shortfall > 0 ? { background: 'rgba(220, 38, 38, 0.08)' } : {}}>
-                                        <td style={{ fontWeight: 500 }}>{mat.materialName}</td>
-                                        <td>{mat.requiredQty.toLocaleString()}</td>
-                                        <td>{mat.availableQty.toLocaleString()}</td>
-                                        <td style={{ color: mat.shortfall > 0 ? 'var(--red)' : 'var(--teal)', fontWeight: 600 }}>
-                                            {mat.shortfall > 0 ? `-${mat.shortfall.toLocaleString()}` : '✓ OK'}
-                                        </td>
-                                        <td>₹{mat.unitCost.toLocaleString()}</td>
-                                        <td>₹{mat.totalCost.toLocaleString()}</td>
-                                    </tr>
-                                ))}
+                                <tr>
+                                    <td>Cost</td>
+                                    <td>₹{result.costBreakdown.laborCost.toLocaleString()}</td>
+                                    <td>₹{result.costBreakdown.materialCost.toLocaleString()}</td>
+                                    <td>₹{result.costBreakdown.electricityCost.toLocaleString()}</td>
+                                    <td>₹{result.costBreakdown.totalCost.toLocaleString()}</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
+                    {/* Cost Breakdown Donut */}
                 </>
             )}
         </div>
