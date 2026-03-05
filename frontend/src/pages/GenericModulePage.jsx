@@ -157,6 +157,10 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
             if (activeTab === 'vendors' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="vendor" />;
             if (colKey === 'employee.name') return <ProfileLink id={item.employeeId} name={val} type="employee" />;
             if (activeTab === 'employees' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="employee" />;
+            if (colKey === 'customer.name') return <ProfileLink id={item.customerId} name={val} type="customer" />;
+            if (activeTab === 'customers' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="customer" />;
+            if (colKey === 'salesman.name' || colKey === 'salesPerson') return <ProfileLink id={item.salesmanId || item.salesPerson} name={val} type="salesman" />;
+            if (activeTab === 'salesmen' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="salesman" />;
 
             if (colKey === 'status') return <span className="badge badge-active">{val}</span>;
             if (typeof val === 'number' && val > 999) return `₹${val.toLocaleString()}`;

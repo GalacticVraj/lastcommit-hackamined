@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, FileText } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import ProfileLink from '../components/ProfileLink';
 
 const REPORT_TYPES = [
     { value: 'sales-register', label: 'Sales Register' },
@@ -78,7 +79,16 @@ export default function ReportsPage() {
             );
         }
         if (!data.length) return <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No data for this report</div>;
-        const cols = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object' && k !== 'id' && k !== 'deletedAt' && k !== 'createdBy' && k !== 'updatedBy' && k !== 'isActive');
+        // include simple primitive columns plus objects that contain a name so we can render links
+        const cols = Object.keys(data[0]).filter(k => {
+            const v = data[0][k];
+            if (k === 'id' || k === 'deletedAt' || k === 'createdBy' || k === 'updatedBy' || k === 'isActive') return false;
+            if (typeof v === 'object' && v !== null) {
+                // keep if it has a name property
+                return 'name' in v;
+            }
+            return true;
+        });
         return (
             <div style={{ overflowX: 'auto' }}>
                 <table className="data-table">
@@ -87,6 +97,16 @@ export default function ReportsPage() {
                         {data.slice(0, 50).map((row, i) => (
                             <tr key={i}>{cols.map(c => {
                                 let val = row[c];
+                                // nested objects with name should be rendered as profile links
+                                if (typeof val === 'object' && val !== null && 'name' in val) {
+                                    let type = '';
+                                    if (c.toLowerCase().includes('customer') || c === 'customer') type = 'customer';
+                                    else if (c.toLowerCase().includes('vendor') || c === 'vendor') type = 'vendor';
+                                    else if (c.toLowerCase().includes('employee') || c === 'employee') type = 'employee';
+                                    else if (c.toLowerCase().includes('salesman') || c === 'salesman') type = 'salesman';
+                                    const id = val.id || row[`${c}Id`] || '';
+                                    return <td key={c}><ProfileLink id={id} name={val.name} type={type || 'customer'} /></td>;
+                                }
                                 if (typeof val === 'number' && (c.toLowerCase().includes('amount') || c.toLowerCase().includes('total') || c.toLowerCase().includes('cost') || c.toLowerCase().includes('value') || c.toLowerCase().includes('salary') || c.toLowerCase().includes('pay'))) val = `₹${val.toLocaleString()}`;
                                 if (c === 'status') return <td key={c}><span className="badge badge-active">{val}</span></td>;
                                 return <td key={c}>{val ?? '—'}</td>;

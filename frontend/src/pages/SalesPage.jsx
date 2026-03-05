@@ -322,7 +322,7 @@ export default function SalesPage() {
                                 <thead><tr><th>Invoice #</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
                                 <tbody>
                                     {(stats?.recentInvoices || []).slice(0, 5).map(inv => (
-                                        <tr key={inv.id}><td>{inv.invoiceNo}</td><td>{inv.customer?.name}</td><td>₹{Number(inv.grandTotal)?.toLocaleString()}</td><td><span className={`badge ${statusClass(inv.status)}`}>{inv.status}</span></td></tr>
+                                        <tr key={inv.id}><td>{inv.invoiceNo}</td><td><ProfileLink id={inv.customer?.id} name={inv.customer?.name} type="customer" /></td><td>₹{Number(inv.grandTotal)?.toLocaleString()}</td><td><span className={`badge ${statusClass(inv.status)}`}>{inv.status}</span></td></tr>
                                     ))}
                                     {!(stats?.recentInvoices?.length) && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No invoices yet</td></tr>}
                                 </tbody>

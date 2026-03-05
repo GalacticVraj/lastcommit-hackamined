@@ -32,6 +32,10 @@ export default function EmployeeProfilePage() {
 
     const currentStructure = profile.salaryStructures?.[0] || {};
     const gross = (currentStructure.basic || 0) + (currentStructure.hra || 0) + (currentStructure.da || 0) + (currentStructure.allowances || 0);
+    const pfAmount = gross * ((currentStructure.pfPercent || 0) / 100);
+    // prefer latest salary sheet net pay if available
+    const lastNetPay = profile.salarySheets?.[0]?.netPay || 0;
+    const netPay = lastNetPay || (gross - pfAmount - ((currentStructure.esiPercent || 0) / 100 * gross));
 
     const memoCols = [
         { key: 'amount', label: 'Amount', render: r => `₹${Number(r.amount).toLocaleString()}` },
@@ -89,13 +93,31 @@ export default function EmployeeProfilePage() {
                             <div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>HRA</div><div style={{ fontSize: 16 }}>₹{Number(currentStructure.hra || 0).toLocaleString()}</div></div>
                             <div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>DA + Allowances</div><div style={{ fontSize: 16 }}>₹{(Number(currentStructure.da || 0) + Number(currentStructure.allowances || 0)).toLocaleString()}</div></div>
                             <div style={{ gridColumn: '1 / 3' }}><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Gross Pay</div><div style={{ fontSize: 20, color: 'var(--blue-light)', fontWeight: 600 }}>₹{gross.toLocaleString()}</div></div>
-                            <div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>PF / ESI %</div><div style={{ fontSize: 16, color: 'var(--red-light)' }}>{currentStructure.pfPercent || 0}% / {currentStructure.esiPercent || 0}%</div></div>
+                            <div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>PF Amount</div><div style={{ fontSize: 16, color: 'var(--red-light)' }}>₹{pfAmount.toLocaleString()}</div></div>
+                            <div style={{ gridColumn: '1 / -1' }}><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Net Pay (latest)</div><div style={{ fontSize: 18, fontWeight: 500, color: 'var(--teal-light)' }}>₹{Number(netPay || 0).toLocaleString()}</div></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div className="grid-2">
+                <div>
+                    <h3 style={{ marginBottom: 16 }}>Attendance Summary (this month)</h3>
+                    <div className="card" style={{ padding: 16, display: 'flex', gap: '24px', justifyContent: 'space-around' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div className="stat-value" style={{ fontSize: 20 }}>{profile.attendanceSummary?.presentDays || 0}</div>
+                            <div className="stat-label">Present</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div className="stat-value" style={{ fontSize: 20 }}>{profile.attendanceSummary?.absentDays || 0}</div>
+                            <div className="stat-label">Absent</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div className="stat-value" style={{ fontSize: 20 }}>{profile.attendanceSummary?.leaves || 0}</div>
+                            <div className="stat-label">Leaves</div>
+                        </div>
+                    </div>
+                </div>
                 <div>
                     <h3 style={{ marginBottom: 16 }}>Last 6 Months Salary History</h3>
                     <DataTable data={profile.salarySheets?.slice(0, 6) || []} columns={salaryCols} perPage={6} emptyMessage="No salary sheets found" />
