@@ -4,7 +4,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 import api from '../lib/api';
 
-const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#EC4899'];
+const COLORS = ['#F97316', '#374151', '#FB923C', '#6B7280'];
 
 export default function DashboardPage() {
     const [stats, setStats] = useState(null);
@@ -71,31 +71,72 @@ export default function DashboardPage() {
                 <div className="card">
                     <div className="card-header"><span className="card-title">Monthly Sales vs Purchase</span></div>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={barData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                            <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
-                            <YAxis stroke="#6B7280" fontSize={12} tickFormatter={v => `₹${v / 1000}K`} />
-                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
-                            <Legend />
-                            <Bar dataKey="sales" fill="#2563EB" radius={[4, 4, 0, 0]} name="Sales" />
-                            <Bar dataKey="purchase" fill="#059669" radius={[4, 4, 0, 0]} name="Purchase" />
+                        <BarChart data={barData} barGap={8} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="0" stroke="#E5E7EB" vertical={false} />
+                            <XAxis dataKey="month" stroke="#374151" fontSize={11} fontWeight={500} tickLine={false} axisLine={{ stroke: '#D1D5DB' }} />
+                            <YAxis stroke="#374151" fontSize={11} fontWeight={500} tickFormatter={v => `₹${v / 1000}K`} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #D1D5DB', borderRadius: '2px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', fontSize: '12px' }} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                            <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px', fontWeight: 500 }} />
+                            <Bar dataKey="sales" fill="#F97316" name="Sales" />
+                            <Bar dataKey="purchase" fill="#374151" name="Purchase" />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
 
                 <div className="card">
                     <div className="card-header"><span className="card-title">Invoice Status</span></div>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                    <ResponsiveContainer width="100%" height={350}>
+                        <PieChart margin={{ top: 40, right: 100, left: 100, bottom: 40 }}>
+                            <Pie 
+                                data={pieData} 
+                                cx="50%" 
+                                cy="50%" 
+                                innerRadius={70} 
+                                outerRadius={110} 
+                                paddingAngle={1} 
+                                dataKey="value" 
+                                stroke="#1F2937" 
+                                strokeWidth={1} 
+                                label={({ name, percent, cx, cy, midAngle, outerRadius }) => {
+                                    const RADIAN = Math.PI / 180;
+                                    const radius = outerRadius + 45;
+                                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                    return (
+                                        <text x={x} y={y} fill="#1F2937" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={500}>
+                                            {`${name} ${(percent * 100).toFixed(0)}%`}
+                                        </text>
+                                    );
+                                }}
+                                labelLine={({ cx, cy, midAngle, outerRadius }) => {
+                                    const RADIAN = Math.PI / 180;
+                                    const startRadius = outerRadius + 5;
+                                    const endRadius = outerRadius + 35;
+                                    const x1 = cx + startRadius * Math.cos(-midAngle * RADIAN);
+                                    const y1 = cy + startRadius * Math.sin(-midAngle * RADIAN);
+                                    const x2 = cx + endRadius * Math.cos(-midAngle * RADIAN);
+                                    const y2 = cy + endRadius * Math.sin(-midAngle * RADIAN);
+                                    const arrowSize = 6;
+                                    const angle = Math.atan2(y2 - y1, x2 - x1);
+                                    const arrowX1 = x2 - arrowSize * Math.cos(angle - Math.PI / 6);
+                                    const arrowY1 = y2 - arrowSize * Math.sin(angle - Math.PI / 6);
+                                    const arrowX2 = x2 - arrowSize * Math.cos(angle + Math.PI / 6);
+                                    const arrowY2 = y2 - arrowSize * Math.sin(angle + Math.PI / 6);
+                                    return (
+                                        <g>
+                                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#374151" strokeWidth={1} />
+                                            <polygon points={`${x2},${y2} ${arrowX1},${arrowY1} ${arrowX2},${arrowY2}`} fill="#374151" />
+                                        </g>
+                                    );
+                                }}
+                            >
                                 {pieData.map((_, index) => <Cell key={index} fill={COLORS[index]} />)}
                             </Pie>
-                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
+                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #374151', borderRadius: '2px', boxShadow: '0 2px 4px rgba(0,0,0,0.08)', fontSize: '12px' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
             </div>
-
             <div className="card">
                 <div className="card-header">
                     <span className="card-title">Quick Actions</span>
