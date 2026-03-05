@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const { authenticate } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/permission');
+const ctrl = require('../controllers/simulationController');
+router.use(authenticate);
+router.post('/run', checkPermission('simulation.run'), ctrl.runSimulation);
+router.get('/history', checkPermission('simulation.view'), ctrl.listSimulations);
+router.get('/:id', checkPermission('simulation.view'), ctrl.getSimulation);
+module.exports = router;
