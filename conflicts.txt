@@ -1,9 +1,0 @@
-﻿backend/node_modules/.prisma/client/edge.js
-backend/node_modules/.prisma/client/index.js
-backend/node_modules/.prisma/client/wasm.js
-backend/prisma/dev.db
-frontend/src/index.css
-frontend/src/layouts/AppLayout.jsx
-frontend/src/pages/DashboardPage.jsx
-frontend/src/pages/LoginPage.jsx
-frontend/src/pages/ReportsPage.jsx

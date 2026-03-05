@@ -37,7 +37,7 @@ export default function SimulationPage() {
         setLoading(true);
         try {
             // send according to spec alias endpoint
-            const res = await api.post('/production-simulation', { mps: validInputs.map(i => ({ product_id: i.productId, target_qty: i.targetQty })), shift_hours: shiftHours, worker_count: workerCount });
+            const res = await api.post('/simulation/run', { mps: validInputs.map(i => ({ product_id: i.productId, target_qty: i.targetQty })), shift_hours: shiftHours, worker_count: workerCount });
             setResult(res.data.data);
             setLastRunId(res.data.data.simulationId);
             setIsSaved(false);
@@ -90,8 +90,8 @@ export default function SimulationPage() {
                         {inputs.map((input, i) => (
                             <tr key={i}>
                                 <td>
-                                    <GlassSelect 
-                                        value={input.productId} 
+                                    <GlassSelect
+                                        value={input.productId}
                                         onChange={e => updateInput(i, 'productId', e.target.value)}
                                         placeholder="Select Product..."
                                         options={products.map(p => ({ value: p.id, label: `${p.name} (${p.code})` }))}
