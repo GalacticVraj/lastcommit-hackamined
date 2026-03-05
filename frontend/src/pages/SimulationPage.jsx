@@ -3,6 +3,7 @@ import { Calculator, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import GlassSelect from '../components/GlassSelect';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -81,10 +82,12 @@ export default function SimulationPage() {
                         {inputs.map((input, i) => (
                             <tr key={i}>
                                 <td>
-                                    <select className="form-select" value={input.productId} onChange={e => updateInput(i, 'productId', e.target.value)}>
-                                        <option value="">Select Product...</option>
-                                        {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-                                    </select>
+                                    <GlassSelect 
+                                        value={input.productId} 
+                                        onChange={e => updateInput(i, 'productId', e.target.value)}
+                                        placeholder="Select Product..."
+                                        options={products.map(p => ({ value: p.id, label: `${p.name} (${p.code})` }))}
+                                    />
                                 </td>
                                 <td><input className="form-input" type="number" min="1" placeholder="Qty" value={input.targetQty} onChange={e => updateInput(i, 'targetQty', e.target.value)} /></td>
                                 <td><button className="btn btn-ghost btn-sm" onClick={() => removeRow(i)} style={{ color: 'var(--red)' }}>✕</button></td>

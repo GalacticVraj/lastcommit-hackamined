@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Download, FileText } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import GlassSelect from '../components/GlassSelect';
+import GlassDatePicker from '../components/GlassDatePicker';
 
 const REPORT_TYPES = [
     { value: 'sales-register', label: 'Sales Register' },
@@ -111,17 +113,19 @@ export default function ReportsPage() {
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'end' }}>
                     <div className="form-group" style={{ flex: 2, marginBottom: 0 }}>
                         <label className="form-label">Report Type</label>
-                        <select className="form-select" value={reportType} onChange={e => setReportType(e.target.value)}>
-                            {REPORT_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                        </select>
+                        <GlassSelect 
+                            value={reportType} 
+                            onChange={e => setReportType(e.target.value)}
+                            options={REPORT_TYPES}
+                        />
                     </div>
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                         <label className="form-label">From Date</label>
-                        <input className="form-input" type="date" value={from} onChange={e => setFrom(e.target.value)} />
+                        <GlassDatePicker value={from} onChange={e => setFrom(e.target.value)} placeholder="Select from date" />
                     </div>
                     <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                         <label className="form-label">To Date</label>
-                        <input className="form-input" type="date" value={to} onChange={e => setTo(e.target.value)} />
+                        <GlassDatePicker value={to} onChange={e => setTo(e.target.value)} placeholder="Select to date" />
                     </div>
                     <button className="btn btn-primary" onClick={loadReport} disabled={loading}>
                         <FileText size={16} /> Generate
