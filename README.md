@@ -1,2 +1,2 @@
 # lastcommit-hackamined
-Initial repository setup.
+Initial repository setup
