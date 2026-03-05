@@ -481,6 +481,7 @@ const salesController = {
 
     // ─── DASHBOARD ──────────────────────────────────────
     async dashboard(req, res, next) {
+        // existing implementation left unchanged because module-specific dashboards may still use it
         try {
             const [
                 totalCustomers, totalInvoices, totalRevenue, overdueInvoices,
@@ -506,6 +507,25 @@ const salesController = {
                 invoicesByStatus: monthlyData,
                 inquiriesByStatus: statusBreakdown
             });
+        } catch (e) { next(e); }
+    },
+
+    // new stats endpoint for simple monthly comparison
+    async stats(req, res, next) {
+        try {
+            const now = new Date();
+            const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endPrev = startThis;
+
+            const [thisCount, prevCount, breakdown] = await Promise.all([
+                prisma.invoice.count({ where: { invoiceDate: { gte: startThis, lt: startNext } } }),
+                prisma.invoice.count({ where: { invoiceDate: { gte: startPrev, lt: endPrev } } }),
+                prisma.invoice.groupBy({ by: ['status'], _count: { status: true } })
+            ]);
+            const change = prevCount ? ((thisCount - prevCount) / prevCount) * 100 : null;
+            return successResponse(res, { thisMonth: thisCount, lastMonth: prevCount, changePct: change, breakdown: breakdown.map(b => ({ status: b.status, count: b._count.status })) });
         } catch (e) { next(e); }
     }
 };

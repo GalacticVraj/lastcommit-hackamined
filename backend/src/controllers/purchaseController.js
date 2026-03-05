@@ -244,6 +244,23 @@ const ctrl = {
             ]);
             return successResponse(res, { stats: { totalVendors, totalPOs, totalSpend: totalBills._sum.totalAmount || 0, pendingGRNs } });
         } catch (e) { next(e); }
+    },
+
+    async stats(req, res, next) {
+        try {
+            const now = new Date();
+            const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const startPrev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endPrev = startThis;
+            const [thisCount, prevCount, breakdown] = await Promise.all([
+                prisma.purchaseOrder.count({ where: { poDate: { gte: startThis, lt: startNext } } }),
+                prisma.purchaseOrder.count({ where: { poDate: { gte: startPrev, lt: endPrev } } }),
+                prisma.purchaseOrder.groupBy({ by: ['status'], _count: { status: true } })
+            ]);
+            const change = prevCount ? ((thisCount - prevCount) / prevCount) * 100 : null;
+            return successResponse(res, { thisMonth: thisCount, lastMonth: prevCount, changePct: change, breakdown: breakdown.map(b => ({ status: b.status, count: b._count.status })) });
+        } catch (e) { next(e); }
     }
 };
 

@@ -33,5 +33,6 @@ router.post('/bills', checkPermission('purchase.bill.create'), ctrl.createBill);
 router.post('/payments', checkPermission('purchase.payment.create'), ctrl.createPayment);
 
 router.get('/dashboard', checkPermission('purchase.view'), ctrl.dashboard);
+router.get('/stats', checkPermission('purchase.view'), ctrl.stats);
 
 module.exports = router;

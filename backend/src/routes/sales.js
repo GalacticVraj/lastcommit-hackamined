@@ -53,5 +53,7 @@ router.get('/salesmen/:id/profile', checkPermission('sales.view'), salesControll
 
 // Dashboard
 router.get('/dashboard', checkPermission('sales.view'), salesController.dashboard);
+// simple stats for module cards
+router.get('/stats', checkPermission('sales.view'), salesController.stats);
 
 module.exports = router;
