@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { generateDocNumber } = require('../utils/autoNumber');
+const { checkStockBatch } = require('../utils/stockGuard');
 const { successResponse, paginatedResponse, errorResponse, parseListQuery, buildPagination } = require('../utils/responseHelper');
 
 const ctrl = {
@@ -93,8 +94,27 @@ const ctrl = {
         try {
             const issueNo = await generateDocNumber('MIS', 'MIS');
             const { routeCardId, items } = req.body;
-            const mi = await prisma.materialIssue.create({ data: { issueNo, routeCardId, createdBy: req.user.id, items: { create: items || [] } }, include: { items: true } });
-            for (const item of (items || [])) { await prisma.product.update({ where: { id: item.productId }, data: { currentStock: { decrement: item.qtyIssued } } }); }
+            const issueItems = items || [];
+
+            // Check stock availability for all items before any writes
+            const stockItems = issueItems.map(i => ({ productId: i.productId, quantity: i.qtyIssued }));
+            if (await checkStockBatch(res, stockItems)) return;
+
+            const mi = await prisma.$transaction(async (tx) => {
+                const newIssue = await tx.materialIssue.create({
+                    data: { issueNo, routeCardId, createdBy: req.user.id, items: { create: issueItems } },
+                    include: { items: true }
+                });
+                // Decrement stock for each item
+                for (const item of issueItems) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { currentStock: { decrement: item.qtyIssued } }
+                    });
+                }
+                return newIssue;
+            });
+
             return successResponse(res, mi, 'Material Issue created — stock deducted', 201);
         } catch (e) { next(e); }
     },

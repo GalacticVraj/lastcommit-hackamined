@@ -9,6 +9,7 @@ router.use(authenticate);
 // Customers
 router.get('/customers', checkPermission('sales.view'), salesController.listCustomers);
 router.post('/customers', checkPermission('sales.customer.create'), salesController.createCustomer);
+router.get('/customers/:id/profile', checkPermission('sales.view'), salesController.getCustomerProfile);
 router.get('/customers/:id', checkPermission('sales.view'), salesController.getCustomer);
 router.put('/customers/:id', checkPermission('sales.customer.edit'), salesController.updateCustomer);
 router.delete('/customers/:id', checkPermission('sales.customer.delete'), salesController.deleteCustomer);
@@ -46,6 +47,9 @@ router.get('/invoices/:id', checkPermission('sales.view'), salesController.getIn
 // Receipt Vouchers
 router.get('/receipts', checkPermission('sales.view'), salesController.listReceipts);
 router.post('/receipts', checkPermission('sales.receipt.create'), salesController.createReceipt);
+
+// Salesman profile (by employee ID, filtered on salesPerson field)
+router.get('/salesmen/:id/profile', checkPermission('sales.view'), salesController.getSalesmanProfile);
 
 // Dashboard
 router.get('/dashboard', checkPermission('sales.view'), salesController.dashboard);

@@ -52,6 +52,64 @@ const salesController = {
         } catch (e) { next(e); }
     },
 
+    async getCustomerProfile(req, res, next) {
+        try {
+            const id = parseInt(req.params.id);
+            const [customer, saleOrders, invoices, receipts] = await Promise.all([
+                prisma.customer.findUnique({ where: { id } }),
+                prisma.saleOrder.findMany({ where: { customerId: id, deletedAt: null }, orderBy: { createdAt: 'desc' } }),
+                prisma.invoice.findMany({ where: { customerId: id, deletedAt: null }, orderBy: { createdAt: 'desc' } }),
+                prisma.salesReceiptVoucher.findMany({ where: { customerId: id }, orderBy: { receiptDate: 'desc' } }),
+            ]);
+            if (!customer) return errorResponse(res, 'Customer not found', 404);
+
+            const totalBusiness = invoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0);
+            const totalReceived = receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+            const outstanding = totalBusiness - totalReceived;
+
+            // Tag each invoice
+            const now = new Date();
+            const taggedInvoices = invoices.map(inv => ({
+                ...inv,
+                paymentStatus: inv.status === 'Paid' ? 'Paid'
+                    : new Date(inv.dueDate) < now ? 'Overdue' : 'Unpaid'
+            }));
+
+            return successResponse(res, {
+                customer, saleOrders, invoices: taggedInvoices,
+                metrics: { totalBusiness, totalReceived, outstanding, totalOrders: saleOrders.length, totalInvoices: invoices.length }
+            });
+        } catch (e) { next(e); }
+    },
+
+    async getSalesmanProfile(req, res, next) {
+        try {
+            const paramId = req.params.id;
+            const id = parseInt(paramId);
+            const employee = await prisma.employee.findFirst({
+                where: isNaN(id) ? { name: decodeURIComponent(paramId) } : { id }
+            });
+            if (!employee) return errorResponse(res, 'Salesman/Employee not found', 404);
+
+            const [inquiries, saleOrders] = await Promise.all([
+                prisma.inquiry.findMany({ where: { salesPerson: employee.name, deletedAt: null }, orderBy: { createdAt: 'desc' } }),
+                prisma.saleOrder.findMany({ where: { salesPerson: employee.name, deletedAt: null }, orderBy: { createdAt: 'desc' } })
+            ]);
+
+            const convertedInquiries = inquiries.filter(i => i.status === 'Won' || i.status === 'Converted').length;
+            const conversionRate = inquiries.length ? ((convertedInquiries / inquiries.length) * 100).toFixed(1) : 0;
+            const totalSales = saleOrders.reduce((s, o) => s + Number(o.grandTotal || 0), 0);
+
+            // basic commission logic: 2% of total sales (just an example, user wanted 'commission earned this month')
+            const commission = (totalSales * 0.02).toFixed(2);
+
+            return successResponse(res, {
+                employee, inquiries, saleOrders,
+                metrics: { totalInquiries: inquiries.length, convertedOrders: saleOrders.length, conversionRate, totalSales, commission }
+            });
+        } catch (e) { next(e); }
+    },
+
     // ─── INQUIRIES ─────────────────────────────────────
     async listInquiries(req, res, next) {
         try {
@@ -173,19 +231,22 @@ const salesController = {
                 return { ...item, total: +lineTotal.toFixed(2) };
             });
 
-            const quotation = await prisma.quotation.create({
-                data: {
-                    quoteNo, customerId, inquiryId, validUntil: new Date(validUntil), paymentTerms,
-                    totalAmount: +totalAmount.toFixed(2), createdBy: req.user.id,
-                    items: { create: processedItems }
-                },
-                include: { items: true, customer: true }
-            });
+            const quotation = await prisma.$transaction(async (tx) => {
+                const newQuote = await tx.quotation.create({
+                    data: {
+                        quoteNo, customerId, inquiryId, validUntil: new Date(validUntil), paymentTerms,
+                        totalAmount: +totalAmount.toFixed(2), createdBy: req.user.id,
+                        items: { create: processedItems }
+                    },
+                    include: { items: true, customer: true }
+                });
 
-            // Update inquiry status
-            if (inquiryId) {
-                await prisma.inquiry.update({ where: { id: inquiryId }, data: { status: 'Quoted' } });
-            }
+                // Update inquiry status
+                if (inquiryId) {
+                    await tx.inquiry.update({ where: { id: inquiryId }, data: { status: 'Quoted' } });
+                }
+                return newQuote;
+            });
 
             return successResponse(res, quotation, 'Quotation created', 201);
         } catch (e) { next(e); }
@@ -267,10 +328,23 @@ const salesController = {
 
     async updateSaleOrder(req, res, next) {
         try {
-            const order = await prisma.saleOrder.update({
-                where: { id: parseInt(req.params.id) },
-                data: { ...req.body, updatedBy: req.user.id }
+            const id = parseInt(req.params.id);
+            const order = await prisma.$transaction(async (tx) => {
+                const updated = await tx.saleOrder.update({
+                    where: { id },
+                    data: { ...req.body, updatedBy: req.user.id }
+                });
+
+                // Cascade: if SO is now Closed, close all its line items
+                if (req.body.status === 'Closed') {
+                    await tx.saleOrderItem.updateMany({
+                        where: { saleOrderId: id },
+                        data: { status: 'Closed' }
+                    });
+                }
+                return updated;
             });
+
             return successResponse(res, order, 'Sale Order updated');
         } catch (e) { next(e); }
     },
@@ -380,23 +454,26 @@ const salesController = {
     async createReceipt(req, res, next) {
         try {
             const receiptNo = await generateDocNumber('RV', 'RV');
-            const receipt = await prisma.salesReceiptVoucher.create({
-                data: { ...req.body, receiptNo, createdBy: req.user.id }
-            });
+            const receipt = await prisma.$transaction(async (tx) => {
+                const newReceipt = await tx.salesReceiptVoucher.create({
+                    data: { ...req.body, receiptNo, createdBy: req.user.id }
+                });
 
-            // Update invoice status if linked
-            if (req.body.invoiceId) {
-                const invoice = await prisma.invoice.findUnique({ where: { id: req.body.invoiceId } });
-                if (invoice) {
-                    const totalReceipts = await prisma.salesReceiptVoucher.aggregate({
-                        where: { invoiceId: req.body.invoiceId },
-                        _sum: { amount: true }
-                    });
-                    const totalPaid = totalReceipts._sum.amount || 0;
-                    const newStatus = totalPaid >= invoice.grandTotal ? 'Paid' : 'Partial';
-                    await prisma.invoice.update({ where: { id: req.body.invoiceId }, data: { status: newStatus } });
+                // Update invoice status if linked
+                if (req.body.invoiceId) {
+                    const invoice = await tx.invoice.findUnique({ where: { id: req.body.invoiceId } });
+                    if (invoice) {
+                        const totalReceipts = await tx.salesReceiptVoucher.aggregate({
+                            where: { invoiceId: req.body.invoiceId },
+                            _sum: { amount: true }
+                        });
+                        const totalPaid = totalReceipts._sum.amount || 0;
+                        const newStatus = totalPaid >= invoice.grandTotal ? 'Paid' : 'Partial';
+                        await tx.invoice.update({ where: { id: req.body.invoiceId }, data: { status: newStatus } });
+                    }
                 }
-            }
+                return newReceipt;
+            });
 
             return successResponse(res, receipt, 'Receipt Voucher created', 201);
         } catch (e) { next(e); }

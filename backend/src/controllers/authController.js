@@ -59,7 +59,7 @@ const authController = {
                     name: user.name,
                     email: user.email,
                     roles: roleNames,
-                    permissions
+                    permissions: permissions
                 }
             }, 'Login successful');
         } catch (error) {

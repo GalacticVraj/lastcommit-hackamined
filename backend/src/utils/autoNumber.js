@@ -26,13 +26,13 @@ async function generateDocNumber(docType, prefix) {
             return `${prefix}-${year}-00001`;
         }
 
-        const nextNo = seq.lastNo + 1;
-        await tx.docSequence.update({
+        // Atomic increment handles concurrency perfectly
+        const updatedSeq = await tx.docSequence.update({
             where: { docType },
-            data: { lastNo: nextNo }
+            data: { lastNo: { increment: 1 } }
         });
 
-        return `${prefix}-${year}-${String(nextNo).padStart(5, '0')}`;
+        return `${prefix}-${year}-${String(updatedSeq.lastNo).padStart(5, '0')}`;
     });
 
     return result;

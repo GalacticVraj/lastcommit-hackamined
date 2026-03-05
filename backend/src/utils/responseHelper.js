@@ -33,7 +33,7 @@ function errorResponse(res, message = 'Error', statusCode = 400) {
  */
 function parseListQuery(query) {
     const page = Math.max(1, parseInt(query.page) || 1);
-    const perPage = Math.min(100, Math.max(1, parseInt(query.per_page) || 20));
+    const perPage = Math.min(100, Math.max(1, parseInt(query.per_page) || 25));
     const skip = (page - 1) * perPage;
     const sortBy = query.sort_by || 'createdAt';
     const sortOrder = query.sort_order === 'asc' ? 'asc' : 'desc';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, Loader2 } from 'lucide-react';
 import useAuthStore from '../lib/auth';
@@ -8,18 +8,28 @@ export default function LoginPage() {
     const [email, setEmail] = useState('admin@erp.com');
     const [password, setPassword] = useState('password');
     const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState(null);
     const login = useAuthStore(s => s.login);
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setErrorMsg(null);
         try {
             await login(email, password);
             toast.success('Welcome to TechMicra ERP!');
-            navigate('/');
+            navigate('/dashboard');
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Login failed');
+            setErrorMsg('Invalid email or password.');
+            toast.error('Invalid email or password.');
         } finally {
             setLoading(false);
         }
@@ -46,6 +56,11 @@ export default function LoginPage() {
                         {loading ? <Loader2 size={20} className="spin" /> : 'Sign In'}
                     </button>
                 </form>
+                {errorMsg && (
+                    <div style={{ color: 'red', marginTop: '16px', textAlign: 'center', fontSize: '14px' }}>
+                        {errorMsg}
+                    </div>
+                )}
                 <div style={{ marginTop: '24px', padding: '16px', borderRadius: 'var(--radius-sm)', background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
                         <strong style={{ color: 'var(--blue-light)' }}>Demo Credentials:</strong><br />

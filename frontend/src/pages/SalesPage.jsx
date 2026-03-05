@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
-import { PermissionGate } from '../hooks/usePermission';
+import PermissionGate from '../components/PermissionGate';
+import RecordViewPanel from '../components/RecordViewPanel';
+import RecordEditModal from '../components/RecordEditModal';
+import ConfirmDialog from '../components/ConfirmDialog';
+import ProfileLink from '../components/ProfileLink';
 
 const COLORS = ['#2563EB', '#0D9488', '#D97706', '#DC2626', '#8B5CF6'];
 
@@ -12,62 +16,285 @@ const statusClass = (s) => {
     return map[s] || 'badge-draft';
 };
 
+// ─── Per-tab configuration ────────────────────────────────────────────────────
+
+const TAB_CONFIG = {
+    customers: {
+        endpoint: '/sales/customers',
+        label: 'Customer',
+        columns: ['name', 'gstin', 'city', 'state', 'contactPerson', 'phone'],
+        viewFields: [
+            { key: 'name', label: 'Name' }, { key: 'gstin', label: 'GSTIN' },
+            { key: 'address', label: 'Address' }, { key: 'city', label: 'City' },
+            { key: 'state', label: 'State' }, { key: 'pincode', label: 'Pincode' },
+            { key: 'contactPerson', label: 'Contact Person' }, { key: 'phone', label: 'Phone' },
+            { key: 'email', label: 'Email' }, { key: 'creditPeriod', label: 'Credit Period (days)' },
+            { key: 'isActive', label: 'Active' }, { key: 'createdAt', label: 'Created' },
+        ],
+        editFields: [
+            { name: 'name', label: 'Name', required: true, fullWidth: true },
+            { name: 'gstin', label: 'GSTIN' }, { name: 'stateCode', label: 'State Code' },
+            { name: 'address', label: 'Address', fullWidth: true },
+            { name: 'city', label: 'City' }, { name: 'state', label: 'State' },
+            { name: 'pincode', label: 'Pincode' }, { name: 'contactPerson', label: 'Contact Person' },
+            { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' },
+            { name: 'creditPeriod', label: 'Credit Period (days)', type: 'number' },
+        ],
+        formFields: [
+            { name: 'name', label: 'Name', required: true },
+            { name: 'gstin', label: 'GSTIN' }, { name: 'stateCode', label: 'State Code' },
+            { name: 'address', label: 'Address' }, { name: 'city', label: 'City' },
+            { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' },
+            { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' },
+            { name: 'creditPeriod', label: 'Credit Period (days)', type: 'number' },
+        ],
+        deletePermission: 'sales.customer.delete',
+    },
+    inquiries: {
+        endpoint: '/sales/inquiries',
+        label: 'Inquiry',
+        columns: ['inquiryNo', 'customer.name', 'salesPerson', 'status'],
+        viewFields: [
+            { key: 'inquiryNo', label: 'Inquiry No.' }, { key: 'customer.name', label: 'Customer' },
+            { key: 'salesPerson', label: 'Sales Person' }, { key: 'status', label: 'Status', render: r => <span className={`badge ${statusClass(r.status)}`}>{r.status}</span> },
+            { key: 'remarks', label: 'Remarks' }, { key: 'inquiryDate', label: 'Date' }, { key: 'createdAt', label: 'Created' },
+        ],
+        editFields: [
+            { name: 'salesPerson', label: 'Sales Person' }, { name: 'remarks', label: 'Remarks' },
+            { name: 'status', label: 'Status', type: 'select', options: ['New', 'Processing', 'Quoted', 'Lost'] },
+        ],
+        formFields: [
+            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'salesPerson', label: 'Sales Person' }, { name: 'remarks', label: 'Remarks' },
+        ],
+        deletePermission: 'sales.inquiry.delete',
+        statusActions: [{ label: 'Mark Lost', status: 'Lost', confirmMessage: 'Mark this inquiry as Lost?', icon: XCircle, class: 'btn-danger' }],
+    },
+    quotations: {
+        endpoint: '/sales/quotations',
+        label: 'Quotation',
+        columns: ['quoteNo', 'customer.name', 'totalAmount', 'status'],
+        viewFields: [
+            { key: 'quoteNo', label: 'Quote No.' }, { key: 'customer.name', label: 'Customer' },
+            { key: 'totalAmount', label: 'Total Amount', render: r => `₹${Number(r.totalAmount).toLocaleString()}` },
+            { key: 'status', label: 'Status', render: r => <span className={`badge ${statusClass(r.status)}`}>{r.status}</span> },
+            { key: 'validUntil', label: 'Valid Until' }, { key: 'paymentTerms', label: 'Payment Terms' },
+            { key: 'createdAt', label: 'Created' },
+        ],
+        editFields: [
+            { name: 'paymentTerms', label: 'Payment Terms' },
+            { name: 'status', label: 'Status', type: 'select', options: ['Draft', 'Sent', 'Accepted', 'Rejected'] },
+            { name: 'validUntil', label: 'Valid Until', type: 'date' },
+        ],
+        sections: [{ title: 'Line Items', dataKey: 'items', columns: [{ key: 'product.name', label: 'Product', render: r => r.product?.name || r.productId }, { key: 'quantity', label: 'Qty' }, { key: 'rate', label: 'Rate', render: r => `₹${Number(r.rate).toLocaleString()}` }, { key: 'total', label: 'Total', render: r => `₹${Number(r.total).toLocaleString()}` }] }],
+        formFields: [
+            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'validUntil', label: 'Valid Until', type: 'date', required: true },
+            { name: 'paymentTerms', label: 'Payment Terms' },
+        ],
+        deletePermission: 'sales.quotation.delete',
+        statusActions: [
+            { label: 'Mark Sent', status: 'Sent', confirmMessage: 'Send this quotation to the customer?', icon: CheckCircle, class: 'btn-primary' },
+            { label: 'Mark Accepted', status: 'Accepted', confirmMessage: 'Mark this quotation as Accepted?', icon: CheckCircle, class: 'btn-success' },
+        ],
+    },
+    'sale-orders': {
+        endpoint: '/sales/sale-orders',
+        label: 'Sale Order',
+        columns: ['soNo', 'customer.name', 'totalAmount', 'status'],
+        viewFields: [
+            { key: 'soNo', label: 'SO No.' }, { key: 'customer.name', label: 'Customer' },
+            { key: 'totalAmount', label: 'Total Amount', render: r => `₹${Number(r.totalAmount).toLocaleString()}` },
+            { key: 'status', label: 'Status', render: r => <span className={`badge ${statusClass(r.status)}`}>{r.status}</span> },
+            { key: 'customerPoNo', label: 'Customer PO No.' }, { key: 'billingAddress', label: 'Billing Address' },
+            { key: 'shippingAddress', label: 'Shipping Address' }, { key: 'createdAt', label: 'Created' },
+        ],
+        editFields: [
+            { name: 'billingAddress', label: 'Billing Address', fullWidth: true },
+            { name: 'shippingAddress', label: 'Shipping Address', fullWidth: true },
+            { name: 'status', label: 'Status', type: 'select', options: ['Pending', 'Dispatched', 'Closed'] },
+        ],
+        sections: [{ title: 'Line Items', dataKey: 'items', columns: [{ key: 'product.name', label: 'Product', render: r => r.product?.name || r.productId }, { key: 'quantity', label: 'Qty' }, { key: 'rate', label: 'Rate', render: r => `₹${Number(r.rate).toLocaleString()}` }, { key: 'status', label: 'Status' }] }],
+        formFields: [
+            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'customerPoNo', label: 'Customer PO No.' },
+            { name: 'billingAddress', label: 'Billing Address' }, { name: 'shippingAddress', label: 'Shipping Address' },
+        ],
+        deletePermission: 'sales.saleorder.delete',
+        statusActions: [
+            { label: 'Dispatch', status: 'Dispatched', confirmMessage: 'Mark this Sale Order as Dispatched? All line items will be updated.', icon: Truck, class: 'btn-primary' },
+            { label: 'Close', status: 'Closed', confirmMessage: 'Close this Sale Order? All line items will be marked Closed. This cannot be undone.', icon: CheckCircle, class: 'btn-danger' },
+        ],
+    },
+    invoices: {
+        endpoint: '/sales/invoices',
+        label: 'Invoice',
+        columns: ['invoiceNo', 'customer.name', 'grandTotal', 'status'],
+        viewFields: [
+            { key: 'invoiceNo', label: 'Invoice No.' }, { key: 'customer.name', label: 'Customer' },
+            { key: 'taxableValue', label: 'Taxable Value', render: r => `₹${Number(r.taxableValue).toLocaleString()}` },
+            { key: 'cgstAmount', label: 'CGST', render: r => `₹${Number(r.cgstAmount).toLocaleString()}` },
+            { key: 'sgstAmount', label: 'SGST', render: r => `₹${Number(r.sgstAmount).toLocaleString()}` },
+            { key: 'igstAmount', label: 'IGST', render: r => `₹${Number(r.igstAmount).toLocaleString()}` },
+            { key: 'grandTotal', label: 'Grand Total', render: r => `₹${Number(r.grandTotal).toLocaleString()}` },
+            { key: 'status', label: 'Status', render: r => <span className={`badge ${statusClass(r.status)}`}>{r.status}</span> },
+            { key: 'dueDate', label: 'Due Date' }, { key: 'placeOfSupply', label: 'Place of Supply' },
+            { key: 'ewayBillNo', label: 'E-Way Bill No.' }, { key: 'createdAt', label: 'Created' },
+        ],
+        editFields: [
+            { name: 'placeOfSupply', label: 'Place of Supply' }, { name: 'ewayBillNo', label: 'E-Way Bill No.' },
+            { name: 'status', label: 'Status', type: 'select', options: ['Unpaid', 'Partial', 'Paid', 'Overdue'] },
+        ],
+        sections: [{ title: 'Line Items', dataKey: 'items', columns: [{ key: 'product.name', label: 'Product', render: r => r.product?.name || r.productId }, { key: 'quantity', label: 'Qty' }, { key: 'rate', label: 'Rate', render: r => `₹${Number(r.rate).toLocaleString()}` }, { key: 'total', label: 'Total', render: r => `₹${Number(r.total).toLocaleString()}` }] }],
+        formFields: [
+            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'saleOrderId', label: 'Sale Order ID', type: 'number' },
+            { name: 'placeOfSupply', label: 'Place of Supply' }, { name: 'ewayBillNo', label: 'E-Way Bill No.' },
+        ],
+        deletePermission: 'sales.invoice.delete',
+    },
+    receipts: {
+        endpoint: '/sales/receipts',
+        label: 'Receipt Voucher',
+        columns: ['receiptNo', 'customer.name', 'amount', 'paymentMode'],
+        viewFields: [
+            { key: 'receiptNo', label: 'Receipt No.' }, { key: 'customer.name', label: 'Customer' },
+            { key: 'amount', label: 'Amount', render: r => `₹${Number(r.amount).toLocaleString()}` },
+            { key: 'paymentMode', label: 'Payment Mode' }, { key: 'referenceNo', label: 'Reference No.' },
+            { key: 'remarks', label: 'Remarks' }, { key: 'receiptDate', label: 'Receipt Date' },
+        ],
+        editFields: [
+            { name: 'referenceNo', label: 'Reference No.' }, { name: 'remarks', label: 'Remarks' },
+            { name: 'paymentMode', label: 'Payment Mode', type: 'select', options: ['Cheque', 'NEFT', 'RTGS', 'Cash'] },
+        ],
+        formFields: [
+            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'amount', label: 'Amount', type: 'number', required: true },
+            { name: 'paymentMode', label: 'Payment Mode' }, { name: 'referenceNo', label: 'Reference No.' },
+        ],
+        deletePermission: 'sales.receipt.delete',
+    },
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function SalesPage() {
     const [tab, setTab] = useState('dashboard');
     const [data, setData] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
     const [search, setSearch] = useState('');
-    const [form, setForm] = useState({});
+    const [createForm, setCreateForm] = useState({});
+    const [showCreate, setShowCreate] = useState(false);
+
+    // View panel state
+    const [viewRecord, setViewRecord] = useState(null);
+    const [viewLoading, setViewLoading] = useState(false);
+
+    // Edit modal state
+    const [editRecord, setEditRecord] = useState(null);
+
+    // Confirm dialog state  
+    const [confirm, setConfirm] = useState({ open: false, loading: false });
 
     const tabs = ['dashboard', 'customers', 'inquiries', 'quotations', 'sale-orders', 'invoices', 'receipts'];
+    const cfg = TAB_CONFIG[tab] || {};
 
-    useEffect(() => {
-        loadData();
-    }, [tab]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
             if (tab === 'dashboard') {
                 const res = await api.get('/sales/dashboard');
                 setStats(res.data.data);
             } else {
-                const endpoint = tab === 'sale-orders' ? '/sales/sale-orders' : `/sales/${tab}`;
-                const res = await api.get(`${endpoint}?search=${search}`);
-                setData(res.data.data);
+                const res = await api.get(`${cfg.endpoint}?search=${search}`);
+                setData(res.data.data || []);
             }
-        } catch (e) {
-            toast.error('Failed to load data');
-        }
+        } catch { toast.error('Failed to load data'); }
         setLoading(false);
+    }, [tab, search]);
+
+    useEffect(() => { loadData(); }, [tab]);
+
+    // Fetch full record for view panel
+    const handleViewOpen = async (item) => {
+        setViewLoading(true);
+        setViewRecord(item); // show partial immediately
+        try {
+            const res = await api.get(`${cfg.endpoint}/${item.id}`);
+            setViewRecord(res.data.data);
+        } catch { /* keep partial data */ }
+        setViewLoading(false);
     };
 
+    // Handle create
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
-            const endpoint = tab === 'sale-orders' ? '/sales/sale-orders' : `/sales/${tab}`;
-            await api.post(endpoint, form);
-            toast.success('Created successfully');
-            setShowModal(false);
-            setForm({});
+            await api.post(cfg.endpoint, createForm);
+            toast.success(`${cfg.label} created`);
+            setShowCreate(false);
+            setCreateForm({});
             loadData();
-        } catch (e) {
-            toast.error(e.response?.data?.message || 'Error creating record');
-        }
+        } catch (e) { toast.error(e.response?.data?.message || 'Error creating record'); }
     };
 
-    // Dashboard Tab
+    // Handle soft delete
+    const handleDelete = (item) => {
+        setConfirm({
+            open: true, loading: false,
+            title: `Delete ${cfg.label}`,
+            message: `Are you sure you want to delete this ${cfg.label?.toLowerCase()}? This cannot be undone.`,
+            confirmLabel: 'Delete', confirmClass: 'btn-danger',
+            onConfirm: async () => {
+                setConfirm(c => ({ ...c, loading: true }));
+                try {
+                    await api.delete(`${cfg.endpoint}/${item.id}`);
+                    toast.success(`${cfg.label} deleted`);
+                    setConfirm({ open: false, loading: false });
+                    loadData();
+                } catch (err) {
+                    toast.error(err.response?.data?.message || 'Error deleting');
+                    setConfirm(c => ({ ...c, loading: false }));
+                }
+            }
+        });
+    };
+
+    // Handle status change
+    const handleStatusAction = (item, action) => {
+        setConfirm({
+            open: true, loading: false,
+            title: action.label,
+            message: action.confirmMessage,
+            confirmLabel: action.label, confirmClass: action.class || 'btn-primary',
+            onConfirm: async () => {
+                setConfirm(c => ({ ...c, loading: true }));
+                try {
+                    await api.put(`${cfg.endpoint}/${item.id}`, { status: action.status });
+                    toast.success(`Status updated to ${action.status}`);
+                    setConfirm({ open: false, loading: false });
+                    // Update row in-place without full reload
+                    setData(prev => prev.map(r => r.id === item.id ? { ...r, status: action.status } : r));
+                    if (viewRecord?.id === item.id) setViewRecord(v => ({ ...v, status: action.status }));
+                } catch (err) {
+                    toast.error(err.response?.data?.message || 'Error updating status');
+                    setConfirm(c => ({ ...c, loading: false }));
+                }
+            }
+        });
+    };
+
+    const getNestedValue = (obj, path) => path.split('.').reduce((acc, key) => acc?.[key], obj);
+
+    // ─── Dashboard view ─────────────────────────────────────────────────────────
     if (tab === 'dashboard') {
         if (loading) return <div className="stats-grid">{[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}</div>;
         const s = stats?.stats;
         const pieData = stats?.inquiriesByStatus?.map(i => ({ name: i.status, value: i._count })) || [];
         return (
             <div>
-                <div className="page-header">
-                    <h1>Sales Management</h1>
-                </div>
+                <div className="page-header"><h1>Sales Management</h1></div>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                     {tabs.map(t => (
                         <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab(t)}>
@@ -95,7 +322,7 @@ export default function SalesPage() {
                                 <thead><tr><th>Invoice #</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
                                 <tbody>
                                     {(stats?.recentInvoices || []).slice(0, 5).map(inv => (
-                                        <tr key={inv.id}><td>{inv.invoiceNo}</td><td>{inv.customer?.name}</td><td>₹{inv.grandTotal?.toLocaleString()}</td><td><span className={`badge ${statusClass(inv.status)}`}>{inv.status}</span></td></tr>
+                                        <tr key={inv.id}><td>{inv.invoiceNo}</td><td>{inv.customer?.name}</td><td>₹{Number(inv.grandTotal)?.toLocaleString()}</td><td><span className={`badge ${statusClass(inv.status)}`}>{inv.status}</span></td></tr>
                                     ))}
                                     {!(stats?.recentInvoices?.length) && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No invoices yet</td></tr>}
                                 </tbody>
@@ -107,118 +334,160 @@ export default function SalesPage() {
         );
     }
 
-    // List Tab
-    const columns = {
-        customers: ['name', 'gstin', 'city', 'state', 'contactPerson', 'phone'],
-        inquiries: ['inquiryNo', 'customer.name', 'salesPerson', 'status'],
-        quotations: ['quoteNo', 'customer.name', 'totalAmount', 'status'],
-        'sale-orders': ['soNo', 'customer.name', 'totalAmount', 'status'],
-        invoices: ['invoiceNo', 'customer.name', 'grandTotal', 'status'],
-        receipts: ['receiptNo', 'customer.name', 'amount', 'paymentMode'],
-    };
-
-    const formFields = {
-        customers: [
-            { name: 'name', label: 'Name', required: true },
-            { name: 'gstin', label: 'GSTIN' },
-            { name: 'stateCode', label: 'State Code' },
-            { name: 'address', label: 'Address' },
-            { name: 'city', label: 'City' },
-            { name: 'state', label: 'State' },
-            { name: 'contactPerson', label: 'Contact Person' },
-            { name: 'phone', label: 'Phone' },
-            { name: 'email', label: 'Email' },
-            { name: 'creditPeriod', label: 'Credit Period (days)', type: 'number' },
-        ],
-        inquiries: [
-            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
-            { name: 'salesPerson', label: 'Sales Person' },
-            { name: 'remarks', label: 'Remarks' },
-        ],
-        quotations: [
-            { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
-            { name: 'validUntil', label: 'Valid Until', type: 'date', required: true },
-            { name: 'paymentTerms', label: 'Payment Terms' },
-        ],
-    };
-
-    const getNestedValue = (obj, path) => path.split('.').reduce((acc, key) => acc?.[key], obj);
-
+    // ─── List view ──────────────────────────────────────────────────────────────
     return (
         <div>
             <div className="page-header">
                 <h1>Sales — {tab.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}</h1>
-                <div className="page-header-actions">
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {tabs.map(t => (
-                            <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab(t)}>
-                                {t.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}
-                            </button>
-                        ))}
-                    </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {tabs.map(t => (
+                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab(t)}>
+                            {t.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             <div className="table-container">
                 <div className="table-toolbar">
-                    <input className="table-search" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadData()} />
-                    <PermissionGate module="sales" action={`${tab.replace('s', '')}.create`}>
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}><Plus size={16} /> New</button>
+                    <input className="table-search" placeholder="Search…" value={search}
+                        onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadData()} />
+                    <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                        <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}><Plus size={16} /> New</button>
                     </PermissionGate>
                 </div>
+
                 <div style={{ overflowX: 'auto' }}>
                     <table className="data-table">
                         <thead>
-                            <tr>{(columns[tab] || []).map(col => <th key={col}>{col.split('.').pop().replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase())}</th>)}<th>Actions</th></tr>
+                            <tr>
+                                {(cfg.columns || []).map(col => <th key={col}>{col.split('.').pop().replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase())}</th>)}
+                                <th>Actions</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            {loading ? (
-                                [1, 2, 3].map(i => <tr key={i}>{(columns[tab] || []).map((c, j) => <td key={j}><div className="skeleton" style={{ height: 20, width: '80%' }} /></td>)}<td></td></tr>)
-                            ) : (
-                                data.map(item => (
+                            {loading
+                                ? [1, 2, 3].map(i => <tr key={i}>{(cfg.columns || []).map((c, j) => <td key={j}><div className="skeleton" style={{ height: 20, width: '80%' }} /></td>)}<td /></tr>)
+                                : data.map(item => (
                                     <tr key={item.id}>
-                                        {(columns[tab] || []).map(col => {
+                                        {(cfg.columns || []).map(col => {
                                             const val = getNestedValue(item, col);
+                                            if (col === 'customer.name') return <td key={col}><ProfileLink id={item.customerId} name={val} type="customer" /></td>;
+                                            if (tab === 'customers' && col === 'name') return <td key={col}><ProfileLink id={item.id} name={val} type="customer" /></td>;
+                                            if (col === 'salesPerson') return <td key={col}><ProfileLink id={encodeURIComponent(val)} name={val} type="salesman" /></td>;
                                             if (col === 'status') return <td key={col}><span className={`badge ${statusClass(val)}`}>{val}</span></td>;
                                             if (typeof val === 'number' && (col.includes('Amount') || col.includes('Total') || col.includes('total') || col.includes('amount'))) return <td key={col}>₹{val?.toLocaleString()}</td>;
                                             return <td key={col}>{val ?? '—'}</td>;
                                         })}
                                         <td>
-                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                                <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}><Eye size={14} /></button>
-                                                <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}><Edit size={14} /></button>
+                                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap' }}>
+                                                {/* View */}
+                                                <button className="btn btn-ghost btn-sm" title="View" style={{ padding: '4px 8px' }}
+                                                    onClick={() => handleViewOpen(item)}>
+                                                    <Eye size={14} />
+                                                </button>
+
+                                                {/* Edit */}
+                                                <PermissionGate permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                    <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}
+                                                        onClick={() => setEditRecord(item)}>
+                                                        <Edit size={14} />
+                                                    </button>
+                                                </PermissionGate>
+
+                                                {/* Status actions */}
+                                                {(cfg.statusActions || []).map(action => (
+                                                    item.status !== action.status && (
+                                                        <PermissionGate key={action.label} permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                            <button
+                                                                className={`btn btn-sm ${action.class || 'btn-ghost'}`}
+                                                                title={action.label}
+                                                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                                                                onClick={() => handleStatusAction(item, action)}
+                                                            >
+                                                                <action.icon size={13} />
+                                                            </button>
+                                                        </PermissionGate>
+                                                    )
+                                                ))}
+
+                                                {/* Delete */}
+                                                <PermissionGate permission={cfg.deletePermission}>
+                                                    <button className="btn btn-ghost btn-sm" title="Delete" style={{ padding: '4px 8px', color: 'var(--danger)' }}
+                                                        onClick={() => handleDelete(item)}>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </PermissionGate>
                                             </div>
                                         </td>
                                     </tr>
                                 ))
-                            )}
-                            {!loading && data.length === 0 && <tr><td colSpan={(columns[tab]?.length || 0) + 1} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No records found</td></tr>}
+                            }
+                            {!loading && data.length === 0 && <tr><td colSpan={(cfg.columns?.length || 0) + 1} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No records found</td></tr>}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* Create Modal */}
-            {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+            {/* ─── View slide-over panel ─── */}
+            <RecordViewPanel
+                open={!!viewRecord}
+                onClose={() => setViewRecord(null)}
+                onEdit={() => { setEditRecord(viewRecord); setViewRecord(null); }}
+                title={`${cfg.label} Details`}
+                record={viewRecord}
+                fields={cfg.viewFields || []}
+                sections={cfg.sections || []}
+                canEdit={true}
+            />
+
+            {/* ─── Edit modal ─── */}
+            <RecordEditModal
+                open={!!editRecord}
+                onClose={() => setEditRecord(null)}
+                onSaved={loadData}
+                record={editRecord}
+                endpoint={cfg.endpoint}
+                fields={cfg.editFields || []}
+                title={`Edit ${cfg.label}`}
+            />
+
+            {/* ─── Confirm dialog (delete / status change) ─── */}
+            <ConfirmDialog
+                open={confirm.open}
+                onClose={() => setConfirm({ open: false, loading: false })}
+                onConfirm={confirm.onConfirm}
+                title={confirm.title}
+                message={confirm.message}
+                confirmLabel={confirm.confirmLabel}
+                confirmClass={confirm.confirmClass}
+                loading={confirm.loading}
+            />
+
+            {/* ─── Create modal ─── */}
+            {showCreate && (
+                <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
                         <div className="modal-header">
-                            <h2>New {tab.replace('-', ' ').replace(/^\w/, c => c.toUpperCase()).replace(/s$/, '')}</h2>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
+                            <h2>New {cfg.label}</h2>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>✕</button>
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
-                                {(formFields[tab] || [{ name: 'name', label: 'Name', required: true }]).map(field => (
-                                    <div className="form-group" key={field.name}>
-                                        <label className="form-label">{field.label}</label>
-                                        <input className="form-input" type={field.type || 'text'} required={field.required}
-                                            value={form[field.name] || ''} onChange={e => setForm({ ...form, [field.name]: field.type === 'number' ? Number(e.target.value) : e.target.value })} />
+                                {(cfg.formFields || []).map(f => (
+                                    <div className="form-group" key={f.name}>
+                                        <label className="form-label">{f.label}</label>
+                                        <input className="form-input" type={f.type || 'text'} required={f.required}
+                                            value={createForm[f.name] || ''}
+                                            onChange={e => setCreateForm({ ...createForm, [f.name]: f.type === 'number' ? Number(e.target.value) : e.target.value })} />
                                     </div>
                                 ))}
                             </div>
                             <div className="modal-footer">
-                                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Create</button>
+                                <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
+                                <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                                    <button type="submit" className="btn btn-primary">Create</button>
+                                </PermissionGate>
                             </div>
                         </form>
                     </div>

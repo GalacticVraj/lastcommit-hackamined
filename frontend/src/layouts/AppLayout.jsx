@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, HardHat, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, HardHat, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, FileBarChart } from 'lucide-react';
 import useAuthStore from '../lib/auth';
 
 const navGroups = [
@@ -43,20 +43,54 @@ const navGroups = [
 
 export default function AppLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 769);
     const { user, logout, hasPermission } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Detect mobile breakpoint
+    useEffect(() => {
+        const onResize = () => {
+            const mobile = window.innerWidth < 769;
+            setIsMobile(mobile);
+            if (!mobile) setSidebarOpen(true); // on desktop always show
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    // Close sidebar on route change (mobile only)
+    useEffect(() => {
+        if (isMobile) setSidebarOpen(false);
+    }, [location.pathname]);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
+    // Sidebar class logic: desktop=collapsed/open, mobile=hidden/open overlay
+    const sidebarClass = isMobile
+        ? `sidebar ${sidebarOpen ? 'open' : ''}`
+        : `sidebar ${sidebarOpen ? '' : 'collapsed'}`;
+
     return (
         <div className="app-layout">
-            <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+            {/* Mobile backdrop */}
+            {isMobile && sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                        zIndex: 99, backdropFilter: 'blur(2px)'
+                    }}
+                />
+            )}
+
+            <aside className={sidebarClass} style={{ zIndex: 100 }}>
                 <div className="sidebar-logo">
-                    <BarChart3 size={28} style={{ color: 'var(--blue-light)' }} />
-                    {sidebarOpen && <h1>TechMicra ERP</h1>}
+                    <BarChart3 size={28} style={{ color: 'var(--blue-light)', flexShrink: 0 }} />
+                    {(sidebarOpen || !isMobile) && sidebarOpen && <h1>TechMicra ERP</h1>}
                 </div>
                 <nav className="sidebar-nav">
                     {navGroups.map((group) => (
@@ -73,10 +107,10 @@ export default function AppLayout() {
                 </nav>
             </aside>
 
-            <div className="main-content">
+            <div className="main-content" style={{ marginLeft: isMobile ? 0 : (sidebarOpen ? 'var(--sidebar-width)' : 'var(--sidebar-collapsed)'), transition: 'margin-left 0.3s ease' }}>
                 <header className="top-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '8px' }}>
+                        <button className="btn btn-ghost btn-sm hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '8px' }}>
                             <Menu size={20} />
                         </button>
                         <div className="breadcrumb">
@@ -91,7 +125,7 @@ export default function AppLayout() {
                         </button>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="avatar">{user?.name?.[0] || 'A'}</div>
-                            {sidebarOpen && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}
+                            {sidebarOpen && !isMobile && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}
                         </div>
                         <button className="btn btn-ghost btn-sm" onClick={handleLogout} style={{ padding: '8px' }}>
                             <LogOut size={18} />
@@ -105,3 +139,4 @@ export default function AppLayout() {
         </div>
     );
 }
+
