@@ -488,7 +488,7 @@ main
 ║                                                          ║
 ║            ⚡  Preetansh Devpura                         ║
 ║            Full Stack Logic Engineer                     ║
-║            Team Last Commit · TechMicra ERP 2024         ║
+║            Team Last Commit · TechMicra ERP 2026         ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 ```
