@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\StatutoryController;
 use App\Http\Controllers\Api\LogisticsController;
-use App\Http\Controllers\Api\ContractorsController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\AssetsController;
 use App\Http\Controllers\Api\ReportsController;
@@ -300,14 +299,6 @@ Route::prefix('v1')->group(function () {
         Route::put('logistics/transporters/{id}', [LogisticsController::class, 'updateTransporter']);
         Route::get('logistics/orders', [LogisticsController::class, 'listOrders']);
         Route::get('logistics/freight-bills', [LogisticsController::class, 'listFreightBills']);
-
-        // ── Contractors ───────────────────────────────────────────────────────
-        Route::get('contractors/dashboard', [ContractorsController::class, 'dashboard']);
-        Route::get('contractors/workers', [ContractorsController::class, 'listWorkers']);
-        Route::post('contractors/workers', [ContractorsController::class, 'createWorker']);
-        Route::get('contractors/workers/{id}', [ContractorsController::class, 'getWorker']);
-        Route::put('contractors/workers/{id}', [ContractorsController::class, 'updateWorker']);
-        Route::get('contractors/salary-sheets', [ContractorsController::class, 'listSalarySheets']);
 
         // ── Maintenance ───────────────────────────────────────────────────────
         Route::get('maintenance/dashboard', [MaintenanceController::class, 'dashboard']);

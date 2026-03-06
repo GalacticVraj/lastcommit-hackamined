@@ -9,6 +9,5 @@ class AutoCounter extends Model
     
     protected $table = 'AutoCounter';
     protected $guarded = [];
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    public $timestamps = false;  // Table only has updatedAt, handled by DB
 }
