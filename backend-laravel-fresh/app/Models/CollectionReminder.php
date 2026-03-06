@@ -11,4 +11,9 @@ class CollectionReminder extends Model
     protected $guarded = [];
     const CREATED_AT = 'createdAt';
     const UPDATED_AT = 'updatedAt';
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoiceId', 'id');
+    }
 }

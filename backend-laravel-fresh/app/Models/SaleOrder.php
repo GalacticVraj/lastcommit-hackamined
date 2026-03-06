@@ -26,4 +26,14 @@ class SaleOrder extends Model
     {
         return $this->belongsTo(Quotation::class, 'quotationId', 'id');
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'saleOrderId', 'id');
+    }
+
+    public function dispatchAdvices()
+    {
+        return $this->hasMany(DispatchAdvice::class, 'saleOrderId', 'id');
+    }
 }
