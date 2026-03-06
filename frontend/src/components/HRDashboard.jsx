@@ -333,8 +333,8 @@ export default function HRDashboard() {
         </ChartCard>
       </div>
 
-      {/* Bottom Charts - Advances by Status + Salary Heads */}
-      <div className="charts-grid">
+      {/* Bottom Chart - Advances by Status (full width) */}
+      <div style={{ marginBottom: '16px' }}>
         
         {/* Advances by Status */}
         <ChartCard title="Advances by Status" height={320}>
@@ -368,25 +368,6 @@ export default function HRDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
-
-        {/* Salary Heads Config */}
-        {charts.salaryHeadsByType && charts.salaryHeadsByType.length > 0 && (
-          <div className="card">
-            <div className="card-header"><span className="card-title">Salary Heads Configuration</span></div>
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', padding: '40px 20px' }}>
-              {charts.salaryHeadsByType.map((head, idx) => (
-                <div key={head.name} className="stat-card" style={{ minWidth: '140px', justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div className="stat-value" style={{ color: idx === 0 ? ORANGE : GRAY_DARK }}>
-                      {head.count}
-                    </div>
-                    <div className="stat-label">{head.name} Heads</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

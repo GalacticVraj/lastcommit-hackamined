@@ -901,7 +901,7 @@ return new class extends Migration {
         ]);
 
         // Create permissions for all modules
-        $modules = ['sales', 'purchase', 'production', 'finance', 'hr', 'quality', 'warehouse', 'statutory', 'logistics', 'contractors', 'maintenance', 'assets', 'reports', 'simulation'];
+        $modules = ['sales', 'purchase', 'production', 'finance', 'hr', 'quality', 'warehouse', 'statutory', 'logistics', 'maintenance', 'assets', 'reports', 'simulation'];
         $actions = ['view', 'create', 'edit', 'delete'];
         $permId = 1;
         foreach ($modules as $module) {

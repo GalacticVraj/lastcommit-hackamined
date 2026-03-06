@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\StatutoryController;
 use App\Http\Controllers\Api\LogisticsController;
-use App\Http\Controllers\Api\ContractorsController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\AssetsController;
 use App\Http\Controllers\Api\ReportsController;
@@ -268,9 +267,30 @@ Route::prefix('v1')->group(function () {
         // ── Quality ───────────────────────────────────────────────────────────
         Route::get('quality/dashboard', [QualityController::class, 'dashboard']);
         Route::get('quality/iqc', [QualityController::class, 'listIqc']);
+        Route::post('quality/iqc', [QualityController::class, 'createIqc']);
+        Route::get('quality/iqc/{id}', [QualityController::class, 'getIqc']);
+        Route::put('quality/iqc/{id}', [QualityController::class, 'updateIqc']);
+        Route::delete('quality/iqc/{id}', [QualityController::class, 'deleteIqc']);
+        Route::get('quality/mts', [QualityController::class, 'listMts']);
+        Route::post('quality/mts', [QualityController::class, 'createMts']);
+        Route::get('quality/mts/{id}', [QualityController::class, 'getMts']);
+        Route::put('quality/mts/{id}', [QualityController::class, 'updateMts']);
+        Route::delete('quality/mts/{id}', [QualityController::class, 'deleteMts']);
         Route::get('quality/pqc', [QualityController::class, 'listPqc']);
+        Route::post('quality/pqc', [QualityController::class, 'createPqc']);
+        Route::get('quality/pqc/{id}', [QualityController::class, 'getPqc']);
+        Route::put('quality/pqc/{id}', [QualityController::class, 'updatePqc']);
+        Route::delete('quality/pqc/{id}', [QualityController::class, 'deletePqc']);
         Route::get('quality/pdi', [QualityController::class, 'listPdi']);
+        Route::post('quality/pdi', [QualityController::class, 'createPdi']);
+        Route::get('quality/pdi/{id}', [QualityController::class, 'getPdi']);
+        Route::put('quality/pdi/{id}', [QualityController::class, 'updatePdi']);
+        Route::delete('quality/pdi/{id}', [QualityController::class, 'deletePdi']);
         Route::get('quality/qrd', [QualityController::class, 'listQrd']);
+        Route::post('quality/qrd', [QualityController::class, 'createQrd']);
+        Route::get('quality/qrd/{id}', [QualityController::class, 'getQrd']);
+        Route::put('quality/qrd/{id}', [QualityController::class, 'updateQrd']);
+        Route::delete('quality/qrd/{id}', [QualityController::class, 'deleteQrd']);
 
         // ── Warehouse ─────────────────────────────────────────────────────────
         Route::get('warehouse/dashboard', [WarehouseController::class, 'dashboard']);
@@ -279,6 +299,28 @@ Route::prefix('v1')->group(function () {
         Route::get('warehouse/warehouses/{id}', [WarehouseController::class, 'getWarehouse']);
         Route::put('warehouse/warehouses/{id}', [WarehouseController::class, 'updateWarehouse']);
         Route::get('warehouse/stocks', [WarehouseController::class, 'listStocks']);
+        Route::get('warehouse/openings', [WarehouseController::class, 'listOpenings']);
+        Route::post('warehouse/openings', [WarehouseController::class, 'createOpening']);
+        Route::get('warehouse/openings/{id}', [WarehouseController::class, 'getOpening']);
+        Route::put('warehouse/openings/{id}', [WarehouseController::class, 'updateOpening']);
+        Route::delete('warehouse/openings/{id}', [WarehouseController::class, 'deleteOpening']);
+        Route::get('warehouse/dispatch-srv', [WarehouseController::class, 'listDispatchSrv']);
+        Route::post('warehouse/dispatch-srv', [WarehouseController::class, 'createDispatchSrv']);
+        Route::get('warehouse/dispatch-srv/{id}', [WarehouseController::class, 'getDispatchSrv']);
+        Route::put('warehouse/dispatch-srv/{id}', [WarehouseController::class, 'updateDispatchSrv']);
+        Route::delete('warehouse/dispatch-srv/{id}', [WarehouseController::class, 'deleteDispatchSrv']);
+        Route::get('warehouse/transfers', [WarehouseController::class, 'listTransfers']);
+        Route::post('warehouse/transfers', [WarehouseController::class, 'createTransfer']);
+        Route::get('warehouse/transfers/{id}', [WarehouseController::class, 'getTransfer']);
+        Route::put('warehouse/transfers/{id}', [WarehouseController::class, 'updateTransfer']);
+        Route::delete('warehouse/transfers/{id}', [WarehouseController::class, 'deleteTransfer']);
+        Route::get('warehouse/material-receipts', [WarehouseController::class, 'listMaterialReceipts']);
+        Route::post('warehouse/material-receipts', [WarehouseController::class, 'createMaterialReceipt']);
+        Route::get('warehouse/material-receipts/{id}', [WarehouseController::class, 'getMaterialReceipt']);
+        Route::put('warehouse/material-receipts/{id}', [WarehouseController::class, 'updateMaterialReceipt']);
+        Route::delete('warehouse/material-receipts/{id}', [WarehouseController::class, 'deleteMaterialReceipt']);
+        Route::get('warehouse/dropdown/warehouses', [WarehouseController::class, 'getWarehousesDropdown']);
+        Route::get('warehouse/dropdown/products', [WarehouseController::class, 'getProductsDropdown']);
 
         // ── Statutory / GST ───────────────────────────────────────────────────
         Route::get('statutory/dashboard', [StatutoryController::class, 'dashboard']);
@@ -307,7 +349,34 @@ Route::prefix('v1')->group(function () {
         Route::post('contractors/workers', [ContractorsController::class, 'createWorker']);
         Route::get('contractors/workers/{id}', [ContractorsController::class, 'getWorker']);
         Route::put('contractors/workers/{id}', [ContractorsController::class, 'updateWorker']);
+        Route::delete('contractors/workers/{id}', [ContractorsController::class, 'deleteWorker']);
+        Route::get('contractors/salary-heads', [ContractorsController::class, 'listSalaryHeads']);
+        Route::post('contractors/salary-heads', [ContractorsController::class, 'createSalaryHead']);
+        Route::get('contractors/salary-heads/{id}', [ContractorsController::class, 'getSalaryHead']);
+        Route::put('contractors/salary-heads/{id}', [ContractorsController::class, 'updateSalaryHead']);
+        Route::delete('contractors/salary-heads/{id}', [ContractorsController::class, 'deleteSalaryHead']);
+        Route::get('contractors/salary-structures', [ContractorsController::class, 'listSalaryStructures']);
+        Route::post('contractors/salary-structures', [ContractorsController::class, 'createSalaryStructure']);
+        Route::get('contractors/salary-structures/{id}', [ContractorsController::class, 'getSalaryStructure']);
+        Route::put('contractors/salary-structures/{id}', [ContractorsController::class, 'updateSalaryStructure']);
+        Route::delete('contractors/salary-structures/{id}', [ContractorsController::class, 'deleteSalaryStructure']);
         Route::get('contractors/salary-sheets', [ContractorsController::class, 'listSalarySheets']);
+        Route::post('contractors/salary-sheets', [ContractorsController::class, 'createSalarySheet']);
+        Route::get('contractors/salary-sheets/{id}', [ContractorsController::class, 'getSalarySheet']);
+        Route::put('contractors/salary-sheets/{id}', [ContractorsController::class, 'updateSalarySheet']);
+        Route::delete('contractors/salary-sheets/{id}', [ContractorsController::class, 'deleteSalarySheet']);
+        Route::get('contractors/advances', [ContractorsController::class, 'listAdvances']);
+        Route::post('contractors/advances', [ContractorsController::class, 'createAdvance']);
+        Route::get('contractors/advances/{id}', [ContractorsController::class, 'getAdvance']);
+        Route::put('contractors/advances/{id}', [ContractorsController::class, 'updateAdvance']);
+        Route::delete('contractors/advances/{id}', [ContractorsController::class, 'deleteAdvance']);
+        Route::get('contractors/voucher-payments', [ContractorsController::class, 'listVoucherPayments']);
+        Route::post('contractors/voucher-payments', [ContractorsController::class, 'createVoucherPayment']);
+        Route::get('contractors/voucher-payments/{id}', [ContractorsController::class, 'getVoucherPayment']);
+        Route::put('contractors/voucher-payments/{id}', [ContractorsController::class, 'updateVoucherPayment']);
+        Route::delete('contractors/voucher-payments/{id}', [ContractorsController::class, 'deleteVoucherPayment']);
+        Route::get('contractors/dropdown/workers', [ContractorsController::class, 'getWorkersDropdown']);
+        Route::get('contractors/dropdown/vendors', [ContractorsController::class, 'getVendorsDropdown']);
 
         // ── Maintenance ───────────────────────────────────────────────────────
         Route::get('maintenance/dashboard', [MaintenanceController::class, 'dashboard']);
@@ -315,15 +384,52 @@ Route::prefix('v1')->group(function () {
         Route::post('maintenance/tools', [MaintenanceController::class, 'createTool']);
         Route::get('maintenance/tools/{id}', [MaintenanceController::class, 'getTool']);
         Route::put('maintenance/tools/{id}', [MaintenanceController::class, 'updateTool']);
+        Route::delete('maintenance/tools/{id}', [MaintenanceController::class, 'deleteTool']);
         Route::get('maintenance/maintenance-charts', [MaintenanceController::class, 'listMaintenanceCharts']);
+        Route::post('maintenance/maintenance-charts', [MaintenanceController::class, 'createMaintenanceChart']);
+        Route::get('maintenance/maintenance-charts/{id}', [MaintenanceController::class, 'getMaintenanceChart']);
+        Route::put('maintenance/maintenance-charts/{id}', [MaintenanceController::class, 'updateMaintenanceChart']);
+        Route::delete('maintenance/maintenance-charts/{id}', [MaintenanceController::class, 'deleteMaintenanceChart']);
         Route::get('maintenance/calibration', [MaintenanceController::class, 'listCalibration']);
+        Route::post('maintenance/calibration', [MaintenanceController::class, 'createCalibration']);
+        Route::get('maintenance/calibration/{id}', [MaintenanceController::class, 'getCalibration']);
+        Route::put('maintenance/calibration/{id}', [MaintenanceController::class, 'updateCalibration']);
+        Route::delete('maintenance/calibration/{id}', [MaintenanceController::class, 'deleteCalibration']);
+        Route::get('maintenance/rectification', [MaintenanceController::class, 'listRectification']);
+        Route::post('maintenance/rectification', [MaintenanceController::class, 'createRectification']);
+        Route::get('maintenance/rectification/{id}', [MaintenanceController::class, 'getRectification']);
+        Route::put('maintenance/rectification/{id}', [MaintenanceController::class, 'updateRectification']);
+        Route::delete('maintenance/rectification/{id}', [MaintenanceController::class, 'deleteRectification']);
+        Route::get('maintenance/dropdown/tools', [MaintenanceController::class, 'getToolsDropdown']);
 
         // ── Assets ────────────────────────────────────────────────────────────
+        Route::get('assets/dashboard', [AssetsController::class, 'dashboard']);
         Route::get('assets', [AssetsController::class, 'listAssets']);
         Route::post('assets', [AssetsController::class, 'createAsset']);
-        Route::get('assets/{id}', [AssetsController::class, 'getAsset']);
-        Route::put('assets/{id}', [AssetsController::class, 'updateAsset']);
-        Route::delete('assets/{id}', [AssetsController::class, 'deleteAsset']);
+        Route::get('assets/{id}', [AssetsController::class, 'getAsset'])->whereNumber('id');
+        Route::put('assets/{id}', [AssetsController::class, 'updateAsset'])->whereNumber('id');
+        Route::delete('assets/{id}', [AssetsController::class, 'deleteAsset'])->whereNumber('id');
+        Route::get('assets/addition-memos', [AssetsController::class, 'listAdditionMemos']);
+        Route::post('assets/addition-memos', [AssetsController::class, 'createAdditionMemo']);
+        Route::get('assets/addition-memos/{id}', [AssetsController::class, 'getAdditionMemo']);
+        Route::put('assets/addition-memos/{id}', [AssetsController::class, 'updateAdditionMemo']);
+        Route::delete('assets/addition-memos/{id}', [AssetsController::class, 'deleteAdditionMemo']);
+        Route::get('assets/allocations', [AssetsController::class, 'listAllocations']);
+        Route::post('assets/allocations', [AssetsController::class, 'createAllocation']);
+        Route::get('assets/allocations/{id}', [AssetsController::class, 'getAllocation']);
+        Route::put('assets/allocations/{id}', [AssetsController::class, 'updateAllocation']);
+        Route::delete('assets/allocations/{id}', [AssetsController::class, 'deleteAllocation']);
+        Route::get('assets/sale-memos', [AssetsController::class, 'listSaleMemos']);
+        Route::post('assets/sale-memos', [AssetsController::class, 'createSaleMemo']);
+        Route::get('assets/sale-memos/{id}', [AssetsController::class, 'getSaleMemo']);
+        Route::put('assets/sale-memos/{id}', [AssetsController::class, 'updateSaleMemo']);
+        Route::delete('assets/sale-memos/{id}', [AssetsController::class, 'deleteSaleMemo']);
+        Route::get('assets/depreciation-vouchers', [AssetsController::class, 'listDepreciationVouchers']);
+        Route::post('assets/depreciation-vouchers', [AssetsController::class, 'createDepreciationVoucher']);
+        Route::get('assets/depreciation-vouchers/{id}', [AssetsController::class, 'getDepreciationVoucher']);
+        Route::put('assets/depreciation-vouchers/{id}', [AssetsController::class, 'updateDepreciationVoucher']);
+        Route::delete('assets/depreciation-vouchers/{id}', [AssetsController::class, 'deleteDepreciationVoucher']);
+        Route::get('assets/dropdown/assets', [AssetsController::class, 'getAssetsDropdown']);
 
         // ── Reports ───────────────────────────────────────────────────────────
         Route::get('reports/sales', [ReportsController::class, 'salesReport']);

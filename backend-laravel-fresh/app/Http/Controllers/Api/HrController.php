@@ -11,10 +11,10 @@ use Illuminate\Http\Request;
 class HrController extends Controller
 {
     // ─── HELPER METHODS ───────────────────────────────────────────────────────
-    private function applySorting($query, Request $request, $defaultColumn = 'createdAt')
+    private function applySorting($query, Request $request, $defaultColumn = 'createdAt', $defaultOrder = 'desc')
     {
         $sortBy = $request->get('sort_by', $defaultColumn);
-        $sortOrder = $request->get('sort_order', 'desc');
+        $sortOrder = $request->get('sort_order', $defaultOrder);
         $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
         return $query->orderBy($sortBy, $sortOrder);
     }
@@ -134,7 +134,20 @@ class HrController extends Controller
     public function listEmployees(Request $request)
     {
         $query = Employee::whereNull('deletedAt');
-        $query = $this->applySorting($query, $request, 'createdAt');
+        
+        // Search functionality
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('empCode', 'like', "%{$search}%")
+                  ->orWhere('department', 'like', "%{$search}%")
+                  ->orWhere('designation', 'like', "%{$search}%")
+                  ->orWhere('mobile', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        $query = $this->applySorting($query, $request, 'empCode', 'asc');
         return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
     }
 
@@ -146,7 +159,73 @@ class HrController extends Controller
 
     public function getEmployee($id)
     {
-        return $this->successResponse(Employee::findOrFail($id));
+        $employee = Employee::findOrFail($id);
+        
+        // Get salary structure
+        $salaryStructure = EmployeeSalaryStructure::where('employeeId', $id)
+            ->whereNull('deletedAt')
+            ->first();
+        
+        // Get salary sheets (last 6 months)
+        $salarySheets = EmployeeSalarySheet::where('employeeId', $id)
+            ->whereNull('deletedAt')
+            ->orderBy('year', 'desc')
+            ->orderByRaw("CASE month 
+                WHEN 'January' THEN 1 WHEN 'February' THEN 2 WHEN 'March' THEN 3
+                WHEN 'April' THEN 4 WHEN 'May' THEN 5 WHEN 'June' THEN 6
+                WHEN 'July' THEN 7 WHEN 'August' THEN 8 WHEN 'September' THEN 9
+                WHEN 'October' THEN 10 WHEN 'November' THEN 11 WHEN 'December' THEN 12
+            END DESC")
+            ->limit(6)
+            ->get();
+        
+        // Get advances
+        $advances = EmployeeAdvance::where('employeeId', $id)
+            ->whereNull('deletedAt')
+            ->orderBy('advanceDate', 'desc')
+            ->get();
+        
+        // Calculate attendance summary (current month from salary sheet)
+        $currentMonth = date('F');
+        $currentYear = date('Y');
+        $currentSheet = EmployeeSalarySheet::where('employeeId', $id)
+            ->where('month', $currentMonth)
+            ->where('year', $currentYear)
+            ->whereNull('deletedAt')
+            ->first();
+        
+        $attendanceSummary = [
+            'presentDays' => $currentSheet->presentDays ?? 0,
+            'absentDays' => $currentSheet->absentDays ?? 0,
+            'leaves' => 0, // Can be added when leave tracking is implemented
+        ];
+        
+        return $this->successResponse([
+            'id' => $employee->id,
+            'name' => $employee->name,
+            'empCode' => $employee->empCode,
+            'department' => $employee->department,
+            'designation' => $employee->designation,
+            'mobile' => $employee->mobile,
+            'email' => $employee->email,
+            'joiningDate' => $employee->doj,
+            'bankAccount' => $employee->bankAccount,
+            'bankIfsc' => $employee->ifscCode,
+            'bankName' => $employee->bankName,
+            'panNumber' => $employee->panNo,
+            'aadharNumber' => $employee->aadharNo,
+            'basicSalary' => $employee->basicSalary,
+            'hra' => $employee->hra,
+            'da' => $employee->da,
+            'otherAllowances' => $employee->otherAllowances,
+            'pfApplicable' => $employee->pfApplicable,
+            'esicApplicable' => $employee->esicApplicable,
+            'isActive' => $employee->isActive,
+            'salaryStructures' => $salaryStructure ? [$salaryStructure] : [],
+            'salarySheets' => $salarySheets,
+            'advanceMemos' => $advances,
+            'attendanceSummary' => $attendanceSummary,
+        ]);
     }
 
     public function updateEmployee(Request $request, $id)
@@ -169,6 +248,15 @@ class HrController extends Controller
     public function listSalaryHeads(Request $request)
     {
         $query = SalaryHead::whereNull('deletedAt');
+        
+        // Search by head name or category
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('headName', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+        
         $query = $this->applySorting($query, $request, 'createdAt');
         return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
     }
@@ -204,6 +292,15 @@ class HrController extends Controller
     public function listSalaryStructures(Request $request)
     {
         $query = EmployeeSalaryStructure::with('employee:id,name,empCode')->whereNull('deletedAt');
+        
+        // Search by employee name or empCode
+        if ($search = $request->get('search')) {
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('empCode', 'like', "%{$search}%");
+            });
+        }
+        
         $query = $this->applySorting($query, $request, 'effectiveDate');
         return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
     }
@@ -239,6 +336,19 @@ class HrController extends Controller
     public function listSalarySheets(Request $request)
     {
         $query = EmployeeSalarySheet::with('employee:id,name,empCode')->whereNull('deletedAt');
+        
+        // Search by employee name, empCode, month, or year
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('month', 'like', "%{$search}%")
+                  ->orWhere('year', 'like', "%{$search}%")
+                  ->orWhereHas('employee', function($eq) use ($search) {
+                      $eq->where('name', 'like', "%{$search}%")
+                        ->orWhere('empCode', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
         $query = $this->applySorting($query, $request, 'createdAt');
         return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
     }
@@ -274,6 +384,20 @@ class HrController extends Controller
     public function listAdvances(Request $request)
     {
         $query = EmployeeAdvance::with('employee:id,name,empCode')->whereNull('deletedAt');
+        
+        // Search by employee name, empCode, advanceType, or status
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('advanceType', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%")
+                  ->orWhere('reason', 'like', "%{$search}%")
+                  ->orWhereHas('employee', function($eq) use ($search) {
+                      $eq->where('name', 'like', "%{$search}%")
+                        ->orWhere('empCode', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
         $query = $this->applySorting($query, $request, 'advanceDate');
         return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
     }
