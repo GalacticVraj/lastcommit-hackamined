@@ -64,67 +64,67 @@ const financeConfig = {
   title: 'Finance Management', apiBase: '/finance',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { 
-      key: 'voucherJournals', 
-      label: 'Voucher Journal', 
-      endpoint: '/voucher-journals', 
-      columns: ['journalNo', 'date', 'debitAccount', 'creditAccount', 'amount', 'narration'], 
+    {
+      key: 'voucherJournals',
+      label: 'Voucher Journal',
+      endpoint: '/voucher-journals',
+      columns: ['journalNo', 'date', 'debitAccount', 'creditAccount', 'amount', 'narration'],
       hasPrint: true,
       printType: 'voucher-journal',
       formFields: [
-        { name: 'date', label: 'Date', type: 'date', required: true }, 
-        { name: 'debitAccount', label: 'Debit Account', required: true }, 
-        { name: 'creditAccount', label: 'Credit Account', required: true }, 
-        { name: 'amount', label: 'Amount', type: 'number', required: true }, 
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'debitAccount', label: 'Debit Account', required: true },
+        { name: 'creditAccount', label: 'Credit Account', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
         { name: 'narration', label: 'Narration' }
-      ] 
+      ]
     },
-    { 
-      key: 'voucherPaymentReceipts', 
-      label: 'Payment & Receipt', 
-      endpoint: '/voucher-payment-receipts', 
-      columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'], 
+    {
+      key: 'voucherPaymentReceipts',
+      label: 'Payment & Receipt',
+      endpoint: '/voucher-payment-receipts',
+      columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'],
       hasPrint: true,
       printType: 'voucher-payment-receipt',
       formFields: [
-        { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true }, 
-        { name: 'date', label: 'Date', type: 'date', required: true }, 
-        { name: 'partyName', label: 'Party Name', required: true }, 
-        { name: 'amount', label: 'Amount', type: 'number', required: true }, 
+        { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true },
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'partyName', label: 'Party Name', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
         { name: 'mode', label: 'Mode', type: 'select', options: ['Cash', 'Bank', 'Cheque', 'Online', 'UPI', 'Card'], required: true },
         { name: 'referenceNo', label: 'Reference No' },
         { name: 'remarks', label: 'Remarks' }
-      ] 
+      ]
     },
-    { 
-      key: 'voucherContras', 
-      label: 'Voucher Contra', 
-      endpoint: '/voucher-contras', 
-      columns: ['voucherNo', 'date', 'fromAccount', 'toAccount', 'amount'], 
+    {
+      key: 'voucherContras',
+      label: 'Voucher Contra',
+      endpoint: '/voucher-contras',
+      columns: ['voucherNo', 'date', 'fromAccount', 'toAccount', 'amount'],
       hasPrint: true,
       printType: 'voucher-contra',
       formFields: [
-        { name: 'date', label: 'Date', type: 'date', required: true }, 
-        { name: 'fromAccount', label: 'From Account (e.g., Cash)', required: true }, 
-        { name: 'toAccount', label: 'To Account (e.g., Bank)', required: true }, 
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'fromAccount', label: 'From Account (e.g., Cash)', required: true },
+        { name: 'toAccount', label: 'To Account (e.g., Bank)', required: true },
         { name: 'amount', label: 'Amount', type: 'number', required: true },
         { name: 'remarks', label: 'Remarks' }
-      ] 
+      ]
     },
-    { 
-      key: 'voucherGSTs', 
-      label: 'Journal Voucher (GST)', 
-      endpoint: '/voucher-gsts', 
-      columns: ['voucherNo', 'date', 'gstLedger', 'adjustmentType', 'amount'], 
+    {
+      key: 'voucherGSTs',
+      label: 'Journal Voucher (GST)',
+      endpoint: '/voucher-gsts',
+      columns: ['voucherNo', 'date', 'gstLedger', 'adjustmentType', 'amount'],
       hasPrint: true,
       printType: 'voucher-gst',
       formFields: [
-        { name: 'date', label: 'Date', type: 'date', required: true }, 
-        { name: 'gstLedger', label: 'GST Ledger', type: 'select', options: ['Input', 'Output'], required: true }, 
-        { name: 'adjustmentType', label: 'Adjustment Type', type: 'select', options: ['Reversal', 'Adjustment', 'Correction', 'Refund'], required: true }, 
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'gstLedger', label: 'GST Ledger', type: 'select', options: ['Input', 'Output'], required: true },
+        { name: 'adjustmentType', label: 'Adjustment Type', type: 'select', options: ['Reversal', 'Adjustment', 'Correction', 'Refund'], required: true },
         { name: 'amount', label: 'Amount', type: 'number', required: true },
         { name: 'remarks', label: 'Remarks' }
-      ] 
+      ]
     },
     { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'], hasPrint: true, printType: 'bank-reconciliation' },
     { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'], hasPrint: true, printType: 'credit-card-statement' },
@@ -135,10 +135,10 @@ const hrConfig = {
   title: 'HR Management', apiBase: '/hr',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { 
-      key: 'employees', 
-      label: 'Employees', 
-      endpoint: '/employees', 
+    {
+      key: 'employees',
+      label: 'Employees',
+      endpoint: '/employees',
       columns: ['empCode', 'name', 'designation', 'department', 'mobile', 'basicSalary', 'isActive'],
       viewFields: [
         { key: 'id', label: 'ID' },
@@ -164,9 +164,9 @@ const hrConfig = {
         { key: 'createdAt', label: 'Created At' },
       ],
       formFields: [
-        { name: 'empCode', label: 'Emp Code', required: true }, 
-        { name: 'name', label: 'Name', required: true }, 
-        { name: 'designation', label: 'Designation' }, 
+        { name: 'empCode', label: 'Emp Code', required: true },
+        { name: 'name', label: 'Name', required: true },
+        { name: 'designation', label: 'Designation' },
         { name: 'department', label: 'Department', type: 'select', options: ['Production', 'Quality', 'Sales', 'HR', 'Finance', 'Purchase', 'Warehouse', 'Admin'] },
         { name: 'doj', label: 'Date of Joining', type: 'date' },
         { name: 'mobile', label: 'Mobile' },
@@ -180,12 +180,12 @@ const hrConfig = {
         { name: 'hra', label: 'HRA', type: 'number' },
         { name: 'da', label: 'DA', type: 'number' },
         { name: 'otherAllowances', label: 'Other Allowances', type: 'number' },
-      ] 
+      ]
     },
-    { 
-      key: 'salaryheads', 
-      label: 'Salary Heads', 
-      endpoint: '/salary-heads', 
+    {
+      key: 'salaryheads',
+      label: 'Salary Heads',
+      endpoint: '/salary-heads',
       columns: ['headCode', 'headName', 'headType', 'description', 'isActive'],
       viewFields: [
         { key: 'id', label: 'ID' },
@@ -203,10 +203,10 @@ const hrConfig = {
         { name: 'description', label: 'Description' },
       ]
     },
-    { 
-      key: 'salarystructures', 
-      label: 'Salary Structures', 
-      endpoint: '/salary-structures', 
+    {
+      key: 'salarystructures',
+      label: 'Salary Structures',
+      endpoint: '/salary-structures',
       columns: ['employee.name', 'effectiveDate', 'basic', 'hra', 'da', 'pfPercent', 'esicPercent', 'otherAllowances'],
       viewFields: [
         { key: 'id', label: 'ID' },
@@ -235,10 +235,10 @@ const hrConfig = {
         { name: 'remarks', label: 'Remarks' },
       ]
     },
-    { 
-      key: 'salarysheets', 
-      label: 'Salary Sheets', 
-      endpoint: '/salary-sheets', 
+    {
+      key: 'salarysheets',
+      label: 'Salary Sheets',
+      endpoint: '/salary-sheets',
       columns: ['employee.name', 'month', 'year', 'totalDays', 'presentDays', 'grossSalary', 'deductions', 'netPay', 'status'],
       viewFields: [
         { key: 'id', label: 'ID' },
@@ -260,13 +260,13 @@ const hrConfig = {
         { key: 'createdAt', label: 'Created At' },
       ],
       formFields: [
-        { 
-          name: 'employeeId', 
-          label: 'Employee', 
-          type: 'select', 
-          optionsEndpoint: '/hr/dropdown/employees-with-structures', 
-          optionsValue: 'id', 
-          optionsLabel: 'label', 
+        {
+          name: 'employeeId',
+          label: 'Employee',
+          type: 'select',
+          optionsEndpoint: '/hr/dropdown/employees-with-structures',
+          optionsValue: 'id',
+          optionsLabel: 'label',
           required: true,
           autoPopulateEndpoint: '/hr/employee/{value}/salary-structure',
           autoPopulateMap: {
@@ -290,10 +290,10 @@ const hrConfig = {
         { name: 'status', label: 'Status', type: 'select', options: ['Draft', 'Processed', 'Paid'] },
       ]
     },
-    { 
-      key: 'advances', 
-      label: 'Advances', 
-      endpoint: '/advances', 
+    {
+      key: 'advances',
+      label: 'Advances',
+      endpoint: '/advances',
       columns: ['employee.name', 'advanceDate', 'amount', 'purpose', 'balanceAmount', 'status'],
       viewFields: [
         { key: 'id', label: 'ID' },

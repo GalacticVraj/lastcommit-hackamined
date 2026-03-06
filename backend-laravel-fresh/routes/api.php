@@ -130,6 +130,25 @@ Route::prefix('v1')->group(function () {
 
         Route::get('sales/salesmen/{id}/profile', [SalesController::class, 'getSalesmanProfile']);
 
+        // Dropdown endpoints for relational selects
+        Route::get('sales/dropdown/customers', [SalesController::class, 'dropdownCustomers']);
+        Route::get('sales/dropdown/inquiries', [SalesController::class, 'dropdownInquiries']);
+        Route::get('sales/dropdown/quotations', [SalesController::class, 'dropdownQuotations']);
+        Route::get('sales/dropdown/sale-orders', [SalesController::class, 'dropdownSaleOrders']);
+        Route::get('sales/dropdown/invoices', [SalesController::class, 'dropdownInvoices']);
+        Route::get('sales/dropdown/transporters', [SalesController::class, 'dropdownTransporters']);
+        Route::get('sales/dropdown/products', [SalesController::class, 'dropdownProducts']);
+
+        // Dispatch Advices
+        Route::get('sales/dispatch-advices', [SalesController::class, 'listDispatchAdvices']);
+        Route::post('sales/dispatch-advices', [SalesController::class, 'createDispatchAdvice']);
+        Route::get('sales/dispatch-advices/{id}', [SalesController::class, 'getDispatchAdvice']);
+        Route::put('sales/dispatch-advices/{id}', [SalesController::class, 'updateDispatchAdvice']);
+
+        // Collections & Reminders
+        Route::get('sales/collections', [SalesController::class, 'listCollections']);
+        Route::post('sales/communication-logs', [SalesController::class, 'createCommunicationLog']);
+
         // ── Purchase ──────────────────────────────────────────────────────────
         Route::get('purchase/dashboard', [PurchaseController::class, 'dashboard']);
         Route::apiResource('purchase/vendors', PurchaseController::class)->only(['index', 'store', 'show', 'update', 'destroy'])->names('purchase.vendors');

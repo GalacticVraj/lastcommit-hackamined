@@ -9,6 +9,10 @@ use App\Models\Quotation;
 use App\Models\SaleOrder;
 use App\Models\Invoice;
 use App\Models\SalesReceiptVoucher;
+use App\Models\DispatchAdvice;
+use App\Models\CollectionReminder;
+use App\Models\CommunicationLog;
+use App\Models\Transporter;
 use App\Models\Employee;
 use App\Models\Product;
 use App\Services\GstCalculator;
@@ -97,7 +101,7 @@ class SalesController extends Controller
 
         $now = now();
         $taggedInvoices = $invoices->map(function ($inv) use ($now) {
-            $inv->payment_status = $inv->status === 'Paid' ? 'Paid'
+            $inv->paymentStatus = $inv->status === 'Paid' ? 'Paid'
                 : ($inv->dueDate < $now ? 'Overdue' : 'Unpaid');
             return $inv;
         });
@@ -148,6 +152,89 @@ class SalesController extends Controller
                 'commission' => $commission,
             ],
         ]);
+    }
+
+    // ─── DROPDOWN ENDPOINTS ──────────────────────────────────────────────────
+
+    public function dropdownCustomers()
+    {
+        $customers = Customer::whereNull('deletedAt')
+            ->where('isActive', true)
+            ->select('id', 'name', 'gstin', 'address', 'city', 'state', 'pincode', 'contactPerson', 'phone', 'email', 'creditPeriod')
+            ->orderBy('name')
+            ->get();
+        return $this->successResponse($customers);
+    }
+
+    public function dropdownInquiries(Request $request)
+    {
+        $query = Inquiry::with('customer:id,name')->whereNull('deletedAt');
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+        $inquiries = $query->select('id', 'inquiryNo', 'customerId', 'status', 'salesPerson')
+            ->orderBy('id', 'desc')
+            ->get();
+        return $this->successResponse($inquiries);
+    }
+
+    public function dropdownQuotations(Request $request)
+    {
+        $query = Quotation::with('customer:id,name')->whereNull('deletedAt');
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+        $quotations = $query->select('id', 'quoteNo', 'customerId', 'inquiryId', 'totalAmount', 'status')
+            ->orderBy('id', 'desc')
+            ->get();
+        return $this->successResponse($quotations);
+    }
+
+    public function dropdownSaleOrders(Request $request)
+    {
+        $query = SaleOrder::with('customer:id,name')->whereNull('deletedAt');
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+        $orders = $query->select('id', 'soNo', 'customerId', 'quotationId', 'customerPoNo', 'totalAmount', 'status', 'billingAddress', 'shippingAddress')
+            ->orderBy('id', 'desc')
+            ->get();
+        return $this->successResponse($orders);
+    }
+
+    public function dropdownInvoices(Request $request)
+    {
+        $query = Invoice::with('customer:id,name')->whereNull('deletedAt');
+        if ($status = $request->get('status')) {
+            if ($status === 'outstanding') {
+                $query->whereIn('status', ['Unpaid', 'Partial', 'Overdue']);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+        $invoices = $query->select('id', 'invoiceNo', 'customerId', 'saleOrderId', 'grandTotal', 'status', 'dueDate')
+            ->orderBy('id', 'desc')
+            ->get();
+        return $this->successResponse($invoices);
+    }
+
+    public function dropdownTransporters()
+    {
+        $transporters = Transporter::where('isActive', true)
+            ->select('id', 'name', 'ownerName', 'mobile', 'gstin')
+            ->orderBy('name')
+            ->get();
+        return $this->successResponse($transporters);
+    }
+
+    public function dropdownProducts()
+    {
+        $products = Product::whereNull('deletedAt')
+            ->where('isActive', true)
+            ->select('id', 'code', 'name', 'unit', 'gstPercent', 'lastSalePrice', 'currentStock')
+            ->orderBy('name')
+            ->get();
+        return $this->successResponse($products);
     }
 
     // ─── INQUIRIES ────────────────────────────────────────────────────────────
@@ -343,7 +430,7 @@ class SalesController extends Controller
 
     public function getSaleOrder(Request $request, $id)
     {
-        $order = SaleOrder::with(['items.product', 'customer', 'invoices', 'dispatchAdvice'])->find($id);
+        $order = SaleOrder::with(['items.product', 'customer', 'invoices', 'dispatchAdvices'])->find($id);
         if (!$order)
             return $this->errorResponse('Sale Order not found', 404);
         return $this->successResponse($order);
@@ -366,6 +453,59 @@ class SalesController extends Controller
         });
 
         return $this->successResponse($order, 'Sale Order updated');
+    }
+
+    // ─── DISPATCH ADVICES ─────────────────────────────────────────────────────
+
+    public function listDispatchAdvices(Request $request)
+    {
+        $query = DispatchAdvice::with(['saleOrder.customer:id,name', 'transporter:id,name'])
+            ->whereNull('deletedAt');
+        if ($search = $request->get('search')) {
+            $query->where('dispatchNo', 'like', "%{$search}%");
+        }
+        return $this->paginatedResponse($query->latest()->paginate(25));
+    }
+
+    public function createDispatchAdvice(Request $request)
+    {
+        $dispatchNo = AutoNumber::generate('DA', 'DA');
+
+        $dispatch = DB::transaction(function () use ($request, $dispatchNo) {
+            $dispatch = DispatchAdvice::create([
+                'dispatchNo' => $dispatchNo,
+                'saleOrderId' => $request->saleOrderId,
+                'transporterId' => $request->transporterId,
+                'vehicleNo' => $request->vehicleNo,
+                'driverName' => $request->driverName,
+                'createdBy' => $request->user()->id,
+            ]);
+
+            // Update sale order status to Dispatched
+            SaleOrder::where('id', $request->saleOrderId)->update(['status' => 'Dispatched']);
+
+            return $dispatch->load(['saleOrder.customer', 'transporter']);
+        });
+
+        return $this->successResponse($dispatch, 'Dispatch Advice created', 201);
+    }
+
+    public function getDispatchAdvice(Request $request, $id)
+    {
+        $dispatch = DispatchAdvice::with(['saleOrder.customer', 'saleOrder.items.product', 'transporter'])->find($id);
+        if (!$dispatch)
+            return $this->errorResponse('Dispatch Advice not found', 404);
+        return $this->successResponse($dispatch);
+    }
+
+    public function updateDispatchAdvice(Request $request, $id)
+    {
+        $dispatch = DispatchAdvice::findOrFail($id);
+        $dispatch->update(array_merge(
+            $request->only(['vehicleNo', 'driverName', 'status', 'transporterId']),
+            ['updatedBy' => $request->user()->id]
+        ));
+        return $this->successResponse($dispatch, 'Dispatch Advice updated');
     }
 
     // ─── INVOICES ─────────────────────────────────────────────────────────────
@@ -409,7 +549,7 @@ class SalesController extends Controller
 
         $grandTotal = $taxableValue + $cgstAmount + $sgstAmount + $igstAmount;
         $roundOff = round(round($grandTotal) - $grandTotal, 2);
-        $dueDate = now()->addDays($customer->credit_period ?? 30);
+        $dueDate = now()->addDays($customer->creditPeriod ?? 30);
 
         $invoice = Invoice::create([
             'invoiceNo' => $invoiceNo,
@@ -444,10 +584,60 @@ class SalesController extends Controller
 
     public function getInvoice(Request $request, $id)
     {
-        $invoice = Invoice::with(['items.product', 'customer', 'reminders', 'communications'])->find($id);
+        $invoice = Invoice::with(['items.product', 'customer', 'reminders', 'communications', 'receipts'])->find($id);
         if (!$invoice)
             return $this->errorResponse('Invoice not found', 404);
         return $this->successResponse($invoice);
+    }
+
+    // ─── COLLECTIONS & REMINDERS ──────────────────────────────────────────────
+
+    public function listCollections(Request $request)
+    {
+        $invoices = Invoice::with('customer:id,name,creditPeriod')
+            ->whereNull('deletedAt')
+            ->whereIn('status', ['Unpaid', 'Partial', 'Overdue'])
+            ->latest()
+            ->paginate(25);
+
+        $now = now();
+        $invoices->getCollection()->transform(function ($inv) use ($now) {
+            $dueDate = $inv->dueDate ? \Carbon\Carbon::parse($inv->dueDate) : null;
+            $daysUntilDue = $dueDate ? $now->diffInDays($dueDate, false) : null;
+
+            if ($daysUntilDue === null) {
+                $inv->reminderStatus = 'Unknown';
+            } elseif ($daysUntilDue < 0) {
+                $inv->reminderStatus = 'Overdue';
+                $inv->daysOverdue = abs($daysUntilDue);
+            } elseif ($daysUntilDue == 0) {
+                $inv->reminderStatus = 'Due Today';
+                $inv->daysOverdue = 0;
+            } else {
+                $inv->reminderStatus = 'Upcoming';
+                $inv->daysOverdue = 0;
+            }
+
+            $inv->totalPaid = SalesReceiptVoucher::where('invoiceId', $inv->id)->sum('amount');
+            $inv->outstanding = $inv->grandTotal - $inv->totalPaid;
+            $inv->communications = CommunicationLog::where('invoiceId', $inv->id)->orderBy('sentAt', 'desc')->get();
+
+            return $inv;
+        });
+
+        return $this->paginatedResponse($invoices);
+    }
+
+    public function createCommunicationLog(Request $request)
+    {
+        $log = CommunicationLog::create([
+            'invoiceId' => $request->invoiceId,
+            'channel' => $request->channel,
+            'content' => $request->content,
+            'status' => $request->status ?? 'Sent',
+        ]);
+
+        return $this->successResponse($log, 'Communication log created', 201);
     }
 
     // ─── RECEIPTS ─────────────────────────────────────────────────────────────
@@ -468,14 +658,14 @@ class SalesController extends Controller
         $receipt = DB::transaction(function () use ($request, $receiptNo) {
             $receipt = SalesReceiptVoucher::create(array_merge(
                 $request->only(['customerId', 'amount', 'paymentMode', 'referenceNo', 'remarks', 'invoiceId']),
-                ['receipt_no' => $receiptNo, 'created_by' => $request->user()->id]
+                ['receiptNo' => $receiptNo, 'createdBy' => $request->user()->id]
             ));
 
             if ($request->invoiceId) {
                 $invoice = Invoice::find($request->invoiceId);
                 if ($invoice) {
-                    $totalPaid = SalesReceiptVoucher::where('invoice_id', $request->invoiceId)->sum('amount');
-                    $newStatus = $totalPaid >= $invoice->grand_total ? 'Paid' : 'Partial';
+                    $totalPaid = SalesReceiptVoucher::where('invoiceId', $request->invoiceId)->sum('amount');
+                    $newStatus = $totalPaid >= $invoice->grandTotal ? 'Paid' : 'Partial';
                     $invoice->update(['status' => $newStatus]);
                 }
             }
@@ -535,38 +725,100 @@ class SalesController extends Controller
         return $this->successResponse($results);
     }
 
-    // ─── DASHBOARD ────────────────────────────────────────────────────────────
+    // ─── ENHANCED DASHBOARD ──────────────────────────────────────────────────
 
     public function dashboard()
     {
+        // Basic stats
         $totalCustomers = Customer::where('isActive', true)->whereNull('deletedAt')->count();
         $totalInvoices = Invoice::whereNull('deletedAt')->count();
-        $totalRevenue = Invoice::whereNull('deletedAt')->sum('grandTotal');
-        $overdueInvoices = Invoice::where('status', 'Overdue')->whereNull('deletedAt')->count();
+        $totalRevenue = Invoice::whereNull('deletedAt')->sum('grandTotal') ?? 0;
 
+        // Overdue
+        $overdueInvoices = Invoice::whereIn('status', ['Unpaid', 'Partial'])
+            ->where('dueDate', '<', now())
+            ->whereNull('deletedAt')
+            ->get();
+        $overdueCount = $overdueInvoices->count();
+        $overdueAmount = $overdueInvoices->sum('grandTotal');
+
+        // Inquiries by status (funnel)
+        $inquiriesByStatus = Inquiry::selectRaw('status, count(*) as _count')
+            ->whereNull('deletedAt')
+            ->groupBy('status')
+            ->get();
+
+        // Quotation to PO conversion
+        $totalQuotations = Quotation::whereNull('deletedAt')->count();
+        $acceptedQuotations = Quotation::whereNull('deletedAt')->where('status', 'Accepted')->count();
+        $conversionRate = $totalQuotations > 0 ? round(($acceptedQuotations / $totalQuotations) * 100, 1) : 0;
+
+        // Sale Orders by status
+        $soByStatus = SaleOrder::selectRaw('status, count(*) as _count')
+            ->whereNull('deletedAt')
+            ->groupBy('status')
+            ->get();
+
+        // Invoice vs Collected vs Outstanding
+        $totalInvoiceValue = Invoice::whereNull('deletedAt')->sum('grandTotal') ?? 0;
+        $totalCollected = SalesReceiptVoucher::sum('amount') ?? 0;
+        $totalOutstanding = $totalInvoiceValue - $totalCollected;
+
+        // Monthly revenue trend (last 6 months)
+        $monthlyRevenue = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end = now()->subMonths($i)->endOfMonth();
+            $revenue = Invoice::whereNull('deletedAt')
+                ->whereBetween('createdAt', [$start, $end])
+                ->sum('grandTotal');
+            $monthlyRevenue[] = [
+                'month' => $start->format('M Y'),
+                'revenue' => round($revenue, 2),
+            ];
+        }
+
+        // Top 5 customers by billed amount
+        $topCustomers = Invoice::selectRaw('customerId, sum(grandTotal) as totalBilled')
+            ->whereNull('deletedAt')
+            ->groupBy('customerId')
+            ->orderByDesc('totalBilled')
+            ->limit(5)
+            ->get()
+            ->map(function ($row) {
+                $customer = Customer::find($row->customerId);
+                return [
+                    'customerId' => $row->customerId,
+                    'name' => $customer->name ?? 'Unknown',
+                    'totalBilled' => round($row->totalBilled, 2),
+                ];
+            });
+
+        // Recent invoices
         $recentInvoices = Invoice::with('customer:id,name')
             ->latest()
             ->limit(10)
-            ->get();
-
-        $invoicesByStatus = Invoice::selectRaw('status, count(*) as _count')
-            ->groupBy('status')
-            ->get();
-
-        $inquiriesByStatus = Inquiry::selectRaw('status, count(*) as _count')
-            ->groupBy('status')
             ->get();
 
         return $this->successResponse([
             'stats' => [
                 'totalCustomers' => $totalCustomers,
                 'totalInvoices' => $totalInvoices,
-                'totalRevenue' => $totalRevenue ?? 0,
-                'overdueInvoices' => $overdueInvoices,
+                'totalRevenue' => $totalRevenue,
+                'overdueCount' => $overdueCount,
+                'overdueAmount' => $overdueAmount,
+                'totalQuotations' => $totalQuotations,
+                'acceptedQuotations' => $acceptedQuotations,
+                'conversionRate' => $conversionRate,
+                'totalInvoiceValue' => $totalInvoiceValue,
+                'totalCollected' => $totalCollected,
+                'totalOutstanding' => $totalOutstanding,
             ],
-            'recentInvoices' => $recentInvoices,
-            'invoicesByStatus' => $invoicesByStatus,
             'inquiriesByStatus' => $inquiriesByStatus,
+            'soByStatus' => $soByStatus,
+            'monthlyRevenue' => $monthlyRevenue,
+            'topCustomers' => $topCustomers,
+            'recentInvoices' => $recentInvoices,
         ]);
     }
 
@@ -576,8 +828,8 @@ class SalesController extends Controller
         $startNext = now()->addMonth()->startOfMonth();
         $startPrev = now()->subMonth()->startOfMonth();
 
-        $thisCount = Invoice::whereBetween('invoice_date', [$startThis, $startNext])->count();
-        $prevCount = Invoice::whereBetween('invoice_date', [$startPrev, $startThis])->count();
+        $thisCount = Invoice::whereBetween('createdAt', [$startThis, $startNext])->count();
+        $prevCount = Invoice::whereBetween('createdAt', [$startPrev, $startThis])->count();
         $change = $prevCount ? (($thisCount - $prevCount) / $prevCount) * 100 : null;
 
         $breakdown = Invoice::selectRaw('status, count(*) as count')

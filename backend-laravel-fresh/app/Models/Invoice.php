@@ -26,4 +26,19 @@ class Invoice extends Model
     {
         return $this->belongsTo(SaleOrder::class, 'saleOrderId', 'id');
     }
+
+    public function reminders()
+    {
+        return $this->hasMany(CollectionReminder::class, 'invoiceId', 'id');
+    }
+
+    public function communications()
+    {
+        return $this->hasMany(CommunicationLog::class, 'invoiceId', 'id');
+    }
+
+    public function receipts()
+    {
+        return $this->hasMany(SalesReceiptVoucher::class, 'invoiceId', 'id');
+    }
 }

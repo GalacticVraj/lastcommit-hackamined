@@ -11,4 +11,14 @@ class DispatchAdvice extends Model
     protected $guarded = [];
     const CREATED_AT = 'createdAt';
     const UPDATED_AT = 'updatedAt';
+
+    public function saleOrder()
+    {
+        return $this->belongsTo(SaleOrder::class, 'saleOrderId', 'id');
+    }
+
+    public function transporter()
+    {
+        return $this->belongsTo(Transporter::class, 'transporterId', 'id');
+    }
 }
