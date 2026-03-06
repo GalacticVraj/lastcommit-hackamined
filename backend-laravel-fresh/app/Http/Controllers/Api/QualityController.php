@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -125,9 +126,11 @@ class QualityController extends Controller
 
     public function listIqc(Request $request)
     {
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('IQCRecord as i')
             ->leftJoin('GRN as g', 'i.grnId', '=', 'g.id')
-            ->leftJoin('Product as p', 'i.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'i.productId', '=', 'p.id')
             ->whereNull('i.deletedAt')
             ->select('i.*', 'g.grnNo as grnRef', 'p.name as item');
         return $this->paginatedResponse($query->orderByDesc('i.id')->paginate($this->perPage($request)));
@@ -161,9 +164,11 @@ class QualityController extends Controller
 
     public function getIqc($id)
     {
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('IQCRecord as i')
             ->leftJoin('GRN as g', 'i.grnId', '=', 'g.id')
-            ->leftJoin('Product as p', 'i.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'i.productId', '=', 'p.id')
             ->where('i.id', $id)
             ->select('i.*', 'g.grnNo as grnRef', 'p.name as item')
             ->first();
@@ -207,8 +212,10 @@ class QualityController extends Controller
 
     public function listMts(Request $request)
     {
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('QualityMTS as m')
-            ->leftJoin('Product as p', 'm.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'm.productId', '=', 'p.id')
             ->whereNull('m.deletedAt')
             ->select('m.*', 'p.name as item');
         return $this->paginatedResponse($query->orderByDesc('m.id')->paginate($this->perPage($request)));
@@ -231,8 +238,10 @@ class QualityController extends Controller
 
     public function getMts($id)
     {
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('QualityMTS as m')
-            ->leftJoin('Product as p', 'm.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'm.productId', '=', 'p.id')
             ->where('m.id', $id)
             ->select('m.*', 'p.name as item')
             ->first();
@@ -391,8 +400,10 @@ class QualityController extends Controller
 
     public function listQrd(Request $request)
     {
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('QualityQRD as q')
-            ->leftJoin('Product as p', 'q.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'q.productId', '=', 'p.id')
             ->whereNull('q.deletedAt')
             ->select('q.*', DB::raw('COALESCE(q.item, p.name) as item'));
         return $this->paginatedResponse($query->orderByDesc('q.id')->paginate($this->perPage($request)));
@@ -416,8 +427,10 @@ class QualityController extends Controller
 
     public function getQrd($id)
     {
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('QualityQRD as q')
-            ->leftJoin('Product as p', 'q.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'q.productId', '=', 'p.id')
             ->where('q.id', $id)
             ->select('q.*', DB::raw('COALESCE(q.item, p.name) as item'))
             ->first();
