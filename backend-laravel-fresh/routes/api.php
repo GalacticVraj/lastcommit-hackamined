@@ -333,5 +333,13 @@ Route::prefix('v1')->group(function () {
 
         // ── Dashboard (Global) ────────────────────────────────────────────────
         Route::get('dashboard', [DashboardController::class, 'index']);
+
+        // ── AI ────────────────────────────────────────────────────────────────
+        Route::get('ai/insights', [\App\Http\Controllers\AI\AISummaryController::class, 'insights']);
+        Route::get('ai/sales-projection', [\App\Http\Controllers\AI\AISummaryController::class, 'salesProjection']);
+        Route::get('ai/recruitment-projection', [\App\Http\Controllers\AI\AISummaryController::class, 'recruitmentProjection']);
+        Route::get('ai/unread-count', [\App\Http\Controllers\AI\AISummaryController::class, 'unreadCount']);
+        Route::patch('ai/mark-seen', [\App\Http\Controllers\AI\AISummaryController::class, 'markSeen']);
+        Route::post('ai/refresh', [\App\Http\Controllers\AI\AISummaryController::class, 'refreshInsights']);
     });
 });
