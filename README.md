@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=280&section=header&text=NexaERP&fontSize=90&fontAlignY=40&fontColor=ffffff&desc=Next-Generation%20Manufacturing%20Intelligence%20Platform&descAlignY=62&descSize=20&animation=fadeIn&stroke=00FF87&strokeWidth=2" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=280&section=header&text=TechMicra ERP&fontSize=90&fontAlignY=40&fontColor=ffffff&desc=Next-Generation%20Manufacturing%20Intelligence%20Platform&descAlignY=62&descSize=20&animation=fadeIn&stroke=00FF87&strokeWidth=2" width="100%" />
 
 </div>
 
@@ -40,9 +40,9 @@
 
 ---
 
-## 🌟 What is NexaERP?
+## 🌟 What is TechMicra ERP?
 
-**NexaERP** is an open-source, **API-first manufacturing ERP engine** built on Laravel 12 that eliminates the staggering complexity, cost, and rigidity of traditional ERP systems like Odoo, Zoho, and SAP — by delivering an intelligent, modular manufacturing core that deploys in **5 minutes** and costs **₹0** in licensing.
+**TechMicra ERP** is an open-source, **API-first manufacturing ERP engine** built on Laravel 12 that eliminates the staggering complexity, cost, and rigidity of traditional ERP systems like Odoo, Zoho, and SAP — by delivering an intelligent, modular manufacturing core that deploys in **5 minutes** and costs **₹0** in licensing.
 
 <table>
 <tr>
@@ -60,7 +60,7 @@
 <td width="50%">
 
 **Why It Wins:**
-| Metric | NexaERP | Odoo/SAP |
+| Metric | TechMicra ERP | Odoo/SAP |
 |--------|---------|---------|
 | 💰 Licensing | **₹0** | ₹12L–1Cr/yr |
 | ⏱ Deploy | **5 min** | 3–36 months |
@@ -316,11 +316,11 @@ $estimatedCompletion = Carbon::now()->addDays($daysRequired)->toDateString();
 
 ---
 
-## 📊 NexaERP vs The World
+## 📊 TechMicra ERP vs The World
 
 <div align="center">
 
-| Feature | ✦ **NexaERP** | Odoo ERP | Zoho Mfg | SAP B1 | NetSuite | Banking MIS | LMS |
+| Feature | ✦ **TechMicra ERP** | Odoo ERP | Zoho Mfg | SAP B1 | NetSuite | Banking MIS | LMS |
 |:--------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | 💰 **Licensing Cost** | **₹0** | ₹12–40k/mo | ₹8–25k/mo | ₹80k+/mo | ₹1L+/mo | Custom | N/A |
 | ⚡ **MRP Engine** | ✅ Real-time | ⚠️ Batch | ⚠️ Limited | ✅ Complex | ✅ Entprise | ❌ | ❌ |
@@ -569,7 +569,7 @@ Released under the [MIT License](LICENSE) — free for commercial and personal u
 
 ## 🏆 Built to Win. Built to Last.
 
-**NexaERP** isn't a proof-of-concept.
+**TechMicra ERP** isn't a proof-of-concept.
 It's a **production-grade manufacturing intelligence platform** that solves a real **₹500 Crore problem** —
 the astronomical cost and complexity of manufacturing ERP for Indian SMEs and global manufacturers alike.
 
