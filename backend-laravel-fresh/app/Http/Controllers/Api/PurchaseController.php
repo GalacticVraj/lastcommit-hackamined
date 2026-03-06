@@ -8,18 +8,124 @@ use App\Models\PurchaseOrderItem;
 use App\Models\GRN;
 use App\Models\GRNItem;
 use App\Models\PurchaseBill;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
     public function dashboard()
     {
+        $poTable = (new PurchaseOrder())->getTable();
+        $vendorTable = (new Vendor())->getTable();
+        $grnTable = (new GRN())->getTable();
+        $billTable = (new PurchaseBill())->getTable();
+
+        $statusMix = DB::table("{$poTable}")
+            ->whereNull('deletedAt')
+            ->selectRaw("COALESCE(status, 'Open') as name, COUNT(*) as value")
+            ->groupBy('status')
+            ->orderByDesc('value')
+            ->get();
+
+        $monthlyPo = DB::table("{$poTable}")
+            ->whereNull('deletedAt')
+            ->selectRaw("substr(COALESCE(createdAt, updatedAt), 1, 7) as name, COUNT(*) as value")
+            ->groupBy(DB::raw("substr(COALESCE(createdAt, updatedAt), 1, 7)"))
+            ->orderBy('name')
+            ->get();
+
+        $vendorSpend = DB::table("{$poTable} as po")
+            ->leftJoin("{$vendorTable} as v", 'po.vendorId', '=', 'v.id')
+            ->whereNull('po.deletedAt')
+            ->selectRaw("COALESCE(v.name, 'Unknown') as name, SUM(COALESCE(po.totalAmount, 0)) as value")
+            ->groupBy('v.name')
+            ->orderByDesc('value')
+            ->limit(6)
+            ->get();
+
+        $recent = collect()
+            ->merge(
+                DB::table("{$poTable} as po")
+                    ->leftJoin("{$vendorTable} as v", 'po.vendorId', '=', 'v.id')
+                    ->whereNull('po.deletedAt')
+                    ->orderByDesc('po.id')
+                    ->limit(3)
+                    ->get(['po.id', 'po.poNo', 'po.createdAt', 'po.status', 'po.totalAmount', 'v.name as vendorName'])
+                    ->map(fn($row) => [
+                        'id' => $row->id,
+                        'type' => 'PO',
+                        'ref' => $row->poNo,
+                        'party' => $row->vendorName ?? 'Unknown Vendor',
+                        'date' => $row->createdAt,
+                        'status' => $row->status ?? 'Open',
+                        'amount' => (float) ($row->totalAmount ?? 0),
+                    ])
+            )
+            ->merge(
+                DB::table("{$grnTable} as g")
+                    ->leftJoin("{$vendorTable} as v", 'g.vendorId', '=', 'v.id')
+                    ->whereNull('g.deletedAt')
+                    ->orderByDesc('g.id')
+                    ->limit(3)
+                    ->get(['g.id', 'g.grnNo', 'g.grnDate', 'g.status', 'v.name as vendorName'])
+                    ->map(fn($row) => [
+                        'id' => $row->id,
+                        'type' => 'GRN',
+                        'ref' => $row->grnNo,
+                        'party' => $row->vendorName ?? 'Unknown Vendor',
+                        'date' => $row->grnDate,
+                        'status' => $row->status ?? 'Pending',
+                        'amount' => 0,
+                    ])
+            )
+            ->merge(
+                DB::table("{$billTable} as b")
+                    ->leftJoin("{$vendorTable} as v", 'b.vendorId', '=', 'v.id')
+                    ->whereNull('b.deletedAt')
+                    ->orderByDesc('b.id')
+                    ->limit(3)
+                    ->get(['b.id', 'b.billNo', 'b.billDate', 'b.status', 'b.grandTotal', 'v.name as vendorName'])
+                    ->map(fn($row) => [
+                        'id' => $row->id,
+                        'type' => 'Bill',
+                        'ref' => $row->billNo,
+                        'party' => $row->vendorName ?? 'Unknown Vendor',
+                        'date' => $row->billDate,
+                        'status' => $row->status ?? 'Unpaid',
+                        'amount' => (float) ($row->grandTotal ?? 0),
+                    ])
+            )
+            ->sortByDesc(fn($row) => $row['date'] ?? '')
+            ->take(8)
+            ->values();
+
         return $this->successResponse([
             'stats' => [
                 'totalVendors' => Vendor::whereNull('deletedAt')->count(),
                 'totalPOs' => PurchaseOrder::whereNull('deletedAt')->count(),
                 'pendingGRNs' => PurchaseOrder::where('status', 'Open')->count(),
                 'pendingBills' => GRN::where('status', 'Pending')->count(),
-            ]
+            ],
+            'charts' => [
+                [
+                    'key' => 'purchase-status',
+                    'title' => 'PO Status Mix',
+                    'type' => 'pie',
+                    'data' => $statusMix,
+                ],
+                [
+                    'key' => 'purchase-monthly',
+                    'title' => 'PO Trend by Month',
+                    'type' => 'line',
+                    'data' => $monthlyPo,
+                ],
+                [
+                    'key' => 'purchase-vendor-spend',
+                    'title' => 'Top Vendor Spend',
+                    'type' => 'bar',
+                    'data' => $vendorSpend,
+                ],
+            ],
+            'recent' => $recent,
         ]);
     }
 
@@ -29,7 +135,7 @@ class PurchaseController extends Controller
         if ($s = $request->get('search')) {
             $query->where('name', 'like', "%$s%");
         }
-        return $this->paginatedResponse($query->latest()->paginate(25));
+        return $this->paginatedResponse($query->orderByDesc('id')->paginate(25));
     }
 
     public function storeVendor(Request $request)
@@ -47,7 +153,7 @@ class PurchaseController extends Controller
     public function listPurchaseOrders(Request $request)
     {
         $query = PurchaseOrder::with('vendor:id,name')->whereNull('deletedAt');
-        return $this->paginatedResponse($query->latest()->paginate(25));
+        return $this->paginatedResponse($query->orderByDesc('id')->paginate(25));
     }
 
     public function getPurchaseOrder($id)
@@ -92,7 +198,7 @@ class PurchaseController extends Controller
 
     public function listGrns(Request $request)
     {
-        return $this->paginatedResponse(GRN::with('vendor:id,name')->latest()->paginate(25));
+        return $this->paginatedResponse(GRN::with('vendor:id,name')->orderByDesc('id')->paginate(25));
     }
 
     public function getGrn($id)
@@ -112,7 +218,7 @@ class PurchaseController extends Controller
 
     public function listBills(Request $request)
     {
-        return $this->paginatedResponse(PurchaseBill::with('vendor:id,name')->latest()->paginate(25));
+        return $this->paginatedResponse(PurchaseBill::with('vendor:id,name')->orderByDesc('id')->paginate(25));
     }
 
     public function getBill($id)

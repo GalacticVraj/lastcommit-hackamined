@@ -18,6 +18,8 @@ import ContractorsDashboard from '../components/ContractorsDashboard';
 import WarehouseDashboard from '../components/WarehouseDashboard';
 import AssetsDashboard from '../components/AssetsDashboard';
 import QualityDashboard from '../components/QualityDashboard';
+import PurchaseDashboard from '../components/PurchaseDashboard';
+import ProductionDashboard from '../components/ProductionDashboard';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -345,9 +347,15 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
             {activeTab === 'dashboard' && apiBase === '/quality' && (
                 <QualityDashboard />
             )}
+            {activeTab === 'dashboard' && apiBase === '/purchase' && (
+                <PurchaseDashboard />
+            )}
+            {activeTab === 'dashboard' && apiBase === '/production' && (
+                <ProductionDashboard />
+            )}
 
             {/* Dashboard stats for other modules */}
-            {activeTab === 'dashboard' && !['/finance','/hr','/logistics','/maintenance','/contractors','/warehouse','/assets','/quality'].includes(apiBase) && stats && (
+            {activeTab === 'dashboard' && !['/finance','/hr','/logistics','/maintenance','/contractors','/warehouse','/assets','/quality','/purchase','/production'].includes(apiBase) && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
                         <div className="stat-card" key={key}>
