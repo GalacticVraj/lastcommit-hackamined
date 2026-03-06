@@ -1,15 +1,6 @@
 import React from 'react';
 import { Printer } from 'lucide-react';
-
-const TECHMICRA_INFO = {
-    name: 'TechMicra IT Solutions',
-    addressLine1: '408, 4th Floor, Ashwamegh Elegance III,',
-    addressLine2: 'Nr. CN Vidhyalay, opp. SBI Zonal office,',
-    cityStatePin: 'Ambawadi, Ahmedabad, Gujarat 380015',
-    email: 'pallav@techmicra.in',
-    phone: '9727835207',
-    gstin: '24AAACT1234A1Z5'
-};
+import { TECHMICRA_INFO } from './companyInfo';
 
 export default function QuotationTemplate({ data }) {
     if (!data) return null;
@@ -27,15 +18,13 @@ export default function QuotationTemplate({ data }) {
             <div className="print-container">
                 <div className="print-header">
                     <div className="print-logo-container">
-                        <img src="/techmicra-logo.png" alt="TechMicra Logo" className="print-logo" />
+                        <img src={TECHMICRA_INFO.logoPath} alt="TechMicra Logo" className="print-logo" />
                     </div>
                     <div className="print-company-info">
                         <h2 className="print-company-name">{TECHMICRA_INFO.name}</h2>
                         <div className="print-company-details">
-                            <div>{TECHMICRA_INFO.addressLine1} {TECHMICRA_INFO.addressLine2}</div>
-                            <div>{TECHMICRA_INFO.cityStatePin}</div>
+                            <div>{TECHMICRA_INFO.address}</div>
                             <div style={{ marginTop: 4 }}><strong>Email:</strong> {TECHMICRA_INFO.email} | <strong>Phone:</strong> +91 {TECHMICRA_INFO.phone}</div>
-                            <div style={{ marginTop: 4 }}><strong>GSTIN/UIN:</strong> {TECHMICRA_INFO.gstin}</div>
                         </div>
                     </div>
                 </div>

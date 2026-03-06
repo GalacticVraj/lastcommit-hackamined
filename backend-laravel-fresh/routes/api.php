@@ -127,6 +127,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('sales/receipts', [SalesController::class, 'listReceipts']);
         Route::post('sales/receipts', [SalesController::class, 'createReceipt']);
+        Route::get('sales/receipts/{id}', [SalesController::class, 'getReceipt']);
 
         Route::get('sales/salesmen/{id}/profile', [SalesController::class, 'getSalesmanProfile']);
 
@@ -139,8 +140,10 @@ Route::prefix('v1')->group(function () {
         Route::put('purchase/purchase-orders/{id}', [PurchaseController::class, 'updatePurchaseOrder']);
         Route::get('purchase/grns', [PurchaseController::class, 'listGrns']);
         Route::post('purchase/grns', [PurchaseController::class, 'createGrn']);
+        Route::get('purchase/grns/{id}', [PurchaseController::class, 'getGrn']);
         Route::get('purchase/bills', [PurchaseController::class, 'listBills']);
         Route::post('purchase/bills', [PurchaseController::class, 'createBill']);
+        Route::get('purchase/bills/{id}', [PurchaseController::class, 'getBill']);
 
         // ── Production ────────────────────────────────────────────────────────
         Route::get('production/dashboard', [ProductionController::class, 'dashboard']);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Loader2, Printer } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DataTable from '../components/DataTable';
 import api from '../lib/api';
@@ -175,6 +175,17 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 onClick={() => handleViewOpen(item)}>
                 <Eye size={14} />
             </button>
+
+            {currentTab.hasPrint && currentTab.printType && (
+                <button
+                    className="btn btn-ghost btn-sm"
+                    title="Print"
+                    style={{ padding: '4px 8px' }}
+                    onClick={() => window.open(`/print/${currentTab.printType}/${item.id}`, '_blank')}
+                >
+                    <Printer size={14} />
+                </button>
+            )}
 
             <PermissionGate permission={`${moduleName}.edit`}>
                 <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}

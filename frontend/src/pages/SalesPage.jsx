@@ -179,6 +179,7 @@ const TAB_CONFIG = {
             { name: 'paymentMode', label: 'Payment Mode' }, { name: 'referenceNo', label: 'Reference No.' },
         ],
         deletePermission: 'sales.receipt.delete',
+        hasPrint: true,
     },
 };
 

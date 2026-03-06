@@ -42,9 +42,9 @@ const purchaseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'vendors', label: 'Vendors', endpoint: '/vendors', columns: ['name', 'gstin', 'city', 'state', 'contactPerson'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'gstin', label: 'GSTIN' }, { name: 'address', label: 'Address' }, { name: 'city', label: 'City' }, { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' }, { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' }] },
-    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true },
-    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true },
-    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true },
+    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true, hasPrint: true, printType: 'purchase-order' },
+    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true, hasPrint: true, printType: 'grn' },
+    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true, hasPrint: true, printType: 'purchase-bill' },
   ]
 };
 
@@ -69,6 +69,8 @@ const financeConfig = {
       label: 'Voucher Journal', 
       endpoint: '/voucher-journals', 
       columns: ['journalNo', 'date', 'debitAccount', 'creditAccount', 'amount', 'narration'], 
+      hasPrint: true,
+      printType: 'voucher-journal',
       formFields: [
         { name: 'date', label: 'Date', type: 'date', required: true }, 
         { name: 'debitAccount', label: 'Debit Account', required: true }, 
@@ -82,6 +84,8 @@ const financeConfig = {
       label: 'Payment & Receipt', 
       endpoint: '/voucher-payment-receipts', 
       columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'], 
+      hasPrint: true,
+      printType: 'voucher-payment-receipt',
       formFields: [
         { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true }, 
         { name: 'date', label: 'Date', type: 'date', required: true }, 
@@ -97,6 +101,8 @@ const financeConfig = {
       label: 'Voucher Contra', 
       endpoint: '/voucher-contras', 
       columns: ['voucherNo', 'date', 'fromAccount', 'toAccount', 'amount'], 
+      hasPrint: true,
+      printType: 'voucher-contra',
       formFields: [
         { name: 'date', label: 'Date', type: 'date', required: true }, 
         { name: 'fromAccount', label: 'From Account (e.g., Cash)', required: true }, 
@@ -110,6 +116,8 @@ const financeConfig = {
       label: 'Journal Voucher (GST)', 
       endpoint: '/voucher-gsts', 
       columns: ['voucherNo', 'date', 'gstLedger', 'adjustmentType', 'amount'], 
+      hasPrint: true,
+      printType: 'voucher-gst',
       formFields: [
         { name: 'date', label: 'Date', type: 'date', required: true }, 
         { name: 'gstLedger', label: 'GST Ledger', type: 'select', options: ['Input', 'Output'], required: true }, 
@@ -118,8 +126,8 @@ const financeConfig = {
         { name: 'remarks', label: 'Remarks' }
       ] 
     },
-    { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'] },
-    { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'] },
+    { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'], hasPrint: true, printType: 'bank-reconciliation' },
+    { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'], hasPrint: true, printType: 'credit-card-statement' },
   ]
 };
 

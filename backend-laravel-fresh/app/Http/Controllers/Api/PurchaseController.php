@@ -4,7 +4,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Vendor;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\GRN;
+use App\Models\GRNItem;
 use App\Models\PurchaseBill;
 
 class PurchaseController extends Controller
@@ -48,6 +50,21 @@ class PurchaseController extends Controller
         return $this->paginatedResponse($query->latest()->paginate(25));
     }
 
+    public function getPurchaseOrder($id)
+    {
+        $po = PurchaseOrder::findOrFail($id);
+        $items = PurchaseOrderItem::where('purchaseOrderId', $po->id)->get();
+        $vendor = Vendor::find($po->vendorId);
+
+        return $this->successResponse(array_merge(
+            $po->toArray(),
+            [
+                'items' => $items,
+                'vendor' => $vendor ? ['id' => $vendor->id, 'name' => $vendor->name, 'address' => $vendor->address, 'city' => $vendor->city, 'state' => $vendor->state, 'phone' => $vendor->phone, 'gstin' => $vendor->gstin] : null,
+            ]
+        ));
+    }
+
     public function createPurchaseOrder(Request $request)
     {
         $poNo = \App\Services\AutoNumber::generate('PO', 'PO');
@@ -78,8 +95,42 @@ class PurchaseController extends Controller
         return $this->paginatedResponse(GRN::with('vendor:id,name')->latest()->paginate(25));
     }
 
+    public function getGrn($id)
+    {
+        $grn = GRN::findOrFail($id);
+        $items = GRNItem::where('grnId', $grn->id)->get();
+        $vendor = Vendor::find($grn->vendorId);
+
+        return $this->successResponse(array_merge(
+            $grn->toArray(),
+            [
+                'items' => $items,
+                'vendor' => $vendor ? ['id' => $vendor->id, 'name' => $vendor->name, 'address' => $vendor->address, 'city' => $vendor->city, 'state' => $vendor->state, 'phone' => $vendor->phone, 'gstin' => $vendor->gstin] : null,
+            ]
+        ));
+    }
+
     public function listBills(Request $request)
     {
         return $this->paginatedResponse(PurchaseBill::with('vendor:id,name')->latest()->paginate(25));
+    }
+
+    public function getBill($id)
+    {
+        $bill = PurchaseBill::findOrFail($id);
+        $vendor = Vendor::find($bill->vendorId);
+        $poItems = collect();
+
+        if (!empty($bill->purchaseOrderId)) {
+            $poItems = PurchaseOrderItem::where('purchaseOrderId', $bill->purchaseOrderId)->get();
+        }
+
+        return $this->successResponse(array_merge(
+            $bill->toArray(),
+            [
+                'items' => $poItems,
+                'vendor' => $vendor ? ['id' => $vendor->id, 'name' => $vendor->name, 'address' => $vendor->address, 'city' => $vendor->city, 'state' => $vendor->state, 'phone' => $vendor->phone, 'gstin' => $vendor->gstin] : null,
+            ]
+        ));
     }
 }

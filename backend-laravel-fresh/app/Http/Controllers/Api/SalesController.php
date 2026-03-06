@@ -486,6 +486,25 @@ class SalesController extends Controller
         return $this->successResponse($receipt, 'Receipt Voucher created', 201);
     }
 
+    public function getReceipt(Request $request, $id)
+    {
+        $receipt = SalesReceiptVoucher::find($id);
+        if (!$receipt) {
+            return $this->errorResponse('Receipt not found', 404);
+        }
+
+        $customer = Customer::find($receipt->customerId);
+        $invoice = $receipt->invoiceId ? Invoice::find($receipt->invoiceId) : null;
+
+        return $this->successResponse(array_merge(
+            $receipt->toArray(),
+            [
+                'customer' => $customer ? ['id' => $customer->id, 'name' => $customer->name, 'address' => $customer->address, 'city' => $customer->city, 'state' => $customer->state, 'phone' => $customer->phone, 'gstin' => $customer->gstin] : null,
+                'invoice' => $invoice ? ['id' => $invoice->id, 'invoiceNo' => $invoice->invoiceNo, 'invoiceDate' => $invoice->invoiceDate, 'grandTotal' => $invoice->grandTotal] : null,
+            ]
+        ));
+    }
+
     // ─── STOCK CHECK ──────────────────────────────────────────────────────────
 
     public function stockCheck(Request $request)
