@@ -106,5 +106,6 @@ class DatabaseSeeder extends Seeder
 
         // ── 4. Synthetic Test Data ──
         $this->call(SyntheticDataSeeder::class);
+        $this->call(OperationsModuleSeeder::class);
     }
 }
