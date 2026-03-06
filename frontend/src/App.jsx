@@ -52,11 +52,11 @@ const productionConfig = {
   title: 'Production Management', apiBase: '/production',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'products', label: 'Products', endpoint: '/products', columns: ['code', 'name', 'category', 'unit', 'currentStock', 'lastPurchasePrice'], formFields: [{ name: 'code', label: 'Code', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category' }, { name: 'unit', label: 'Unit' }, { name: 'hsnCode', label: 'HSN Code' }, { name: 'gstPercent', label: 'GST %', type: 'number' }, { name: 'currentStock', label: 'Current Stock', type: 'number' }] },
-    { key: 'bom', label: 'BOM', endpoint: '/bom', columns: ['bomNo', 'product.name', 'version'] },
-    { key: 'rcs', label: 'Route Cards', endpoint: '/route-cards', columns: ['routeCardNo', 'batchNo', 'planQty', 'status'] },
-    { key: 'reports', label: 'Reports', endpoint: '/reports', columns: ['reportDate', 'product.name', 'productionQty', 'rejectionQty'] },
-    { key: 'jobs', label: 'Job Orders', endpoint: '/job-orders', columns: ['jobOrderNo', 'contractorName', 'processRequired', 'status'] },
+    { key: 'products', label: 'Products', endpoint: '/products', columns: ['code', 'name', 'category', 'unit', 'currentStock', 'lastPurchasePrice'], formFields: [{ name: 'code', label: 'Code', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category' }, { name: 'unit', label: 'Unit' }, { name: 'hsnCode', label: 'HSN Code' }, { name: 'gstPercent', label: 'GST %', type: 'number' }, { name: 'currentStock', label: 'Current Stock', type: 'number' }], hasPrint: true, printType: 'production-product' },
+    { key: 'bom', label: 'BOM', endpoint: '/bom', columns: ['bomNo', 'product.name', 'version'], hasPrint: true, printType: 'production-bom' },
+    { key: 'rcs', label: 'Route Cards', endpoint: '/route-cards', columns: ['routeCardNo', 'batchNo', 'planQty', 'status'], hasPrint: true, printType: 'production-route-card' },
+    { key: 'reports', label: 'Reports', endpoint: '/reports', columns: ['reportDate', 'product.name', 'productionQty', 'rejectionQty'], hasPrint: true, printType: 'production-report' },
+    { key: 'jobs', label: 'Job Orders', endpoint: '/job-orders', columns: ['jobOrderNo', 'contractorName', 'processRequired', 'status'], hasPrint: true, printType: 'production-job-order' },
   ]
 };
 

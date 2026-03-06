@@ -8,6 +8,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\GRN;
 use App\Models\GRNItem;
 use App\Models\PurchaseBill;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
@@ -159,7 +160,19 @@ class PurchaseController extends Controller
     public function getPurchaseOrder($id)
     {
         $po = PurchaseOrder::findOrFail($id);
-        $items = PurchaseOrderItem::where('purchaseOrderId', $po->id)->get();
+        $productTable = (new Product())->getTable();
+        $items = DB::table((new PurchaseOrderItem())->getTable() . ' as poi')
+            ->leftJoin("{$productTable} as p", 'poi.productId', '=', 'p.id')
+            ->where('poi.purchaseOrderId', $po->id)
+            ->get([
+                'poi.id',
+                'poi.productId',
+                'poi.quantity',
+                'poi.rate',
+                'poi.gstPercent',
+                'poi.total',
+                'p.name as productName',
+            ]);
         $vendor = Vendor::find($po->vendorId);
 
         return $this->successResponse(array_merge(
@@ -204,7 +217,18 @@ class PurchaseController extends Controller
     public function getGrn($id)
     {
         $grn = GRN::findOrFail($id);
-        $items = GRNItem::where('grnId', $grn->id)->get();
+        $productTable = (new Product())->getTable();
+        $items = DB::table((new GRNItem())->getTable() . ' as gi')
+            ->leftJoin("{$productTable} as p", 'gi.productId', '=', 'p.id')
+            ->where('gi.grnId', $grn->id)
+            ->get([
+                'gi.id',
+                'gi.productId',
+                'gi.quantity',
+                'gi.acceptedQty',
+                'gi.rejectedQty',
+                'p.name as productName',
+            ]);
         $vendor = Vendor::find($grn->vendorId);
 
         return $this->successResponse(array_merge(
@@ -228,7 +252,19 @@ class PurchaseController extends Controller
         $poItems = collect();
 
         if (!empty($bill->purchaseOrderId)) {
-            $poItems = PurchaseOrderItem::where('purchaseOrderId', $bill->purchaseOrderId)->get();
+            $productTable = (new Product())->getTable();
+            $poItems = DB::table((new PurchaseOrderItem())->getTable() . ' as poi')
+                ->leftJoin("{$productTable} as p", 'poi.productId', '=', 'p.id')
+                ->where('poi.purchaseOrderId', $bill->purchaseOrderId)
+                ->get([
+                    'poi.id',
+                    'poi.productId',
+                    'poi.quantity',
+                    'poi.rate',
+                    'poi.gstPercent',
+                    'poi.total',
+                    'p.name as productName',
+                ]);
         }
 
         return $this->successResponse(array_merge(

@@ -172,9 +172,13 @@ Route::prefix('v1')->group(function () {
         Route::put('production/products/{id}', [ProductionController::class, 'updateProduct']);
         Route::delete('production/products/{id}', [ProductionController::class, 'deleteProduct']);
         Route::get('production/bom', [ProductionController::class, 'listBom']);
+        Route::get('production/bom/{id}', [ProductionController::class, 'getBom']);
         Route::get('production/route-cards', [ProductionController::class, 'listRouteCards']);
+        Route::get('production/route-cards/{id}', [ProductionController::class, 'getRouteCard']);
         Route::get('production/reports', [ProductionController::class, 'listReports']);
+        Route::get('production/reports/{id}', [ProductionController::class, 'getReport']);
         Route::get('production/job-orders', [ProductionController::class, 'listJobOrders']);
+        Route::get('production/job-orders/{id}', [ProductionController::class, 'getJobOrder']);
 
         // ── Simulation ────────────────────────────────────────────────────────
         Route::get('simulation/products-with-bom', [SimulationController::class, 'productsWithBom']);

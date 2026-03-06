@@ -46,6 +46,11 @@ const endpointMap = {
     'asset-allocation': (id) => `/assets/allocations/${id}`,
     'asset-sale-memo': (id) => `/assets/sale-memos/${id}`,
     'asset-depreciation-voucher': (id) => `/assets/depreciation-vouchers/${id}`,
+    'production-product': (id) => `/production/products/${id}`,
+    'production-bom': (id) => `/production/bom/${id}`,
+    'production-route-card': (id) => `/production/route-cards/${id}`,
+    'production-report': (id) => `/production/reports/${id}`,
+    'production-job-order': (id) => `/production/job-orders/${id}`,
 };
 
 const fallbackData = {
@@ -176,7 +181,12 @@ const fallbackData = {
     'asset-addition-memo': { assetTag: 'AST-1001', assetName: 'Laptop Dell', invoiceRef: 'INV-AS-22', installationDate: new Date().toISOString(), depreciationRate: 25 },
     'asset-allocation': { assetTag: 'AST-1001', assetName: 'Laptop Dell', employeeName: 'Amit Kumar', department: 'Production', dateAssigned: new Date().toISOString() },
     'asset-sale-memo': { assetTag: 'AST-0902', assetName: 'Laser Printer', saleDate: new Date().toISOString(), saleValue: 15000, bookValue: 12000 },
-    'asset-depreciation-voucher': { year: 2026, assetTag: 'AST-1001', assetName: 'Laptop Dell', openingBalance: 60000, depreciationAmount: 15000, closingBalance: 45000 }
+    'asset-depreciation-voucher': { year: 2026, assetTag: 'AST-1001', assetName: 'Laptop Dell', openingBalance: 60000, depreciationAmount: 15000, closingBalance: 45000 },
+    'production-product': { code: 'FG-ALTO-001', name: 'Alto Assembly Unit', category: 'Finished Good', unit: 'PCS', currentStock: 15, gstPercent: 28 },
+    'production-bom': { bomNo: 'BOM-001', productCode: 'FG-ALTO-001', productName: 'Alto Assembly Unit', version: '1.0', effectiveFrom: new Date().toISOString(), isActive: true },
+    'production-route-card': { routeCardNo: 'RC-001', productCode: 'FG-ALTO-001', productName: 'Alto Assembly Unit', batchNo: 'BATCH-01', planQty: 100, actualQty: 92, status: 'In Progress' },
+    'production-report': { routeCardNo: 'RC-001', productCode: 'FG-ALTO-001', productName: 'Alto Assembly Unit', reportDate: new Date().toISOString(), productionQty: 92, rejectionQty: 4, remarks: 'Shift A report' },
+    'production-job-order': { jobOrderNo: 'JOB-001', contractorName: 'Tech Contractors', processRequired: 'CNC Machining', status: 'Open', createdAt: new Date().toISOString() }
 };
 
 const genericPrintConfigs = {
@@ -197,6 +207,11 @@ const genericPrintConfigs = {
     'asset-allocation': { title: 'Asset Allocation Master', fields: [{ key: 'assetTag', label: 'Asset Tag' }, { key: 'assetName', label: 'Asset Name' }, { key: 'employeeName', label: 'Employee Name' }, { key: 'department', label: 'Department' }, { key: 'dateAssigned', label: 'Date Assigned' }] },
     'asset-sale-memo': { title: 'Asset Sale Memo', fields: [{ key: 'assetTag', label: 'Asset Tag' }, { key: 'assetName', label: 'Asset Name' }, { key: 'saleDate', label: 'Sale Date' }, { key: 'saleValue', label: 'Sale Value' }, { key: 'bookValue', label: 'Book Value' }] },
     'asset-depreciation-voucher': { title: 'Asset Depreciation Voucher', fields: [{ key: 'year', label: 'Year' }, { key: 'assetTag', label: 'Asset Tag' }, { key: 'assetName', label: 'Asset Name' }, { key: 'openingBalance', label: 'Opening Balance' }, { key: 'depreciationAmount', label: 'Depreciation Amount' }, { key: 'closingBalance', label: 'Closing Balance' }] },
+    'production-product': { title: 'Production Product Master', fields: [{ key: 'code', label: 'Code' }, { key: 'name', label: 'Name' }, { key: 'category', label: 'Category' }, { key: 'unit', label: 'Unit' }, { key: 'gstPercent', label: 'GST %' }, { key: 'currentStock', label: 'Current Stock' }] },
+    'production-bom': { title: 'Bill Of Materials (BOM)', fields: [{ key: 'bomNo', label: 'BOM No' }, { key: 'productCode', label: 'Product Code' }, { key: 'productName', label: 'Product Name' }, { key: 'version', label: 'Version' }, { key: 'effectiveFrom', label: 'Effective From' }, { key: 'isActive', label: 'Active' }] },
+    'production-route-card': { title: 'Production Route Card', fields: [{ key: 'routeCardNo', label: 'Route Card No' }, { key: 'productCode', label: 'Product Code' }, { key: 'productName', label: 'Product Name' }, { key: 'batchNo', label: 'Batch No' }, { key: 'planQty', label: 'Planned Qty' }, { key: 'actualQty', label: 'Actual Qty' }, { key: 'status', label: 'Status' }] },
+    'production-report': { title: 'Production Report', fields: [{ key: 'routeCardNo', label: 'Route Card No' }, { key: 'productCode', label: 'Product Code' }, { key: 'productName', label: 'Product Name' }, { key: 'reportDate', label: 'Report Date' }, { key: 'productionQty', label: 'Production Qty' }, { key: 'rejectionQty', label: 'Rejection Qty' }, { key: 'remarks', label: 'Remarks' }] },
+    'production-job-order': { title: 'Production Job Order', fields: [{ key: 'jobOrderNo', label: 'Job Order No' }, { key: 'contractorName', label: 'Contractor Name' }, { key: 'processRequired', label: 'Process Required' }, { key: 'status', label: 'Status' }, { key: 'createdAt', label: 'Created At' }] },
 };
 
 export default function PrintPage() {

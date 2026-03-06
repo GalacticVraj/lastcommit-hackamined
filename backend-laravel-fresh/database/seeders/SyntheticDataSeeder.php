@@ -28,9 +28,16 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\GRN;
 use App\Models\GRNItem;
+use App\Models\PurchaseBill;
+use App\Models\SalesReceiptVoucher;
+use App\Models\BOMHeader;
+use App\Models\ProductionRouteCard;
+use App\Models\ProductionReport;
+use App\Models\JobOrder;
 use App\Models\BankReconciliation;
 use App\Models\CreditCardStatement;
 use App\Services\AutoNumber;
+use Illuminate\Support\Facades\Schema;
 
 class SyntheticDataSeeder extends Seeder
 {
@@ -559,7 +566,89 @@ class SyntheticDataSeeder extends Seeder
             'quantity' => 500,
         ]);
 
-        echo "✅ Purchase cycle data created (POs, GRNs)\n";
+        PurchaseBill::firstOrCreate(['billNo' => 'PB-001'], [
+            'vendorId' => $vendor->id,
+            'purchaseOrderId' => $po->id,
+            'vendorInvoiceNo' => 'V-INV-001',
+            'billDate' => now(),
+            'dueDate' => now()->addDays(15),
+            'taxableValue' => 42500,
+            'cgstAmount' => 3825,
+            'sgstAmount' => 3825,
+            'igstAmount' => 0,
+            'grandTotal' => 50150,
+            'status' => 'Unpaid',
+            'createdBy' => 1,
+        ]);
+
+        echo "✅ Purchase cycle data created (POs, GRNs, Bills)\n";
+
+        $receiptTable = (new SalesReceiptVoucher())->getTable();
+        $receiptPayload = [
+            'customerId' => $customer->id,
+            'invoiceId' => $invoice->id,
+            'receiptDate' => now(),
+            'amount' => 120000,
+            'paymentMode' => 'Bank',
+            'createdBy' => 1,
+        ];
+
+        if (Schema::hasColumn($receiptTable, 'referenceNo')) {
+            $receiptPayload['referenceNo'] = 'UTR-RV001';
+        }
+        if (Schema::hasColumn($receiptTable, 'remarks')) {
+            $receiptPayload['remarks'] = 'Part payment against INV-001';
+        }
+
+        SalesReceiptVoucher::firstOrCreate(['receiptNo' => 'RV-001'], $receiptPayload);
+        echo "✅ Sales receipt voucher seeded\n";
+
+        $bomTable = (new BOMHeader())->getTable();
+        if (Schema::hasTable($bomTable)) {
+            $existingBomId = BOMHeader::where('bomNo', 'BOM-001')->value('id');
+            if (!$existingBomId) {
+                $existingBomId = BOMHeader::create([
+                    'bomNo' => 'BOM-001',
+                    'productId' => $p1->id,
+                    'version' => '1.0',
+                    'effectiveFrom' => now(),
+                    'isActive' => true,
+                    'createdBy' => 1,
+                ])->id;
+            }
+
+            $routeCard = ProductionRouteCard::firstOrCreate(['routeCardNo' => 'RC-001'], [
+                'productId' => $p1->id,
+                'bomHeaderId' => $existingBomId,
+                'batchNo' => 'BATCH-01',
+                'planQty' => 100,
+                'actualQty' => 92,
+                'status' => 'In Progress',
+                'isActive' => true,
+                'createdBy' => 1,
+            ]);
+
+            ProductionReport::firstOrCreate([
+                'routeCardId' => $routeCard->id,
+                'productId' => $p1->id,
+                'reportDate' => now()->startOfDay(),
+            ], [
+                'productionQty' => 92,
+                'rejectionQty' => 4,
+                'remarks' => 'Seeded production report for dashboard/print',
+                'createdBy' => 1,
+            ]);
+
+            JobOrder::firstOrCreate(['jobOrderNo' => 'JOB-001'], [
+                'contractorName' => 'Tech Contractors',
+                'processRequired' => 'CNC Machining',
+                'status' => 'Open',
+                'isActive' => true,
+                'createdBy' => 1,
+            ]);
+
+            echo "✅ Production cycle data created (BOM, Route Card, Report, Job Order)\n";
+        }
 
         // ══════════════════════════════════════════════════════════════════════
         // 4.5 BANK RECONCILIATION - Extended with more records

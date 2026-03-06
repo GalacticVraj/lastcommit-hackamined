@@ -168,12 +168,74 @@ class ProductionController extends Controller
 
     public function listProducts(Request $request)
     {
-        $query = Product::whereNull('deletedAt');
+        $productTable = (new Product())->getTable();
+        $hasDeletedAt = Schema::hasColumn($productTable, 'deletedAt');
+
+        $query = Product::query();
+        if ($hasDeletedAt) {
+            $query->whereNull('deletedAt');
+        }
         if ($search = $request->get('search'))
             $query->where('name', 'like', "%{$search}%");
         if ($request->has('category'))
             $query->where('category', $request->category);
         return $this->paginatedResponse($query->orderBy($request->get('sort_by', 'createdAt'), $request->get('sort_order', 'desc'))->paginate((int) $request->get('per_page', 100)));
+    }
+
+    public function getBom($id)
+    {
+        $record = DB::table((new BOMHeader())->getTable() . ' as b')
+            ->leftJoin((new Product())->getTable() . ' as p', 'b.productId', '=', 'p.id')
+            ->where('b.id', $id)
+            ->select('b.*', 'p.name as productName', 'p.code as productCode')
+            ->first();
+
+        if (!$record) {
+            return $this->errorResponse('BOM not found', 404);
+        }
+
+        return $this->successResponse($record);
+    }
+
+    public function getRouteCard($id)
+    {
+        $record = DB::table((new ProductionRouteCard())->getTable() . ' as rc')
+            ->leftJoin((new Product())->getTable() . ' as p', 'rc.productId', '=', 'p.id')
+            ->where('rc.id', $id)
+            ->select('rc.*', 'p.name as productName', 'p.code as productCode')
+            ->first();
+
+        if (!$record) {
+            return $this->errorResponse('Route card not found', 404);
+        }
+
+        return $this->successResponse($record);
+    }
+
+    public function getReport($id)
+    {
+        $record = DB::table((new ProductionReport())->getTable() . ' as pr')
+            ->leftJoin((new Product())->getTable() . ' as p', 'pr.productId', '=', 'p.id')
+            ->leftJoin((new ProductionRouteCard())->getTable() . ' as rc', 'pr.routeCardId', '=', 'rc.id')
+            ->where('pr.id', $id)
+            ->select('pr.*', 'p.name as productName', 'p.code as productCode', 'rc.routeCardNo')
+            ->first();
+
+        if (!$record) {
+            return $this->errorResponse('Production report not found', 404);
+        }
+
+        return $this->successResponse($record);
+    }
+
+    public function getJobOrder($id)
+    {
+        $record = JobOrder::find($id);
+        if (!$record) {
+            return $this->errorResponse('Job order not found', 404);
+        }
+
+        return $this->successResponse($record);
     }
 
     public function createProduct(Request $request)
