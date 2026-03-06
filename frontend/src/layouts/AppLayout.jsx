@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
+import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, HardHat, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
 import useAuthStore from '../lib/auth';
 
 const navGroups = [
@@ -28,6 +28,7 @@ const navGroups = [
             { to: '/quality', icon: CheckCircle, label: 'Quality', permission: 'quality.view' },
             { to: '/warehouse', icon: Warehouse, label: 'Warehouse', permission: 'warehouse.view' },
             { to: '/logistics', icon: Truck, label: 'Logistics', permission: 'logistics.view' },
+            { to: '/contractors', icon: HardHat, label: 'Contractors', permission: 'contractors.view' },
             { to: '/maintenance', icon: Wrench, label: 'Maintenance', permission: 'maintenance.view' },
             { to: '/assets', icon: Building2, label: 'Assets', permission: 'assets.view' },
         ]
@@ -45,7 +46,7 @@ const routeLabels = {
     '/': 'Dashboard', '/sales': 'Sales', '/purchase': 'Purchase',
     '/production': 'Production', '/simulation': 'Simulation', '/finance': 'Finance',
     '/hr': 'HR', '/quality': 'Quality',
-    '/warehouse': 'Warehouse', '/logistics': 'Logistics', '/maintenance': 'Maintenance',
+    '/warehouse': 'Warehouse', '/logistics': 'Logistics', '/contractors': 'Contractors', '/maintenance': 'Maintenance',
     '/assets': 'Assets', '/statutory': 'Statutory/GST', '/reports': 'Reports',
 };
 

@@ -332,10 +332,10 @@ const qualityConfig = {
   title: 'Quality Management', apiBase: '/quality',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'] },
-    { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'] },
-    { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'] },
-    { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'] },
+    { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'], hasPrint: true, printType: 'quality-iqc' },
+    { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'], hasPrint: true, printType: 'quality-pqc' },
+    { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'], hasPrint: true, printType: 'quality-pdi' },
+    { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'], hasPrint: true, printType: 'quality-qrd' },
   ]
 };
 
@@ -364,14 +364,31 @@ const maintenanceConfig = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'tools', label: 'Tools', endpoint: '/tools', columns: ['assetCode', 'toolName', 'location', 'maintenanceInterval'], formFields: [{ name: 'assetCode', label: 'Asset Code', required: true }, { name: 'toolName', label: 'Tool Name', required: true }, { name: 'location', label: 'Location' }, { name: 'maintenanceInterval', label: 'Maintenance Interval (days)', type: 'number' }] },
     { key: 'charts', label: 'Maintenance Charts', endpoint: '/maintenance-charts', columns: ['tool.toolName', 'scheduledDate', 'status'] },
-    { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'] },
+    { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'], hasPrint: true, printType: 'maintenance-calibration' },
   ]
 };
 
 const assetsConfig = {
   title: 'Asset Management', apiBase: '/assets',
   tabs: [
+    { key: 'dashboard', label: 'Dashboard' },
     { key: 'assets', label: 'Assets', endpoint: '/', columns: ['assetTag', 'name', 'assetGroup', 'purchaseValue', 'currentValue', 'depreciationRate'], formFields: [{ name: 'assetTag', label: 'Asset Tag', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'assetGroup', label: 'Group' }, { name: 'purchaseValue', label: 'Purchase Value', type: 'number' }, { name: 'depreciationRate', label: 'Depreciation Rate %', type: 'number' }] },
+    { key: 'addition-memos', label: 'Additions', endpoint: '/addition-memos', columns: ['assetTag', 'assetName', 'installationDate', 'depreciationRate'], hasPrint: true, printType: 'asset-addition-memo' },
+    { key: 'allocations', label: 'Allocations', endpoint: '/allocations', columns: ['assetTag', 'assetName', 'dateAssigned', 'status'], hasPrint: true, printType: 'asset-allocation' },
+    { key: 'sale-memos', label: 'Sales', endpoint: '/sale-memos', columns: ['assetTag', 'assetName', 'saleDate', 'saleValue'], hasPrint: true, printType: 'asset-sale-memo' },
+    { key: 'depreciation-vouchers', label: 'Depreciation', endpoint: '/depreciation-vouchers', columns: ['assetTag', 'assetName', 'year', 'depreciationAmount'], hasPrint: true, printType: 'asset-depreciation-voucher' },
+  ]
+};
+
+const contractorsConfig = {
+  title: 'Contractors Management', apiBase: '/contractors',
+  tabs: [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'workers', label: 'Workers', endpoint: '/workers', columns: ['workerId', 'workerName', 'contractorFirmName', 'skillLevel', 'isActive'], formFields: [{ name: 'workerName', label: 'Worker Name', required: true }, { name: 'vendorId', label: 'Contractor/Vendor ID', type: 'number' }, { name: 'skillLevel', label: 'Skill Level', type: 'select', options: ['Unskilled', 'Semi-Skilled', 'Skilled', 'Highly Skilled'] }, { name: 'aadharNo', label: 'Aadhar No' }] },
+    { key: 'salary-heads', label: 'Salary Heads', endpoint: '/salary-heads', columns: ['role', 'dailyRate', 'overtimeRate'], formFields: [{ name: 'role', label: 'Role', required: true }, { name: 'dailyRate', label: 'Daily Rate', type: 'number' }, { name: 'overtimeRate', label: 'OT Rate', type: 'number' }] },
+    { key: 'salary-sheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['month', 'year', 'totalPayable', 'status'], hasPrint: true, printType: 'contractor-salary-sheet' },
+    { key: 'advances', label: 'Advances', endpoint: '/advances', columns: ['workerName', 'amount', 'purpose', 'status'], hasPrint: true, printType: 'contractor-advance-memo' },
+    { key: 'voucher-payments', label: 'Voucher Pay', endpoint: '/voucher-payments', columns: ['voucherNo', 'paymentDate', 'netAmountPaid'], hasPrint: true, printType: 'contractor-voucher-payment' },
   ]
 };
 
@@ -413,6 +430,7 @@ export default function App() {
           <Route path="statutory" element={<GenericModulePage {...statutoryConfig} />} />
           <Route path="logistics" element={<GenericModulePage {...logisticsConfig} />} />
           <Route path="maintenance" element={<GenericModulePage {...maintenanceConfig} />} />
+          <Route path="contractors" element={<GenericModulePage {...contractorsConfig} />} />
           <Route path="assets" element={<GenericModulePage {...assetsConfig} />} />
           <Route path="reports" element={<ReportsPage />} />
 
