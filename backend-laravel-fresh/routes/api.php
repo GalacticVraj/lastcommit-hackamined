@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\StatutoryController;
 use App\Http\Controllers\Api\LogisticsController;
+use App\Http\Controllers\Api\ContractorsController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\AssetsController;
 use App\Http\Controllers\Api\ReportsController;

@@ -332,84 +332,10 @@ const qualityConfig = {
   title: 'Quality Management', apiBase: '/quality',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    {
-      key: 'iqc',
-      label: 'IQC (Incoming)',
-      endpoint: '/iqc',
-      columns: ['grnRef', 'item', 'sampleQty', 'visualCheck', 'dimensionCheck', 'status'],
-      hasPrint: true,
-      printType: 'quality-iqc',
-      formFields: [
-        { name: 'grnId', label: 'GRN Ref', type: 'select', optionsEndpoint: '/purchase/grns', optionsValue: 'id', optionsLabel: 'grnNo' },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'sampleQty', label: 'Sample Qty', type: 'number', required: true },
-        { name: 'visualCheck', label: 'Visual Check', type: 'select', options: ['Pass', 'Fail'], required: true },
-        { name: 'dimensionCheck', label: 'Dimension Check', type: 'select', options: ['Pass', 'Fail'], required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['Pass', 'Fail', 'Hold'] },
-        { name: 'remarks', label: 'Remarks' },
-      ]
-    },
-    {
-      key: 'mts',
-      label: 'MTS',
-      endpoint: '/mts',
-      columns: ['mtaRef', 'item', 'qtyChecked', 'status'],
-      hasPrint: true,
-      printType: 'quality-mts',
-      formFields: [
-        { name: 'mtaRef', label: 'MTA Ref' },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'qtyChecked', label: 'Qty Checked', type: 'number', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['OK', 'Damaged'], required: true },
-        { name: 'remarks', label: 'Remarks' },
-      ]
-    },
-    {
-      key: 'pqc',
-      label: 'PQC',
-      endpoint: '/pqc',
-      columns: ['routeCardRef', 'stageName', 'operator', 'status'],
-      hasPrint: true,
-      printType: 'quality-pqc',
-      formFields: [
-        { name: 'routeCardRef', label: 'Route Card Ref', required: true },
-        { name: 'stageName', label: 'Stage Name', required: true },
-        { name: 'operator', label: 'Operator', required: true },
-        { name: 'observations', label: 'Observations' },
-        { name: 'status', label: 'Status', type: 'select', options: ['Open', 'Closed'] },
-      ]
-    },
-    {
-      key: 'pdi',
-      label: 'PDI (Pre-Dispatch)',
-      endpoint: '/pdi',
-      columns: ['soRef', 'boxNo', 'packagingCondition', 'labelAccuracy', 'overallResult'],
-      hasPrint: true,
-      printType: 'quality-pdi',
-      formFields: [
-        { name: 'soRef', label: 'SO Ref', required: true },
-        { name: 'boxNo', label: 'Box No', required: true },
-        { name: 'packagingCondition', label: 'Packaging Condition', type: 'select', options: ['Good', 'Damaged'], required: true },
-        { name: 'labelAccuracy', label: 'Label Accuracy', type: 'select', options: ['Accurate', 'Mismatch'], required: true },
-        { name: 'overallResult', label: 'Overall Result', type: 'select', options: ['Pass', 'Fail', 'Hold'] },
-        { name: 'remarks', label: 'Remarks' },
-      ]
-    },
-    {
-      key: 'qrd',
-      label: 'QRD',
-      endpoint: '/qrd',
-      columns: ['rejectionId', 'item', 'qty', 'action'],
-      hasPrint: true,
-      printType: 'quality-qrd',
-      formFields: [
-        { name: 'rejectionId', label: 'Rejection ID' },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label' },
-        { name: 'qty', label: 'Qty', type: 'number', required: true },
-        { name: 'action', label: 'Action', type: 'select', options: ['Scrap', 'Return', 'Rework', 'Downgrade'], required: true },
-        { name: 'remarks', label: 'Remarks' },
-      ]
-    },
+    { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'], hasPrint: true, printType: 'quality-iqc' },
+    { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'], hasPrint: true, printType: 'quality-pqc' },
+    { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'], hasPrint: true, printType: 'quality-pdi' },
+    { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'], hasPrint: true, printType: 'quality-qrd' },
   ]
 };
 
@@ -418,50 +344,6 @@ const warehouseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'warehouses', label: 'Warehouses', endpoint: '/warehouses', columns: ['name', 'address', 'managerName'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'address', label: 'Address' }, { name: 'managerName', label: 'Manager Name' }] },
-    {
-      key: 'opening', label: 'Warehouse Opening', endpoint: '/openings', columns: ['warehouseName', 'itemName', 'openingQty', 'value', 'date'],
-      formFields: [
-        { name: 'warehouseId', label: 'Warehouse', type: 'select', optionsEndpoint: '/warehouse/dropdown/warehouses', optionsValue: 'id', optionsLabel: 'label' },
-        { name: 'productId', label: 'Item Name', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'openingQty', label: 'Opening Qty', type: 'number', required: true },
-        { name: 'value', label: 'Value', type: 'number', required: true },
-        { name: 'date', label: 'Date', type: 'date', required: true },
-      ]
-    },
-    {
-      key: 'dispatch-srv', label: 'Dispatch SRV', endpoint: '/dispatch-srv', columns: ['srvNo', 'date', 'partyName', 'itemName', 'qty', 'returnExpectedDate'], hasPrint: true, printType: 'warehouse-dispatch-srv',
-      formFields: [
-        { name: 'srvNo', label: 'SRV No' },
-        { name: 'date', label: 'Date', type: 'date', required: true },
-        { name: 'partyName', label: 'Party Name', required: true },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'qty', label: 'Qty', type: 'number', required: true },
-        { name: 'returnExpected', label: 'Return Expected', type: 'select', options: ['false', 'true'] },
-        { name: 'returnExpectedDate', label: 'Return Expected Date', type: 'date' },
-      ]
-    },
-    {
-      key: 'transfers', label: 'Stock Transfer', endpoint: '/transfers', columns: ['transferId', 'fromWarehouse', 'toWarehouse', 'itemName', 'qty', 'status'], hasPrint: true, printType: 'warehouse-stock-transfer',
-      formFields: [
-        { name: 'transferId', label: 'Transfer ID' },
-        { name: 'fromWarehouseId', label: 'From Warehouse', type: 'select', optionsEndpoint: '/warehouse/dropdown/warehouses', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'toWarehouseId', label: 'To Warehouse', type: 'select', optionsEndpoint: '/warehouse/dropdown/warehouses', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'qty', label: 'Qty', type: 'number', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['Transferred', 'Pending'] },
-      ]
-    },
-    {
-      key: 'material-receipts', label: 'Material Receipt', endpoint: '/material-receipts', columns: ['receiptId', 'sourceDocRef', 'itemName', 'qtyReceived', 'receiptDate'], hasPrint: true, printType: 'warehouse-material-receipt',
-      formFields: [
-        { name: 'receiptId', label: 'Receipt ID' },
-        { name: 'sourceDocRef', label: 'Source Doc Ref' },
-        { name: 'warehouseId', label: 'Warehouse', type: 'select', optionsEndpoint: '/warehouse/dropdown/warehouses', optionsValue: 'id', optionsLabel: 'label' },
-        { name: 'productId', label: 'Item', type: 'select', optionsEndpoint: '/warehouse/dropdown/products', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'qtyReceived', label: 'Qty Received', type: 'number', required: true },
-        { name: 'receiptDate', label: 'Receipt Date', type: 'date', required: true },
-      ]
-    },
     { key: 'stocks', label: 'Stocks', endpoint: '/stocks', columns: ['warehouse.name', 'product.name', 'quantity', 'value'] },
   ]
 };
@@ -476,141 +358,13 @@ const logisticsConfig = {
   ]
 };
 
-const contractorsConfig = {
-  title: 'Contractors HR', apiBase: '/contractors',
-  tabs: [
-    { key: 'dashboard', label: 'Dashboard' },
-    {
-      key: 'workers',
-      label: 'Employee Master',
-      endpoint: '/workers',
-      columns: ['workerId', 'contractorFirmName', 'workerName', 'skillLevel', 'aadharNo'],
-      formFields: [
-        { name: 'workerId', label: 'Worker ID' },
-        { name: 'vendorId', label: 'Contractor Firm Name', type: 'select', optionsEndpoint: '/contractors/dropdown/vendors', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'workerName', label: 'Worker Name', required: true },
-        { name: 'skillLevel', label: 'Skill Level', type: 'select', options: ['Skilled', 'Unskilled'], required: true },
-        { name: 'aadharNo', label: 'Aadhar No' },
-      ]
-    },
-    {
-      key: 'salary-heads',
-      label: 'Salary Head Master',
-      endpoint: '/salary-heads',
-      columns: ['role', 'dailyRate', 'overtimeRate'],
-      formFields: [
-        { name: 'role', label: 'Role', required: true },
-        { name: 'dailyRate', label: 'Daily Rate', type: 'number', required: true },
-        { name: 'overtimeRate', label: 'Overtime Rate', type: 'number', required: true },
-      ]
-    },
-    {
-      key: 'salary-structures',
-      label: 'Salary Structure',
-      endpoint: '/salary-structures',
-      columns: ['workerName', 'role', 'applicableDailyRate', 'overtimeRate'],
-      formFields: [
-        { name: 'workerId', label: 'Worker Name', type: 'select', optionsEndpoint: '/contractors/dropdown/workers', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'role', label: 'Role', required: true },
-        { name: 'applicableDailyRate', label: 'Applicable Daily Rate', type: 'number', required: true },
-        { name: 'overtimeRate', label: 'OT Rate', type: 'number', required: true },
-      ]
-    },
-    {
-      key: 'salary-sheets',
-      label: 'Salary Sheet',
-      endpoint: '/salary-sheets',
-      columns: ['contractorName', 'month', 'workerName', 'daysWorked', 'overtimeHours', 'totalPayable'],
-      hasPrint: true,
-      printType: 'contractor-salary-sheet',
-      formFields: [
-        { name: 'vendorId', label: 'Contractor Name', type: 'select', optionsEndpoint: '/contractors/dropdown/vendors', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'workerId', label: 'Worker Name', type: 'select', optionsEndpoint: '/contractors/dropdown/workers', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'month', label: 'Month', required: true },
-        { name: 'year', label: 'Year', type: 'number', required: true },
-        { name: 'daysWorked', label: 'Days Worked', type: 'number', required: true },
-        { name: 'overtimeHours', label: 'Overtime Hours', type: 'number', required: true },
-        { name: 'dailyRate', label: 'Daily Rate', type: 'number' },
-        { name: 'overtimeRate', label: 'OT Rate', type: 'number' },
-      ]
-    },
-    {
-      key: 'advances',
-      label: 'Advance Memo',
-      endpoint: '/advances',
-      columns: ['contractorName', 'date', 'amount', 'remarks'],
-      hasPrint: true,
-      printType: 'contractor-advance-memo',
-      formFields: [
-        { name: 'vendorId', label: 'Contractor Name', type: 'select', optionsEndpoint: '/contractors/dropdown/vendors', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'date', label: 'Date', type: 'date', required: true },
-        { name: 'amount', label: 'Amount', type: 'number', required: true },
-        { name: 'remarks', label: 'Remarks' },
-      ]
-    },
-    {
-      key: 'voucher-payments',
-      label: 'Voucher Payment',
-      endpoint: '/voucher-payments',
-      columns: ['voucherNo', 'contractorName', 'salarySheetId', 'netAmountPaid', 'tdsDeducted'],
-      hasPrint: true,
-      printType: 'contractor-voucher-payment',
-      formFields: [
-        { name: 'voucherNo', label: 'Voucher No' },
-        { name: 'vendorId', label: 'Contractor Name', type: 'select', optionsEndpoint: '/contractors/dropdown/vendors', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'salarySheetId', label: 'Salary Sheet Ref', type: 'number' },
-        { name: 'netAmountPaid', label: 'Net Amount Paid', type: 'number', required: true },
-        { name: 'tdsDeducted', label: 'TDS Deducted', type: 'number', required: true },
-        { name: 'paymentDate', label: 'Payment Date', type: 'date', required: true },
-      ]
-    },
-  ]
-};
-
 const maintenanceConfig = {
   title: 'Maintenance', apiBase: '/maintenance',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    {
-      key: 'tools', label: 'Tool Master', endpoint: '/tools', columns: ['assetCode', 'toolName', 'location', 'maintenanceIntervalDays'],
-      formFields: [
-        { name: 'assetCode', label: 'Asset Code' },
-        { name: 'toolName', label: 'Tool Name', required: true },
-        { name: 'location', label: 'Location' },
-        { name: 'maintenanceIntervalDays', label: 'Maintenance Interval (Days)', type: 'number', required: true },
-      ]
-    },
-    {
-      key: 'charts', label: 'Tool Maintenance Chart', endpoint: '/maintenance-charts', columns: ['toolName', 'scheduledDate', 'taskList', 'status'],
-      formFields: [
-        { name: 'toolId', label: 'Tool Ref', type: 'select', optionsEndpoint: '/maintenance/dropdown/tools', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'scheduledDate', label: 'Scheduled Date', type: 'date', required: true },
-        { name: 'taskList', label: 'Task List', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['Scheduled', 'Completed'] },
-      ]
-    },
-    {
-      key: 'calibration', label: 'Tool Calibration Report', endpoint: '/calibration', columns: ['toolName', 'calibrationDate', 'standardValue', 'actualValue', 'result'], hasPrint: true, printType: 'maintenance-calibration',
-      formFields: [
-        { name: 'toolId', label: 'Tool Ref', type: 'select', optionsEndpoint: '/maintenance/dropdown/tools', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'calibrationDate', label: 'Calibration Date', type: 'date', required: true },
-        { name: 'standardValue', label: 'Standard Value', type: 'number', required: true },
-        { name: 'actualValue', label: 'Actual Value', type: 'number', required: true },
-        { name: 'result', label: 'Result', type: 'select', options: ['Pass', 'Fail'], required: true },
-      ]
-    },
-    {
-      key: 'rectification', label: 'Rectification Memo', endpoint: '/rectification', columns: ['jobId', 'toolName', 'issue', 'cost', 'technician'], hasPrint: true, printType: 'maintenance-rectification',
-      formFields: [
-        { name: 'jobId', label: 'Job ID' },
-        { name: 'toolId', label: 'Tool Ref', type: 'select', optionsEndpoint: '/maintenance/dropdown/tools', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'issue', label: 'Issue', required: true },
-        { name: 'sparesUsed', label: 'Spares Used' },
-        { name: 'cost', label: 'Cost', type: 'number', required: true },
-        { name: 'technician', label: 'Technician' },
-        { name: 'status', label: 'Status', type: 'select', options: ['Open', 'Closed'] },
-      ]
-    },
+    { key: 'tools', label: 'Tools', endpoint: '/tools', columns: ['assetCode', 'toolName', 'location', 'maintenanceInterval'], formFields: [{ name: 'assetCode', label: 'Asset Code', required: true }, { name: 'toolName', label: 'Tool Name', required: true }, { name: 'location', label: 'Location' }, { name: 'maintenanceInterval', label: 'Maintenance Interval (days)', type: 'number' }] },
+    { key: 'charts', label: 'Maintenance Charts', endpoint: '/maintenance-charts', columns: ['tool.toolName', 'scheduledDate', 'status'] },
+    { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'], hasPrint: true, printType: 'maintenance-calibration' },
   ]
 };
 
@@ -618,77 +372,23 @@ const assetsConfig = {
   title: 'Asset Management', apiBase: '/assets',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    {
-      key: 'assets',
-      label: 'Fixed Asset Master',
-      endpoint: '',
-      columns: ['assetTag', 'name', 'assetGroup', 'purchaseDate', 'value', 'currentValue'],
-      formFields: [
-        { name: 'assetTag', label: 'Asset Tag' },
-        { name: 'name', label: 'Name', required: true },
-        { name: 'assetGroup', label: 'Group', type: 'select', options: ['IT', 'Plant', 'Furniture'], required: true },
-        { name: 'purchaseDate', label: 'Purchase Date', type: 'date' },
-        { name: 'value', label: 'Value', type: 'number', required: true },
-        { name: 'depreciationRate', label: 'Depreciation Rate', type: 'number' },
-      ]
-    },
-    {
-      key: 'addition-memos',
-      label: 'Asset Addition Memo',
-      endpoint: '/addition-memos',
-      columns: ['assetTag', 'invoiceRef', 'installationDate', 'depreciationRate'],
-      hasPrint: true,
-      printType: 'asset-addition-memo',
-      formFields: [
-        { name: 'assetId', label: 'Asset Ref', type: 'select', optionsEndpoint: '/assets/dropdown/assets', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'invoiceRef', label: 'Invoice Ref', required: true },
-        { name: 'installationDate', label: 'Installation Date', type: 'date', required: true },
-        { name: 'depreciationRate', label: 'Depreciation Rate', type: 'number', required: true },
-      ]
-    },
-    {
-      key: 'allocations',
-      label: 'Asset Allocation Master',
-      endpoint: '/allocations',
-      columns: ['assetTag', 'employeeName', 'department', 'dateAssigned'],
-      hasPrint: true,
-      printType: 'asset-allocation',
-      formFields: [
-        { name: 'assetId', label: 'Asset Tag', type: 'select', optionsEndpoint: '/assets/dropdown/assets', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'employeeName', label: 'Employee Name', required: true },
-        { name: 'department', label: 'Department', required: true },
-        { name: 'dateAssigned', label: 'Date Assigned', type: 'date', required: true },
-      ]
-    },
-    {
-      key: 'sale-memos',
-      label: 'Asset Sale Memo',
-      endpoint: '/sale-memos',
-      columns: ['assetTag', 'saleDate', 'saleValue', 'bookValue'],
-      hasPrint: true,
-      printType: 'asset-sale-memo',
-      formFields: [
-        { name: 'assetId', label: 'Asset Tag', type: 'select', optionsEndpoint: '/assets/dropdown/assets', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'saleDate', label: 'Sale Date', type: 'date', required: true },
-        { name: 'saleValue', label: 'Sale Value', type: 'number', required: true },
-        { name: 'bookValue', label: 'Book Value', type: 'number', required: true },
-      ]
-    },
-    {
-      key: 'depreciation-vouchers',
-      label: 'Asset Depreciation Voucher',
-      endpoint: '/depreciation-vouchers',
-      columns: ['year', 'assetTag', 'openingBalance', 'depreciationAmount', 'closingBalance'],
-      hasPrint: true,
-      printType: 'asset-depreciation-voucher',
-      formFields: [
-        { name: 'year', label: 'Year', type: 'number', required: true },
-        { name: 'assetId', label: 'Asset Tag', type: 'select', optionsEndpoint: '/assets/dropdown/assets', optionsValue: 'id', optionsLabel: 'label', required: true },
-        { name: 'openingBalance', label: 'Opening Balance', type: 'number', required: true },
-        { name: 'depreciationAmount', label: 'Depreciation Amount', type: 'number', required: true },
-        { name: 'closingBalance', label: 'Closing Balance', type: 'number' },
-      ]
-    },
+    { key: 'assets', label: 'Assets', endpoint: '/', columns: ['assetTag', 'name', 'assetGroup', 'purchaseValue', 'currentValue', 'depreciationRate'], formFields: [{ name: 'assetTag', label: 'Asset Tag', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'assetGroup', label: 'Group' }, { name: 'purchaseValue', label: 'Purchase Value', type: 'number' }, { name: 'depreciationRate', label: 'Depreciation Rate %', type: 'number' }] },
+    { key: 'addition-memos', label: 'Additions', endpoint: '/addition-memos', columns: ['assetTag', 'assetName', 'installationDate', 'depreciationRate'], hasPrint: true, printType: 'asset-addition-memo' },
+    { key: 'allocations', label: 'Allocations', endpoint: '/allocations', columns: ['assetTag', 'assetName', 'dateAssigned', 'status'], hasPrint: true, printType: 'asset-allocation' },
+    { key: 'sale-memos', label: 'Sales', endpoint: '/sale-memos', columns: ['assetTag', 'assetName', 'saleDate', 'saleValue'], hasPrint: true, printType: 'asset-sale-memo' },
+    { key: 'depreciation-vouchers', label: 'Depreciation', endpoint: '/depreciation-vouchers', columns: ['assetTag', 'assetName', 'year', 'depreciationAmount'], hasPrint: true, printType: 'asset-depreciation-voucher' },
+  ]
+};
+
+const contractorsConfig = {
+  title: 'Contractors Management', apiBase: '/contractors',
+  tabs: [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'workers', label: 'Workers', endpoint: '/workers', columns: ['workerId', 'workerName', 'contractorFirmName', 'skillLevel', 'isActive'], formFields: [{ name: 'workerName', label: 'Worker Name', required: true }, { name: 'vendorId', label: 'Contractor/Vendor ID', type: 'number' }, { name: 'skillLevel', label: 'Skill Level', type: 'select', options: ['Unskilled', 'Semi-Skilled', 'Skilled', 'Highly Skilled'] }, { name: 'aadharNo', label: 'Aadhar No' }] },
+    { key: 'salary-heads', label: 'Salary Heads', endpoint: '/salary-heads', columns: ['role', 'dailyRate', 'overtimeRate'], formFields: [{ name: 'role', label: 'Role', required: true }, { name: 'dailyRate', label: 'Daily Rate', type: 'number' }, { name: 'overtimeRate', label: 'OT Rate', type: 'number' }] },
+    { key: 'salary-sheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['month', 'year', 'totalPayable', 'status'], hasPrint: true, printType: 'contractor-salary-sheet' },
+    { key: 'advances', label: 'Advances', endpoint: '/advances', columns: ['workerName', 'amount', 'purpose', 'status'], hasPrint: true, printType: 'contractor-advance-memo' },
+    { key: 'voucher-payments', label: 'Voucher Pay', endpoint: '/voucher-payments', columns: ['voucherNo', 'paymentDate', 'netAmountPaid'], hasPrint: true, printType: 'contractor-voucher-payment' },
   ]
 };
 
@@ -730,6 +430,7 @@ export default function App() {
           <Route path="statutory" element={<GenericModulePage {...statutoryConfig} />} />
           <Route path="logistics" element={<GenericModulePage {...logisticsConfig} />} />
           <Route path="maintenance" element={<GenericModulePage {...maintenanceConfig} />} />
+          <Route path="contractors" element={<GenericModulePage {...contractorsConfig} />} />
           <Route path="assets" element={<GenericModulePage {...assetsConfig} />} />
           <Route path="reports" element={<ReportsPage />} />
 
