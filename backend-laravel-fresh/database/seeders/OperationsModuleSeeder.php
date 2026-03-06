@@ -9,26 +9,41 @@ use Illuminate\Support\Facades\Schema;
 
 class OperationsModuleSeeder extends Seeder
 {
+    private function tableName(array $candidates): ?string
+    {
+        foreach ($candidates as $table) {
+            if (Schema::hasTable($table)) {
+                return $table;
+            }
+        }
+
+        return null;
+    }
+
     public function run(): void
     {
         $now = Carbon::now();
 
-        if (!Schema::hasTable('Product') || !Schema::hasTable('Vendor')) {
+        $productTable = $this->tableName(['Product', 'products']);
+        $vendorTable = $this->tableName(['Vendor', 'vendors']);
+        $warehouseTable = $this->tableName(['Warehouse', 'warehouses']);
+
+        if (!$productTable || !$vendorTable) {
             return;
         }
 
-        $productIds = DB::table('Product')->orderBy('id')->limit(5)->pluck('id')->values();
-        $vendorIds = DB::table('Vendor')->orderBy('id')->limit(3)->pluck('id')->values();
+        $productIds = DB::table($productTable)->orderBy('id')->limit(5)->pluck('id')->values();
+        $vendorIds = DB::table($vendorTable)->orderBy('id')->limit(3)->pluck('id')->values();
 
         if ($productIds->isEmpty() || $vendorIds->isEmpty()) {
             return;
         }
 
         $warehouseId = null;
-        if (Schema::hasTable('Warehouse')) {
-            $warehouseId = DB::table('Warehouse')->orderBy('id')->value('id');
+        if ($warehouseTable) {
+            $warehouseId = DB::table($warehouseTable)->orderBy('id')->value('id');
             if (!$warehouseId) {
-                $warehouseId = DB::table('Warehouse')->insertGetId([
+                $warehouseId = DB::table($warehouseTable)->insertGetId([
                     'name' => 'Main Store',
                     'address' => 'Plant 1',
                     'managerName' => 'Store Manager',

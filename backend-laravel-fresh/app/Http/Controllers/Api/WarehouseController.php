@@ -20,6 +20,8 @@ class WarehouseController extends Controller
 
     public function dashboard()
     {
+        $productTable = (new Product())->getTable();
+
         $stats = [
             'totalWarehouses' => Warehouse::count(),
             'totalItems' => Product::count(),
@@ -37,7 +39,7 @@ class WarehouseController extends Controller
             ['name' => 'Receipts', 'value' => $stats['materialReceipts']],
         ];
 
-        $topStock = DB::table('Product')
+        $topStock = DB::table($productTable)
             ->whereNull('deletedAt')
             ->orderByDesc('currentStock')
             ->limit(8)
@@ -163,9 +165,12 @@ class WarehouseController extends Controller
 
     public function listOpenings(Request $request)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('WarehouseOpening as o')
-            ->leftJoin('Warehouse as w', 'o.warehouseId', '=', 'w.id')
-            ->leftJoin('Product as p', 'o.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as w", 'o.warehouseId', '=', 'w.id')
+            ->leftJoin("{$productTable} as p", 'o.productId', '=', 'p.id')
             ->whereNull('o.deletedAt')
             ->select('o.*', 'w.name as warehouseName', 'p.name as itemName');
         return $this->paginatedResponse($query->orderByDesc('o.id')->paginate($this->perPage($request)));
@@ -195,9 +200,12 @@ class WarehouseController extends Controller
 
     public function getOpening($id)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('WarehouseOpening as o')
-            ->leftJoin('Warehouse as w', 'o.warehouseId', '=', 'w.id')
-            ->leftJoin('Product as p', 'o.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as w", 'o.warehouseId', '=', 'w.id')
+            ->leftJoin("{$productTable} as p", 'o.productId', '=', 'p.id')
             ->where('o.id', $id)
             ->select('o.*', 'w.name as warehouseName', 'p.name as itemName')
             ->first();
@@ -235,8 +243,10 @@ class WarehouseController extends Controller
 
     public function listDispatchSrv(Request $request)
     {
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('DispatchSRV as d')
-            ->leftJoin('Product as p', 'd.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'd.productId', '=', 'p.id')
             ->whereNull('d.deletedAt')
             ->select('d.*', 'p.name as itemName');
         return $this->paginatedResponse($query->orderByDesc('d.id')->paginate($this->perPage($request)));
@@ -267,8 +277,10 @@ class WarehouseController extends Controller
 
     public function getDispatchSrv($id)
     {
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('DispatchSRV as d')
-            ->leftJoin('Product as p', 'd.productId', '=', 'p.id')
+            ->leftJoin("{$productTable} as p", 'd.productId', '=', 'p.id')
             ->where('d.id', $id)
             ->select('d.*', 'p.name as itemName')
             ->first();
@@ -308,10 +320,13 @@ class WarehouseController extends Controller
 
     public function listTransfers(Request $request)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('WarehouseStockTransfer as t')
-            ->leftJoin('Warehouse as fw', 't.fromWarehouseId', '=', 'fw.id')
-            ->leftJoin('Warehouse as tw', 't.toWarehouseId', '=', 'tw.id')
-            ->leftJoin('Product as p', 't.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as fw", 't.fromWarehouseId', '=', 'fw.id')
+            ->leftJoin("{$warehouseTable} as tw", 't.toWarehouseId', '=', 'tw.id')
+            ->leftJoin("{$productTable} as p", 't.productId', '=', 'p.id')
             ->whereNull('t.deletedAt')
             ->select('t.*', 'fw.name as fromWarehouse', 'tw.name as toWarehouse', 'p.name as itemName');
         return $this->paginatedResponse($query->orderByDesc('t.id')->paginate($this->perPage($request)));
@@ -336,10 +351,13 @@ class WarehouseController extends Controller
 
     public function getTransfer($id)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('WarehouseStockTransfer as t')
-            ->leftJoin('Warehouse as fw', 't.fromWarehouseId', '=', 'fw.id')
-            ->leftJoin('Warehouse as tw', 't.toWarehouseId', '=', 'tw.id')
-            ->leftJoin('Product as p', 't.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as fw", 't.fromWarehouseId', '=', 'fw.id')
+            ->leftJoin("{$warehouseTable} as tw", 't.toWarehouseId', '=', 'tw.id')
+            ->leftJoin("{$productTable} as p", 't.productId', '=', 'p.id')
             ->where('t.id', $id)
             ->select('t.*', 'fw.name as fromWarehouse', 'tw.name as toWarehouse', 'p.name as itemName')
             ->first();
@@ -378,9 +396,12 @@ class WarehouseController extends Controller
 
     public function listMaterialReceipts(Request $request)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $query = DB::table('WarehouseMaterialReceipt as r')
-            ->leftJoin('Warehouse as w', 'r.warehouseId', '=', 'w.id')
-            ->leftJoin('Product as p', 'r.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as w", 'r.warehouseId', '=', 'w.id')
+            ->leftJoin("{$productTable} as p", 'r.productId', '=', 'p.id')
             ->whereNull('r.deletedAt')
             ->select('r.*', 'w.name as warehouseName', 'p.name as itemName');
         return $this->paginatedResponse($query->orderByDesc('r.id')->paginate($this->perPage($request)));
@@ -410,9 +431,12 @@ class WarehouseController extends Controller
 
     public function getMaterialReceipt($id)
     {
+        $warehouseTable = (new Warehouse())->getTable();
+        $productTable = (new Product())->getTable();
+
         $record = DB::table('WarehouseMaterialReceipt as r')
-            ->leftJoin('Warehouse as w', 'r.warehouseId', '=', 'w.id')
-            ->leftJoin('Product as p', 'r.productId', '=', 'p.id')
+            ->leftJoin("{$warehouseTable} as w", 'r.warehouseId', '=', 'w.id')
+            ->leftJoin("{$productTable} as p", 'r.productId', '=', 'p.id')
             ->where('r.id', $id)
             ->select('r.*', 'w.name as warehouseName', 'p.name as itemName')
             ->first();

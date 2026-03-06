@@ -19,7 +19,7 @@ class AIDemoDataSeeder extends Seeder
         DB::table('Invoice')->delete();
         DB::table('PurchaseOrder')->delete();
         DB::table('ProductionRouteCard')->delete();
-        DB::table('Product')->delete();
+        DB::table('products')->delete();
         DB::table('Customer')->delete();
         DB::table('Vendor')->delete();
         DB::table('Employee')->delete();
@@ -42,7 +42,7 @@ class AIDemoDataSeeder extends Seeder
         ]);
 
         // 3. Products
-        $p1 = DB::table('Product')->insertGetId([
+        $p1 = DB::table('products')->insertGetId([
             'code' => 'PROD-01',
             'name' => 'Industrial Generator X1',
             'category' => 'Engineering',
@@ -52,7 +52,7 @@ class AIDemoDataSeeder extends Seeder
             'isActive' => true,
             'createdAt' => now()
         ]);
-        $p2 = DB::table('Product')->insertGetId([
+        $p2 = DB::table('products')->insertGetId([
             'code' => 'PROD-02',
             'name' => 'Solar Panel Kit Y2',
             'category' => 'Renewables',

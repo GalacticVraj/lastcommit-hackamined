@@ -68,13 +68,7 @@ class SimulationDemoSeeder extends Seeder
                     'name' => $pData['item_name'],
                     'category' => $pData['category'],
                     'unit' => $pData['unit'],
-                    'lastPurchasePrice' => $pData['last_purchase_price'],
-                    // These fields might not exist in Product table based on erp_tables migration, 
-                    // but the prompt says 0.50 man_hours etc. 
-                    // If they don't exist, we skip or add them. 
-                    // Checking migration erp_tables again... it doesn't have man_hours_per_unit.
-                    // But SimulationController line 37 uses $product->manHoursPerUnit.
-                    // I'll stick to what the seeder prompt says. 
+                    'lastSalePrice' => $pData['last_purchase_price'], // Use lastSalePrice instead of lastPurchasePrice
                 ]
             );
         }
@@ -110,8 +104,8 @@ class SimulationDemoSeeder extends Seeder
         // 4. BOM Headers and Items
         // BOM for Steel Frame
         $bomA = \App\Models\BOMHeader::updateOrCreate(
-            ['product_id' => $prodA->id],
-            ['bom_no' => 'BOM-SF-001', 'is_active' => true]
+            ['productId' => $prodA->id], // Changed product_id to productId
+            ['bomNo' => 'BOM-SF-001', 'isActive' => true] // Changed bom_no to bomNo, is_active to isActive
         );
         \App\Models\BOMItem::updateOrCreate(
             ['bom_header_id' => $bomA->id, 'raw_material_id' => $prodB->id],
@@ -124,8 +118,8 @@ class SimulationDemoSeeder extends Seeder
 
         // BOM for Engine Gasket
         $bomC = \App\Models\BOMHeader::updateOrCreate(
-            ['product_id' => $prodC->id],
-            ['bom_no' => 'BOM-EG-003', 'is_active' => true]
+            ['productId' => $prodC->id], // Changed product_id to productId
+            ['bomNo' => 'BOM-EG-003', 'isActive' => true] // Changed bom_no to bomNo, is_active to isActive
         );
         \App\Models\BOMItem::updateOrCreate(
             ['bom_header_id' => $bomC->id, 'raw_material_id' => $prodB->id],

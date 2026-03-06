@@ -28,8 +28,8 @@ class SalesSeeder extends Seeder
             ['code' => 'PRD-004', 'name' => 'Hydraulic Cylinder 100mm', 'category' => 'Hydraulics', 'unit' => 'Nos', 'hsnCode' => '8412', 'gstPercent' => 18, 'currentStock' => 80, 'lastSalePrice' => 12000, 'isActive' => true, 'createdAt' => $now, 'updatedAt' => $now],
             ['code' => 'PRD-005', 'name' => 'SS Flange DN50', 'category' => 'Flanges', 'unit' => 'Nos', 'hsnCode' => '7307', 'gstPercent' => 18, 'currentStock' => 500, 'lastSalePrice' => 850, 'isActive' => true, 'createdAt' => $now, 'updatedAt' => $now],
         ];
-        DB::table('Product')->insert($products);
-        $productIds = DB::table('Product')->pluck('id')->toArray();
+        DB::table('products')->insert($products);
+        $productIds = DB::table('products')->pluck('id')->toArray();
 
         // ─── CUSTOMERS ───────────────────────────────────────────────────
         $customers = [

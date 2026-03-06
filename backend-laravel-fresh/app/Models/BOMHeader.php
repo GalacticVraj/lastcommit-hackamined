@@ -8,5 +8,7 @@ class BOMHeader extends Model
 {
     protected $table = 'bom_headers';
     protected $guarded = [];
+    const CREATED_AT = 'createdAt';
+    const UPDATED_AT = 'updatedAt';
 }
 
