@@ -127,4 +127,21 @@ class AISummaryController extends Controller
 
         return $this->insights($request);
     }
+
+    public function summarize(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string',
+            'data' => 'required|array',
+        ]);
+
+        $summary = $this->aiService->summarizeContext($request->input('type'), $request->input('data'));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'summary' => $summary
+            ]
+        ]);
+    }
 }

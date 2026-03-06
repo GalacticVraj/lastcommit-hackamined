@@ -14,7 +14,7 @@ class Product extends Model
 
     public function bomHeader()
     {
-        return $this->hasOne(BOMHeader::class, 'product_id');
+        return $this->hasOne(BOMHeader::class, 'productId');
     }
 
     public function routings()

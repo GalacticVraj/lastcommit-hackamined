@@ -469,5 +469,6 @@ Route::prefix('v1')->group(function () {
         Route::get('ai/unread-count', [\App\Http\Controllers\AI\AISummaryController::class, 'unreadCount']);
         Route::patch('ai/mark-seen', [\App\Http\Controllers\AI\AISummaryController::class, 'markSeen']);
         Route::post('ai/refresh', [\App\Http\Controllers\AI\AISummaryController::class, 'refreshInsights']);
+        Route::post('ai/summarize', [\App\Http\Controllers\AI\AISummaryController::class, 'summarize']);
     });
 });

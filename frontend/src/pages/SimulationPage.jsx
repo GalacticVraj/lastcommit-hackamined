@@ -3,7 +3,8 @@ import {
     Calculator, Loader2, Hammer, Package, Clock,
     TrendingUp, History, Save, Plus, Trash2,
     AlertTriangle, CheckCircle2, ChevronRight,
-    ArrowRight, Info
+    ArrowRight, Info, Sparkles, Zap, BrainCircuit,
+    Calendar, Activity, Layers, DollarSign
 } from 'lucide-react';
 import {
     PieChart, Pie, Cell, ResponsiveContainer,
@@ -13,22 +14,7 @@ import {
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
-// Theme Colors
-const COLORS = {
-    primary: '#E8720C',      // Orange Primary
-    primaryLight: '#F5924A', // Orange Light
-    secondary: '#C9860A',    // Gold Accent
-    bg: '#FAFAF8',          // Primary Background
-    card: '#EFEFEB',        // Card Background
-    border: '#E2DDD6',      // Border Color
-    textMuted: '#9C9488',   // Muted Text
-    textBody: '#3D3A35',    // Body Text
-    textHeading: '#1C1A17', // Heading Text
-    success: '#4A7C59',     // Success Green
-    error: '#DC2626',       // Standard Error Red
-};
-
-const PIE_COLORS = [COLORS.primary, COLORS.secondary, COLORS.primaryLight];
+const PIE_COLORS = ['#EA580C', '#F59E0B', '#6366F1', '#10B981'];
 
 export default function SimulationPage() {
     const [products, setProducts] = useState([]);
@@ -41,7 +27,9 @@ export default function SimulationPage() {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [historyLoading, setHistoryLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('new'); // 'new' or 'history'
+    const [activeTab, setActiveTab] = useState('new');
+    const [aiInsights, setAiInsights] = useState('');
+    const [generatingAI, setGeneratingAI] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -126,6 +114,22 @@ export default function SimulationPage() {
         toast.success(`Loaded ${sim.simulation_name}`);
     };
 
+    const getAIInsights = async () => {
+        if (!result) return;
+        setGeneratingAI(true);
+        try {
+            const res = await api.post('/ai/summarize', {
+                type: 'simulation_forecast',
+                data: result
+            });
+            setAiInsights(res.data.data.summary);
+            toast.success('AI Analysis Complete');
+        } catch (e) {
+            toast.error('AI Service currently busy');
+        }
+        setGeneratingAI(false);
+    };
+
     const costData = result ? [
         { name: 'Labor', value: result.cost_breakdown.labor },
         { name: 'Material', value: result.cost_breakdown.material },
@@ -133,25 +137,25 @@ export default function SimulationPage() {
     ] : [];
 
     return (
-        <div className="min-h-screen p-6" style={{ background: COLORS.bg, color: COLORS.textBody, fontFamily: "'Inter', sans-serif" }}>
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+        <div className="page-content">
+            {/* Header with Tabs */}
+            <div className="page-header">
                 <div>
-                    <h1 className="text-3xl font-bold mb-1" style={{ color: COLORS.textHeading }}>Production Simulation</h1>
-                    <p className="text-sm" style={{ color: COLORS.textMuted }}>MRP, CRP & Forecasting Environment</p>
+                    <h1>Production Simulation</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+                        Strategic Capacity Planning & Impact Assessment
+                    </p>
                 </div>
-                <div className="flex bg-white rounded-full p-1 shadow-sm border" style={{ borderColor: COLORS.border }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                     <button
+                        className={`btn ${activeTab === 'new' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                         onClick={() => setActiveTab('new')}
-                        className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${activeTab === 'new' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-                        style={activeTab === 'new' ? { background: COLORS.primary } : {}}
                     >
                         New Simulation
                     </button>
                     <button
+                        className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${activeTab === 'history' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-                        style={activeTab === 'history' ? { background: COLORS.primary } : {}}
                     >
                         History
                     </button>
@@ -159,194 +163,172 @@ export default function SimulationPage() {
             </div>
 
             {activeTab === 'new' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left Panel: Inputs */}
-                    <div className="lg:col-span-5 space-y-6">
-                        <section className="bg-white rounded-2xl p-6 shadow-sm border" style={{ borderColor: COLORS.border }}>
-                            <div className="flex items-center gap-2 mb-6 border-b pb-4" style={{ borderColor: COLORS.border }}>
-                                <Hammer className="text-orange-600" size={20} style={{ color: COLORS.primary }} />
-                                <h2 className="text-lg font-semibold" style={{ color: COLORS.textHeading }}>Simulation Parameters</h2>
-                            </div>
+                <div className="grid-2" style={{ gridTemplateColumns: 'minmax(400px, 450px) 1fr', alignItems: 'start' }}>
+                    {/* Input Panel */}
+                    <div className="card glass" style={{ position: 'sticky', top: '20px' }}>
+                        <div className="card-header">
+                            <span className="card-title">Configuration</span>
+                            <Layers size={16} className="text-muted" />
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Shift Hours</label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                        <input
-                                            type="number"
-                                            value={shiftHours}
-                                            onChange={(e) => setShiftHours(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none transition-all text-sm font-medium"
-                                            style={{ borderColor: COLORS.border, background: '#F9F9F7' }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Worker Count</label>
-                                    <div className="relative">
-                                        <Plus className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                        <input
-                                            type="number"
-                                            value={workerCount}
-                                            onChange={(e) => setWorkerCount(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none transition-all text-sm font-medium"
-                                            style={{ borderColor: COLORS.border, background: '#F9F9F7' }}
-                                        />
-                                    </div>
+                        <div className="grid-2" style={{ gap: '12px', marginBottom: '16px' }}>
+                            <div className="form-group">
+                                <label className="form-label">Shift Hours</label>
+                                <div style={{ position: 'relative' }}>
+                                    <Clock size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        style={{ paddingLeft: '36px' }}
+                                        value={shiftHours}
+                                        onChange={(e) => setShiftHours(e.target.value)}
+                                    />
                                 </div>
                             </div>
-
-                            <div className="flex items-center justify-between mb-4 mt-8">
-                                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Master Production Schedule</label>
-                                <button
-                                    onClick={addMpsRow}
-                                    className="text-orange-600 hover:text-orange-700 text-xs font-bold flex items-center gap-1"
-                                    style={{ color: COLORS.primary }}
-                                >
-                                    <Plus size={14} /> Add Product
-                                </button>
+                            <div className="form-group">
+                                <label className="form-label">Total Workers</label>
+                                <div style={{ position: 'relative' }}>
+                                    <Hammer size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        style={{ paddingLeft: '36px' }}
+                                        value={workerCount}
+                                        onChange={(e) => setWorkerCount(e.target.value)}
+                                    />
+                                </div>
                             </div>
+                        </div>
 
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {mps.map((row, idx) => (
-                                    <div key={idx} className="group flex gap-3 p-3 rounded-xl border bg-white hover:shadow-md transition-all relative" style={{ borderColor: COLORS.border }}>
-                                        <div className="flex-1 space-y-2">
-                                            <select
-                                                value={row.productId}
-                                                onChange={(e) => updateMpsRow(idx, 'productId', e.target.value)}
-                                                className="w-full bg-transparent outline-none text-sm font-semibold cursor-pointer"
-                                                style={{ color: COLORS.textHeading }}
-                                            >
-                                                <option value="">Select Finished Good...</option>
-                                                {products.map(p => (
-                                                    <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-                                                ))}
-                                            </select>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    min="0.1"
-                                                    value={row.targetQty}
-                                                    onChange={(e) => updateMpsRow(idx, 'targetQty', e.target.value)}
-                                                    className="w-20 bg-gray-50 px-2 py-1 rounded text-xs font-bold border outline-none"
-                                                    style={{ borderColor: COLORS.border }}
-                                                />
-                                                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-tighter">Target Qty</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => removeMpsRow(idx)}
-                                            className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 transition-all absolute top-2 right-2"
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <label className="form-label" style={{ marginBottom: 0 }}>Production Schedule (MPS)</label>
+                            <button className="btn btn-ghost btn-sm" onClick={addMpsRow} style={{ padding: '4px 8px' }}>
+                                <Plus size={14} /> Add Product
+                            </button>
+                        </div>
+
+                        <div className="custom-scrollbar" style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
+                            {mps.map((row, idx) => (
+                                <div key={idx} className="glass" style={{ padding: '12px', borderRadius: '12px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <select
+                                            className="form-input"
+                                            style={{ fontSize: '13px' }}
+                                            value={row.productId}
+                                            onChange={(e) => updateMpsRow(idx, 'productId', e.target.value)}
                                         >
-                                            <Trash2 size={16} />
+                                            <option value="">{products.length === 0 ? 'Loading products...' : 'Select Finished Good...'}</option>
+                                            {products.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                                            ))}
+                                        </select>
+                                        <div style={{ width: '80px', flexShrink: 0 }}>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                style={{ fontSize: '13px', textAlign: 'center' }}
+                                                value={row.targetQty}
+                                                onChange={(e) => updateMpsRow(idx, 'targetQty', e.target.value)}
+                                                placeholder="Qty"
+                                            />
+                                        </div>
+                                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)', padding: '8px' }} onClick={() => removeMpsRow(idx)}>
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
+                        </div>
 
-                            <button
-                                onClick={runSimulation}
-                                disabled={loading}
-                                className="w-full mt-8 py-4 rounded-2xl text-white font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-200 hover:shadow-orange-300 transform active:scale-[0.98] transition-all disabled:grayscale"
-                                style={{ background: COLORS.primary }}
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <Calculator />}
-                                {loading ? 'Computing Simulation...' : 'Run Simulation'}
-                            </button>
-                        </section>
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: '100%', marginTop: '20px', justifyContent: 'center', padding: '14px' }}
+                            onClick={runSimulation}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : <Calculator size={18} />}
+                            {loading ? 'Crunching Numbers...' : 'Run Simulation'}
+                        </button>
                     </div>
 
-                    {/* Right Panel: Results */}
-                    <div className="lg:col-span-7">
+                    {/* Results Panel */}
+                    <div>
                         {!result ? (
-                            <div className="h-full min-h-[500px] border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-center p-12" style={{ borderColor: COLORS.border }}>
-                                <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-4" style={{ background: '#FEF0E6' }}>
-                                    <TrendingUp className="text-orange-300" size={40} style={{ color: COLORS.primaryLight }} />
+                            <div className="card glass flex flex-col items-center justify-center p-12 text-center" style={{ minHeight: '500px' }}>
+                                <div style={{ background: 'rgba(234, 88, 12, 0.1)', padding: '24px', borderRadius: '50%', marginBottom: '16px' }}>
+                                    <TrendingUp size={48} style={{ color: '#EA580C' }} />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.textHeading }}>Results Environment Ready</h3>
-                                <p className="text-sm max-w-xs" style={{ color: COLORS.textMuted }}>Define your MPS and parameters on the left to generate real-time MRP, CRP, and cost breakdown.</p>
+                                <h3 style={{ fontSize: '18px', fontWeight: 600 }}>Ready to Simulate</h3>
+                                <p style={{ color: 'var(--text-secondary)', maxWidth: '280px', margin: '8px auto' }}>
+                                    Provide your master schedule parameters on the left to analyze production feasibility.
+                                </p>
                             </div>
                         ) : (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                {/* Summary Bar */}
-                                <div className="grid grid-cols-4 gap-4">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }} className="animate-in fade-in slide-in-from-bottom-2">
+                                {/* Stats Row */}
+                                <div className="stats-grid">
                                     {[
-                                        { label: 'Completion', val: result.summary.days_required + ' Days', icon: Clock, color: 'blue' },
-                                        { label: 'Readiness', val: result.summary.material_readiness_pct + '%', icon: Package, color: 'green' },
-                                        { label: 'Total Cost', val: '₹' + (result.cost_breakdown.total / 100000).toFixed(1) + 'L', icon: Calculator, color: 'orange' },
-                                        { label: 'Est. Date', val: result.summary.estimated_completion, icon: TrendingUp, color: 'purple' },
-                                    ].map((stat, i) => (
-                                        <div key={i} className="bg-white p-4 rounded-2xl border shadow-sm" style={{ borderColor: COLORS.border }}>
-                                            <div className="flex items-center gap-2 mb-1.5">
-                                                <stat.icon size={14} className="text-gray-400" />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{stat.label}</span>
+                                        { label: 'Completion', value: `${result.summary.days_required} Days`, icon: Calendar },
+                                        { label: 'Material Readiness', value: `${result.summary.material_readiness_pct}%`, icon: Package },
+                                        { label: 'Forecasted Cost', value: `₹${(result.cost_breakdown.total / 100000).toFixed(1)}L`, icon: DollarSign },
+                                        { label: 'Est. End Date', value: result.summary.estimated_completion, icon: Clock },
+                                    ].map((s, i) => (
+                                        <div key={i} className="stat-card glass">
+                                            <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.4)' }}><s.icon size={16} /></div>
+                                            <div>
+                                                <div className="stat-value" style={{ fontSize: '16px' }}>{s.value}</div>
+                                                <div className="stat-label">{s.label}</div>
                                             </div>
-                                            <div className="text-lg font-black" style={{ color: COLORS.textHeading }}>{stat.val}</div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Cost Donut */}
-                                    <div className="bg-white rounded-2xl p-6 border shadow-sm" style={{ borderColor: COLORS.border }}>
-                                        <h3 className="text-sm font-bold uppercase tracking-tight mb-4 flex items-center gap-2">
-                                            Cost Distribution
-                                        </h3>
-                                        <div className="h-64">
+                                <div className="grid-2">
+                                    {/* Cost Pie */}
+                                    <div className="card glass">
+                                        <div className="card-header">
+                                            <span className="card-title">Cost Composition</span>
+                                        </div>
+                                        <div style={{ height: '220px' }}>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
-                                                    <Pie
-                                                        data={costData}
-                                                        cx="50%" cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={80}
-                                                        paddingAngle={8}
-                                                        dataKey="value"
-                                                    >
-                                                        {costData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} strokeWidth={0} />
-                                                        ))}
+                                                    <Pie data={costData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                                                        {costData.map((_, index) => <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />)}
                                                     </Pie>
-                                                    <RechartsTooltip
-                                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px' }}
-                                                        formatter={(value) => `₹${value.toLocaleString()}`}
-                                                    />
-                                                    <Legend wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }} />
+                                                    <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-md)', fontSize: '12px' }} />
+                                                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                                                 </PieChart>
                                             </ResponsiveContainer>
                                         </div>
                                     </div>
 
-                                    {/* Capacity Gauge */}
-                                    <div className="bg-white rounded-2xl p-6 border shadow-sm" style={{ borderColor: COLORS.border }}>
-                                        <h3 className="text-sm font-bold uppercase tracking-tight mb-4">Capacity Analysis</h3>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-end border-b pb-2" style={{ borderColor: COLORS.border }}>
-                                                <span className="text-xs text-gray-500 font-medium">Total Man-Hours Req.</span>
-                                                <span className="text-sm font-bold">{result.summary.total_man_hours.toLocaleString()}h</span>
+                                    {/* Capacity Check */}
+                                    <div className="card glass">
+                                        <div className="card-header">
+                                            <span className="card-title">Resource Load</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
+                                                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Man-Hours Needed</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{result.summary.total_man_hours.toLocaleString()}h</span>
                                             </div>
-                                            <div className="flex justify-between items-end border-b pb-2" style={{ borderColor: COLORS.border }}>
-                                                <span className="text-xs text-gray-500 font-medium">Daily Plant Capacity</span>
-                                                <span className="text-sm font-bold">{(workerCount * shiftHours).toLocaleString()}h</span>
-                                            </div>
-                                            <div className="flex justify-between items-end border-b pb-2" style={{ borderColor: COLORS.border }}>
-                                                <span className="text-xs text-gray-500 font-medium">Effective Utilization</span>
-                                                <span className="text-sm font-bold text-orange-600" style={{ color: COLORS.primary }}>Target 100%</span>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
+                                                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Daily Plant Flow</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{(workerCount * shiftHours).toLocaleString()}h</span>
                                             </div>
 
                                             {result.summary.overload_alert ? (
-                                                <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex gap-3 mt-4">
-                                                    <AlertTriangle className="text-red-500 shrink-0" size={20} />
-                                                    <p className="text-[10px] text-red-700 font-bold leading-tight uppercase">
-                                                        CRITICAL: Capacity Overload Detected. Estimated production exceeds standard 30-day window. Add workers or shifts.
+                                                <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '12px', display: 'flex', gap: '10px', marginTop: '8px' }}>
+                                                    <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+                                                    <p style={{ fontSize: '11px', color: '#991B1B', fontWeight: 500 }}>
+                                                        <strong>Overload:</strong> Target date exceeds 30-day feasibility window. Requires workforce expansion.
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex gap-3 mt-4">
-                                                    <CheckCircle2 className="text-emerald-500 shrink-0" size={20} />
-                                                    <p className="text-[10px] text-emerald-700 font-bold leading-tight uppercase">
-                                                        CAPACITY OK: Production plan fits within sustainable schedule. No immediate hiring required.
+                                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '12px', display: 'flex', gap: '10px', marginTop: '8px' }}>
+                                                    <CheckCircle2 size={18} style={{ color: 'var(--success)', flexShrink: 0 }} />
+                                                    <p style={{ fontSize: '11px', color: '#065F46', fontWeight: 500 }}>
+                                                        <strong>Optimal:</strong> Production volume is manageable with current staffing levels.
                                                     </p>
                                                 </div>
                                             )}
@@ -354,41 +336,30 @@ export default function SimulationPage() {
                                     </div>
                                 </div>
 
-                                {/* MRP Breakdown Table */}
-                                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden" style={{ borderColor: COLORS.border }}>
-                                    <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50/50" style={{ borderColor: COLORS.border }}>
-                                        <h3 className="text-sm font-bold uppercase tracking-tight">Material Requirements (MRP)</h3>
-                                        <div className="flex gap-2">
-                                            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[10px] uppercase font-bold text-gray-400">Ready</span></div>
-                                            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-[10px] uppercase font-bold text-gray-400">Shortfall</span></div>
-                                        </div>
+                                {/* MRP Details */}
+                                <div className="table-container glass">
+                                    <div className="card-header" style={{ padding: '16px 20px', marginBottom: 0 }}>
+                                        <span className="card-title">Material Strategy (MRP)</span>
                                     </div>
-                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                        <table className="w-full text-left">
-                                            <thead className="sticky top-0 bg-white shadow-sm border-b" style={{ borderColor: COLORS.border, zIndex: 10 }}>
-                                                <tr className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                                    <th className="px-6 py-4">Required Item</th>
-                                                    <th className="px-6 py-4">Parent Product</th>
-                                                    <th className="px-6 py-4">Needed</th>
-                                                    <th className="px-6 py-4">Available</th>
-                                                    <th className="px-6 py-4 text-right">Shortfall</th>
+                                    <div className="custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        <table className="data-table">
+                                            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                                                <tr>
+                                                    <th>Item</th>
+                                                    <th>Required</th>
+                                                    <th>Stock</th>
+                                                    <th>Status</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y" style={{ borderColor: COLORS.border }}>
+                                            <tbody>
                                                 {result.material_breakdown.map((mat, i) => (
-                                                    <tr key={i} className={`hover:bg-gray-50 transition-colors ${mat.shortfall > 0 ? 'bg-red-50/30' : ''}`}>
-                                                        <td className="px-6 py-3.5">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`w-1.5 h-1.5 rounded-full ${mat.shortfall > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                                                                <span className="font-semibold text-sm" style={{ color: COLORS.textHeading }}>{mat.material_name}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-3.5 text-xs font-medium text-gray-500">{mat.parent_name}</td>
-                                                        <td className="px-6 py-3.5 text-xs font-bold">{mat.required_qty} {mat.unit}</td>
-                                                        <td className="px-6 py-3.5 text-xs font-bold text-gray-500">{mat.available_qty}</td>
-                                                        <td className="px-6 py-3.5 text-right">
-                                                            <span className={`text-xs font-black ${mat.shortfall > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                                {mat.shortfall > 0 ? mat.shortfall : 'OK'}
+                                                    <tr key={i}>
+                                                        <td style={{ fontWeight: 600 }}>{mat.material_name}</td>
+                                                        <td>{mat.required_qty} {mat.unit}</td>
+                                                        <td>{mat.available_qty}</td>
+                                                        <td>
+                                                            <span className={`badge ${mat.shortfall > 0 ? 'badge-rejected' : 'badge-paid'}`}>
+                                                                {mat.shortfall > 0 ? `Short: ${mat.shortfall}` : 'Ready'}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -398,89 +369,106 @@ export default function SimulationPage() {
                                     </div>
                                 </div>
 
-                                {/* Save Bar */}
-                                <div className="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm" style={{ borderColor: COLORS.border }}>
-                                    <input
-                                        type="text"
-                                        value={simulationName}
-                                        onChange={(e) => setSimulationName(e.target.value)}
-                                        placeholder="Simulation Name (e.g., Q2 Main Batch)"
-                                        className="flex-1 bg-gray-50 px-4 py-2 rounded-xl text-sm font-semibold border outline-none focus:ring-2"
-                                        style={{ borderColor: COLORS.border }}
-                                    />
-                                    <button
-                                        onClick={saveToHistory}
-                                        disabled={loading}
-                                        className="bg-zinc-800 text-white px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black transition-all disabled:grayscale"
-                                    >
-                                        <Save size={16} /> Save Result
-                                    </button>
+                                {/* Save Bar & AI */}
+                                <div className="card glass">
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Assign a Name (e.g., April Batch B)..."
+                                            value={simulationName}
+                                            onChange={(e) => setSimulationName(e.target.value)}
+                                        />
+                                        <button className="btn btn-ghost" onClick={saveToHistory}>
+                                            <Save size={16} /> Save
+                                        </button>
+                                    </div>
+
+                                    <div style={{ marginTop: '20px', padding: '20px', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(234, 88, 12, 0.05) 100%)', border: '1px dashed rgba(0,0,0,0.1)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                            <BrainCircuit size={20} style={{ color: 'var(--primary)' }} />
+                                            <h4 style={{ fontSize: '15px', fontWeight: 600 }}>AI Strategic Summary</h4>
+                                        </div>
+
+                                        {!aiInsights ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                    Get a high-level executive summary and actionable recommendations from our AI engine.
+                                                </p>
+                                                <button className="btn btn-primary btn-sm" style={{ alignSelf: 'start' }} onClick={getAIInsights} disabled={generatingAI}>
+                                                    {generatingAI ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                                                    {generatingAI ? 'Analyzing...' : 'Generate Analysis'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="animate-in zoom-in-95">
+                                                <div style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--text-primary)', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
+                                                    {aiInsights}
+                                                </div>
+                                                <button className="btn btn-link btn-sm" style={{ marginTop: '8px' }} onClick={() => setAiInsights('')}>Clear</button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
             ) : (
-                <div className="space-y-4 max-w-5xl mx-auto">
+                /* History Tab */
+                <div className="card glass">
+                    <div className="card-header">
+                        <span className="card-title">Saved Archives</span>
+                        <History size={16} className="text-muted" />
+                    </div>
+
                     {historyLoading ? (
-                        <div className="flex flex-col items-center justify-center py-24">
-                            <Loader2 className="animate-spin text-orange-500 mb-4" size={40} />
-                            <p className="text-gray-400 font-medium">Loading simulation archives...</p>
+                        <div style={{ padding: '60px', textAlign: 'center' }}>
+                            <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)', margin: '0 auto 16px' }} />
+                            <p style={{ color: 'var(--text-secondary)' }}>Retrieving archived models...</p>
                         </div>
                     ) : history.length === 0 ? (
-                        <div className="text-center py-24 bg-white rounded-3xl border" style={{ borderColor: COLORS.border }}>
-                            <History className="mx-auto text-gray-200 mb-4" size={64} />
-                            <p className="text-gray-400 font-bold uppercase tracking-widest">No history found</p>
+                        <div style={{ padding: '60px', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>No simulations saved yet.</p>
                         </div>
                     ) : (
-                        history.map((sim, i) => (
-                            <div
-                                key={i}
-                                onClick={() => loadFromHistory(sim)}
-                                className="group bg-white p-6 rounded-2xl border shadow-sm hover:shadow-xl hover:border-orange-200 transition-all cursor-pointer flex items-center justify-between"
-                                style={{ borderColor: COLORS.border }}
-                            >
-                                <div className="flex gap-6 items-center">
-                                    <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center group-hover:bg-orange-50 transition-colors">
-                                        <Calculator className="text-gray-400 group-hover:text-orange-500" size={24} />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-lg mb-0.5" style={{ color: COLORS.textHeading }}>{sim.simulation_name}</h4>
-                                        <div className="flex gap-3 items-center">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{new Date(sim.createdAt || sim.created_at).toLocaleDateString()}</span>
-                                            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{sim.days_required} Days Plan</span>
-                                            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-500" style={{ color: COLORS.primary }}>₹{(sim.total_cost / 100000).toFixed(1)}L Total</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {history.map((sim, i) => (
+                                <div
+                                    key={i}
+                                    className="glass hover:shadow-md transition-all cursor-pointer"
+                                    style={{ padding: '16px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(0,0,0,0.05)' }}
+                                    onClick={() => loadFromHistory(sim)}
+                                >
+                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                        <div style={{ background: 'white', padding: '10px', borderRadius: '12px' }}>
+                                            <Calculator size={20} style={{ color: 'var(--primary)' }} />
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '15px', fontWeight: 600 }}>{sim.simulation_name}</h4>
+                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                {new Date(sim.createdAt || sim.created_at).toLocaleDateString()} • {sim.days_required} Day Plan • ₹{(sim.total_cost / 100000).toFixed(1)}L
+                                            </p>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="text-right hidden sm:block">
-                                        <div className="text-xs font-bold text-gray-400 uppercase mb-1">Status</div>
-                                        <div className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${sim.material_readiness_pct === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                                            {sim.material_readiness_pct === 100 ? 'Fully Ready' : `Ready: ${sim.material_readiness_pct}%`}
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <span className={`badge ${sim.material_readiness_pct === 100 ? 'badge-paid' : 'badge-pending'}`}>
+                                            {sim.material_readiness_pct}% Ready
+                                        </span>
+                                        <ChevronRight size={18} className="text-muted" />
                                     </div>
-                                    <ChevronRight className="text-gray-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" size={24} />
                                 </div>
-                            </div>
-                        ))
+                            ))}
+                        </div>
                     )}
                 </div>
             )}
 
-            <style jsx>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 4px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #E2DDD6;
-                    border-radius: 10px;
-                }
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
             `}</style>
         </div>
     );

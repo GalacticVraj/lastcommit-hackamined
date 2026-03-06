@@ -40,7 +40,7 @@ class SimulationController extends Controller
     {
         $request->validate([
             'mps' => 'required|array',
-            'mps.*.productId' => 'required|exists:Product,id',
+            'mps.*.productId' => 'required|exists:products,id',
             'mps.*.targetQty' => 'required|numeric|min:0.1',
             'shiftHours' => 'required|numeric|min:1',
             'workerCount' => 'required|integer|min:1',

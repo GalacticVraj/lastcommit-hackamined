@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('Product')) {
+        if (Schema::hasTable('Product') && !Schema::hasTable('products')) {
             Schema::rename('Product', 'products');
         }
-        if (Schema::hasTable('Warehouse')) {
+        if (Schema::hasTable('Warehouse') && !Schema::hasTable('warehouses')) {
             Schema::rename('Warehouse', 'warehouses');
         }
     }

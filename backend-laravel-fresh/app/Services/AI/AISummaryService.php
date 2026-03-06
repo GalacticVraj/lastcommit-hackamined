@@ -358,4 +358,32 @@ class AISummaryService
             return $fallback;
         }
     }
+
+    public function summarizeContext($type, $data)
+    {
+        $fallback = "Analysis service is currently preparing reports. Please try again in a few minutes.";
+        
+        try {
+            $apiKey = config('services.gemini.api_key');
+            if (empty($apiKey)) return $fallback;
+
+            $jsonString = json_encode($data);
+            $prompt = "You are a senior production consultant. Analyze this {$type} data from our ERP and provide a concise, high-impact executive summary focusing on bottlenecks, resource efficiency, and strategic recommendations.\n\nData: {$jsonString}";
+
+            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$apiKey}", [
+                'contents' => [
+                    [
+                        'parts' => [['text' => $prompt]]
+                    ]
+                ]
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('candidates.0.content.parts.0.text') ?? $fallback;
+            }
+            return $fallback;
+        } catch (\Exception $e) {
+            return $fallback;
+        }
+    }
 }

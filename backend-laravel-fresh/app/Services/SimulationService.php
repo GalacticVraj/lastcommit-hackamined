@@ -44,7 +44,7 @@ class SimulationService
             $materialsChecked++;
 
             // a. Material Requirements (BOM)
-            $bom = BOMHeader::where('product_id', $product->id)->where('is_active', true)->first();
+            $bom = BOMHeader::where('productId', $product->id)->where('isActive', true)->first();
             if ($bom) {
                 $components = BOMItem::where('bom_header_id', $bom->id)->with('rawMaterial')->get();
                 foreach ($components as $comp) {
@@ -160,7 +160,7 @@ class SimulationService
                 'mrp_breakdown' => $data['material_breakdown'],
                 'crp_breakdown' => $data['resource_breakdown'],
                 'cost_breakdown' => $data['cost_breakdown'],
-                'created_by' => auth()->id(),
+                'created_by' => auth()->id() ?? 1,
             ]);
 
             foreach ($mps as $item) {
