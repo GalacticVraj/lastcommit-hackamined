@@ -10,9 +10,27 @@ use App\Models\GRNItem;
 use App\Models\PurchaseBill;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PurchaseController extends Controller
 {
+    private function filterExistingColumns(string $table, array $payload): array
+    {
+        return collect($payload)
+            ->filter(fn($value) => $value !== null)
+            ->filter(fn($value, $column) => Schema::hasColumn($table, $column))
+            ->toArray();
+    }
+
+    private function generateDocNo(string $docType, string $prefix): string
+    {
+        try {
+            return \App\Services\AutoNumber::generate($docType, $prefix);
+        } catch (\Throwable $e) {
+            return sprintf('%s-%s-%04d', $prefix, now()->format('YmdHis'), random_int(0, 9999));
+        }
+    }
+
     public function dashboard()
     {
         $poTable = (new PurchaseOrder())->getTable();
@@ -151,6 +169,65 @@ class PurchaseController extends Controller
         return $this->successResponse($v);
     }
 
+    public function updateVendor(Request $request, $id)
+    {
+        $vendor = Vendor::findOrFail($id);
+        $vendorTable = $vendor->getTable();
+
+        $payload = $this->filterExistingColumns($vendorTable, $request->only([
+            'name',
+            'contactPerson',
+            'phone',
+            'email',
+            'address',
+            'city',
+            'state',
+            'pincode',
+            'gstin',
+            'pan',
+            'isActive',
+        ]));
+
+        if (Schema::hasColumn($vendorTable, 'updatedBy')) {
+            $payload['updatedBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($vendorTable, 'updated_by')) {
+            $payload['updated_by'] = $request->user()->id;
+        }
+
+        if (!empty($payload)) {
+            $vendor->update($payload);
+        }
+
+        return $this->successResponse($vendor, 'Vendor updated');
+    }
+
+    public function deleteVendor(Request $request, $id)
+    {
+        $vendor = Vendor::findOrFail($id);
+        $vendorTable = $vendor->getTable();
+
+        $payload = [];
+        if (Schema::hasColumn($vendorTable, 'deletedAt')) {
+            $payload['deletedAt'] = now();
+        }
+        if (Schema::hasColumn($vendorTable, 'isActive')) {
+            $payload['isActive'] = false;
+        }
+        if (Schema::hasColumn($vendorTable, 'updatedBy')) {
+            $payload['updatedBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($vendorTable, 'updated_by')) {
+            $payload['updated_by'] = $request->user()->id;
+        }
+
+        if (!empty($payload)) {
+            $vendor->update($payload);
+        } else {
+            $vendor->delete();
+        }
+
+        return $this->successResponse(null, 'Vendor deleted');
+    }
+
     public function listPurchaseOrders(Request $request)
     {
         $query = PurchaseOrder::with('vendor:id,name')->whereNull('deletedAt');
@@ -186,7 +263,7 @@ class PurchaseController extends Controller
 
     public function createPurchaseOrder(Request $request)
     {
-        $poNo = \App\Services\AutoNumber::generate('PO', 'PO');
+        $poNo = $this->generateDocNo('PO', 'PO');
         $po = PurchaseOrder::create([
             'poNo' => $poNo,
             'vendorId' => $request->vendorId,
@@ -207,6 +284,118 @@ class PurchaseController extends Controller
         }
 
         return $this->successResponse($po->load('items', 'vendor'), 'PO created', 201);
+    }
+
+    public function updatePurchaseOrder(Request $request, $id)
+    {
+        $po = PurchaseOrder::findOrFail($id);
+        $poTable = $po->getTable();
+
+        $payload = $this->filterExistingColumns($poTable, $request->only([
+            'vendorId',
+            'totalAmount',
+            'status',
+            'poDate',
+            'remarks',
+        ]));
+
+        if (Schema::hasColumn($poTable, 'updatedBy')) {
+            $payload['updatedBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($poTable, 'updated_by')) {
+            $payload['updated_by'] = $request->user()->id;
+        }
+
+        if (!empty($payload)) {
+            $po->update($payload);
+        }
+
+        if ($request->has('items') && is_array($request->items)) {
+            $po->items()->delete();
+            $itemTable = (new PurchaseOrderItem())->getTable();
+
+            foreach ($request->items as $item) {
+                $itemPayload = $this->filterExistingColumns($itemTable, [
+                    'productId' => $item['productId'] ?? null,
+                    'quantity' => $item['quantity'] ?? 0,
+                    'rate' => $item['rate'] ?? 0,
+                    'gstPercent' => $item['gstPercent'] ?? null,
+                    'total' => $item['total'] ?? (($item['quantity'] ?? 0) * ($item['rate'] ?? 0)),
+                ]);
+
+                $po->items()->create($itemPayload);
+            }
+        }
+
+        return $this->successResponse($po->load('items', 'vendor'), 'PO updated');
+    }
+
+    public function createGrn(Request $request)
+    {
+        $grnNo = $this->generateDocNo('GRN', 'GRN');
+        $grnTable = (new GRN())->getTable();
+
+        $payload = $this->filterExistingColumns($grnTable, [
+            'grnNo' => $grnNo,
+            'vendorId' => $request->vendorId,
+            'purchaseOrderId' => $request->purchaseOrderId,
+            'grnDate' => $request->grnDate ?? now()->toDateString(),
+            'status' => $request->status ?? 'Pending',
+            'remarks' => $request->remarks,
+        ]);
+
+        if (Schema::hasColumn($grnTable, 'createdBy')) {
+            $payload['createdBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($grnTable, 'created_by')) {
+            $payload['created_by'] = $request->user()->id;
+        }
+
+        $grn = GRN::create($payload);
+
+        if ($request->has('items') && is_array($request->items)) {
+            $itemTable = (new GRNItem())->getTable();
+            foreach ($request->items as $item) {
+                $itemPayload = $this->filterExistingColumns($itemTable, [
+                    'grnId' => $grn->id,
+                    'productId' => $item['productId'] ?? null,
+                    'quantity' => $item['quantity'] ?? 0,
+                    'acceptedQty' => $item['acceptedQty'] ?? ($item['quantity'] ?? 0),
+                    'rejectedQty' => $item['rejectedQty'] ?? 0,
+                ]);
+                GRNItem::create($itemPayload);
+            }
+        }
+
+        return $this->successResponse($grn->load('vendor'), 'GRN created', 201);
+    }
+
+    public function createBill(Request $request)
+    {
+        $billNo = $this->generateDocNo('BILL', 'BILL');
+        $billTable = (new PurchaseBill())->getTable();
+
+        $payload = $this->filterExistingColumns($billTable, [
+            'billNo' => $billNo,
+            'vendorId' => $request->vendorId,
+            'purchaseOrderId' => $request->purchaseOrderId,
+            'billDate' => $request->billDate ?? now()->toDateString(),
+            'dueDate' => $request->dueDate,
+            'taxableValue' => $request->taxableValue,
+            'igstAmount' => $request->igstAmount,
+            'cgstAmount' => $request->cgstAmount,
+            'sgstAmount' => $request->sgstAmount,
+            'grandTotal' => $request->grandTotal ?? $request->totalAmount ?? 0,
+            'status' => $request->status ?? 'Unpaid',
+            'remarks' => $request->remarks,
+        ]);
+
+        if (Schema::hasColumn($billTable, 'createdBy')) {
+            $payload['createdBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($billTable, 'created_by')) {
+            $payload['created_by'] = $request->user()->id;
+        }
+
+        $bill = PurchaseBill::create($payload);
+        return $this->successResponse($bill->load('vendor'), 'Bill created', 201);
     }
 
     public function listGrns(Request $request)

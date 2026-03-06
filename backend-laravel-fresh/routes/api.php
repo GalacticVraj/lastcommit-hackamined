@@ -152,7 +152,11 @@ Route::prefix('v1')->group(function () {
 
         // ── Purchase ──────────────────────────────────────────────────────────
         Route::get('purchase/dashboard', [PurchaseController::class, 'dashboard']);
-        Route::apiResource('purchase/vendors', PurchaseController::class)->only(['index', 'store', 'show', 'update', 'destroy'])->names('purchase.vendors');
+        Route::get('purchase/vendors', [PurchaseController::class, 'listVendors']);
+        Route::post('purchase/vendors', [PurchaseController::class, 'storeVendor']);
+        Route::get('purchase/vendors/{id}', [PurchaseController::class, 'getVendor']);
+        Route::put('purchase/vendors/{id}', [PurchaseController::class, 'updateVendor']);
+        Route::delete('purchase/vendors/{id}', [PurchaseController::class, 'deleteVendor']);
         Route::get('purchase/purchase-orders', [PurchaseController::class, 'listPurchaseOrders']);
         Route::post('purchase/purchase-orders', [PurchaseController::class, 'createPurchaseOrder']);
         Route::get('purchase/purchase-orders/{id}', [PurchaseController::class, 'getPurchaseOrder']);

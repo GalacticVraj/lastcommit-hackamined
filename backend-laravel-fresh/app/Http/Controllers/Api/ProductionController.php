@@ -260,7 +260,30 @@ class ProductionController extends Controller
     public function updateProduct(Request $request, $id)
     {
         $p = Product::findOrFail($id);
-        $p->update(array_merge($request->all(), ['updatedBy' => $request->user()->id]));
+        $productTable = $p->getTable();
+        $payload = $request->only(['code', 'name', 'category', 'unit', 'hsnCode', 'gstPercent', 'currentStock', 'manHoursPerUnit', 'machineHoursPerUnit', 'description', 'maxStock', 'standardCost']);
+
+        if (Schema::hasColumn($productTable, 'reorderLevel')) {
+            $payload['reorderLevel'] = $request->get('reorderLevel', $request->get('minStock', $p->reorderLevel ?? 0));
+        } elseif (Schema::hasColumn($productTable, 'minStock')) {
+            $payload['minStock'] = $request->get('minStock', $request->get('reorderLevel', $p->minStock ?? 0));
+        }
+
+        $payload = collect($payload)
+            ->filter(fn($value) => $value !== null)
+            ->filter(fn($value, $column) => Schema::hasColumn($productTable, $column))
+            ->toArray();
+
+        if (Schema::hasColumn($productTable, 'updatedBy')) {
+            $payload['updatedBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($productTable, 'updated_by')) {
+            $payload['updated_by'] = $request->user()->id;
+        }
+
+        if (!empty($payload)) {
+            $p->update($payload);
+        }
+
         return $this->successResponse($p, 'Product updated');
     }
     public function deleteProduct($id)

@@ -19,6 +19,7 @@ use App\Services\GstCalculator;
 use App\Services\AutoNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SalesController extends Controller
 {
@@ -43,10 +44,46 @@ class SalesController extends Controller
 
     public function createCustomer(Request $request)
     {
-        $customer = Customer::create(array_merge(
-            $request->only(['name', 'gstin', 'stateCode', 'address', 'city', 'state', 'pincode', 'contactPerson', 'phone', 'email', 'creditPeriod']),
-            ['created_by' => $request->user()->id]
-        ));
+        $customerTable = (new Customer())->getTable();
+
+        $payload = $request->only([
+            'name',
+            'gstin',
+            'stateCode',
+            'address',
+            'city',
+            'state',
+            'pincode',
+            'contactPerson',
+            'phone',
+            'email',
+            'creditPeriod',
+            'billingAddress',
+            'shippingAddress',
+            'creditLimit',
+            'paymentTerms',
+            'isActive',
+        ]);
+
+        if (empty($payload['address']) && !empty($payload['billingAddress']) && Schema::hasColumn($customerTable, 'address')) {
+            $payload['address'] = $payload['billingAddress'];
+        }
+        if (empty($payload['creditPeriod']) && !empty($payload['paymentTerms']) && Schema::hasColumn($customerTable, 'creditPeriod')) {
+            $payload['creditPeriod'] = $payload['paymentTerms'];
+        }
+
+        $payload = collect($payload)
+            ->filter(fn($value) => $value !== null)
+            ->filter(fn($value, $column) => Schema::hasColumn($customerTable, $column))
+            ->toArray();
+
+        if (Schema::hasColumn($customerTable, 'createdBy')) {
+            $payload['createdBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($customerTable, 'created_by')) {
+            $payload['created_by'] = $request->user()->id;
+        }
+
+        $customer = Customer::create($payload);
 
         return $this->successResponse($customer, 'Customer created', 201);
     }
@@ -67,10 +104,48 @@ class SalesController extends Controller
     public function updateCustomer(Request $request, $id)
     {
         $customer = Customer::findOrFail($id);
-        $customer->update(array_merge(
-            $request->only(['name', 'gstin', 'stateCode', 'address', 'city', 'state', 'pincode', 'contactPerson', 'phone', 'email', 'creditPeriod']),
-            ['updated_by' => $request->user()->id]
-        ));
+        $customerTable = $customer->getTable();
+
+        $payload = $request->only([
+            'name',
+            'gstin',
+            'stateCode',
+            'address',
+            'city',
+            'state',
+            'pincode',
+            'contactPerson',
+            'phone',
+            'email',
+            'creditPeriod',
+            'billingAddress',
+            'shippingAddress',
+            'creditLimit',
+            'paymentTerms',
+            'isActive',
+        ]);
+
+        if (empty($payload['address']) && !empty($payload['billingAddress']) && Schema::hasColumn($customerTable, 'address')) {
+            $payload['address'] = $payload['billingAddress'];
+        }
+        if (empty($payload['creditPeriod']) && !empty($payload['paymentTerms']) && Schema::hasColumn($customerTable, 'creditPeriod')) {
+            $payload['creditPeriod'] = $payload['paymentTerms'];
+        }
+
+        $payload = collect($payload)
+            ->filter(fn($value) => $value !== null)
+            ->filter(fn($value, $column) => Schema::hasColumn($customerTable, $column))
+            ->toArray();
+
+        if (Schema::hasColumn($customerTable, 'updatedBy')) {
+            $payload['updatedBy'] = $request->user()->id;
+        } elseif (Schema::hasColumn($customerTable, 'updated_by')) {
+            $payload['updated_by'] = $request->user()->id;
+        }
+
+        if (!empty($payload)) {
+            $customer->update($payload);
+        }
 
         return $this->successResponse($customer, 'Customer updated');
     }
