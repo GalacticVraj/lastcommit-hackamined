@@ -12,9 +12,6 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import ProfileLink from '../components/ProfileLink';
 import FinanceDashboard from '../components/FinanceDashboard';
 import HRDashboard from '../components/HRDashboard';
-import OperationsDashboard from '../components/OperationsDashboard';
-import LogisticsDashboard from '../components/LogisticsDashboard';
-import MaintenanceDashboard from '../components/MaintenanceDashboard';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -59,7 +56,6 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
 
     const currentTab = tabs.find(t => t.key === activeTab) || {};
     const moduleName = apiBase.replace('/', '');
-    const isOperationsModule = ['/quality', '/contractors', '/warehouse', '/assets'].includes(apiBase);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -324,22 +320,8 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 <HRDashboard />
             )}
 
-            {/* Dashboard - Operations modules get chart visualizations */}
-            {activeTab === 'dashboard' && apiBase === '/logistics' && (
-                <LogisticsDashboard />
-            )}
-
-            {activeTab === 'dashboard' && apiBase === '/maintenance' && (
-                <MaintenanceDashboard />
-            )}
-
-            {/* Dashboard - Operations modules get chart visualizations */}
-            {activeTab === 'dashboard' && isOperationsModule && (
-                <OperationsDashboard apiBase={apiBase} title={title} stats={stats} />
-            )}
-
             {/* Dashboard stats for other modules */}
-            {activeTab === 'dashboard' && apiBase !== '/finance' && apiBase !== '/hr' && apiBase !== '/logistics' && apiBase !== '/maintenance' && !isOperationsModule && stats && (
+            {activeTab === 'dashboard' && apiBase !== '/finance' && apiBase !== '/hr' && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
                         <div className="stat-card" key={key}>
