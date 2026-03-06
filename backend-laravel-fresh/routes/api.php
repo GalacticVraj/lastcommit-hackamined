@@ -28,6 +28,11 @@ use App\Http\Controllers\Api\DashboardController;
 
 // ─── Open Routes ──────────────────────────────────────────────────────────────
 Route::prefix('v1')->group(function () {
+    Route::get('/', fn() => response()->json([
+        'success' => true,
+        'message' => 'TechMicra ERP API v1',
+        'status' => 'operational'
+    ]));
 
     Route::post('auth/login', [AuthController::class, 'login']);
 
