@@ -596,11 +596,11 @@ a:hover { color: var(--primary-dark); }
 /* ── Data Table - Glass ── */
 .table-container {
   background: var(--glass-bg);
-
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--glass-shadow);
+  max-width: 100%;
 }
 
 .table-toolbar {
@@ -634,25 +634,33 @@ a:hover { color: var(--primary-dark); }
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .data-table th {
   text-align: left;
-  padding: 14px 20px;
+  padding: 12px 12px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-table td {
-  padding: 14px 20px;
-  font-size: 14px;
+  padding: 12px 12px;
+  font-size: 13px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .data-table tr:hover td {
@@ -677,21 +685,26 @@ a:hover { color: var(--primary-dark); }
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  padding: 5px 10px;
   border-radius: 20px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badge-pending { background: rgba(245, 158, 11, 0.2); color: #B45309; }
 .badge-active, .badge-new, .badge-processing { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
 .badge-closed, .badge-paid, .badge-passed, .badge-completed { background: rgba(16, 185, 129, 0.2); color: #047857; }
-.badge-overdue, .badge-rejected, .badge-failed { background: rgba(239, 68, 68, 0.2); color: #B91C1C; }
+.badge-overdue, .badge-rejected, .badge-failed, .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #B91C1C; }
 .badge-draft { background: rgba(107, 114, 128, 0.2); color: var(--gray-600); }
-.badge-partial { background: rgba(124, 58, 237, 0.2); color: #7C3AED; }
+.badge-partial, .badge-partially-recovered { background: rgba(124, 58, 237, 0.2); color: #7C3AED; }
+.badge-approved { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+.badge-fully-recovered { background: rgba(16, 185, 129, 0.2); color: #047857; }
 
 /* ── Modal / Dialog - Glass ── */
 .modal-overlay {

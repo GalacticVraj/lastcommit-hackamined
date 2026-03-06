@@ -582,9 +582,11 @@ return new class extends Migration {
             $table->unsignedBigInteger('employeeId');
             $table->string('month');
             $table->integer('year');
+            $table->integer('totalDays')->default(30);
             $table->integer('presentDays')->default(0);
             $table->integer('absentDays')->default(0);
             $table->decimal('grossSalary', 15, 2)->default(0);
+            $table->decimal('deductions', 15, 2)->default(0);
             $table->decimal('pfDeduction', 15, 2)->default(0);
             $table->decimal('esicDeduction', 15, 2)->default(0);
             $table->decimal('tdsDeduction', 15, 2)->default(0);
@@ -592,6 +594,61 @@ return new class extends Migration {
             $table->decimal('netPay', 15, 2)->default(0);
             $table->string('status')->default('Draft');
             $table->boolean('isActive')->default(true);
+            $table->unsignedBigInteger('createdBy')->nullable();
+            $table->timestamp('createdAt')->useCurrent();
+            $table->timestamp('updatedAt')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamp('deletedAt')->nullable();
+        });
+
+        // Salary Head Master - Define salary components
+        Schema::create('SalaryHead', function (Blueprint $table) {
+            $table->id();
+            $table->string('headName');
+            $table->string('headCode')->unique();
+            $table->enum('headType', ['Earning', 'Deduction']);
+            $table->text('description')->nullable();
+            $table->boolean('isActive')->default(true);
+            $table->unsignedBigInteger('createdBy')->nullable();
+            $table->timestamp('createdAt')->useCurrent();
+            $table->timestamp('updatedAt')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamp('deletedAt')->nullable();
+        });
+
+        // Employee Salary Structure - Assign pay structure to employees
+        Schema::create('EmployeeSalaryStructure', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('employeeId');
+            $table->date('effectiveDate');
+            $table->decimal('basic', 15, 2)->default(0);
+            $table->decimal('hra', 15, 2)->default(0);
+            $table->decimal('da', 15, 2)->default(0);
+            $table->decimal('pfPercent', 5, 2)->default(12);
+            $table->decimal('esicPercent', 5, 2)->default(0.75);
+            $table->decimal('otherAllowances', 15, 2)->default(0);
+            $table->text('remarks')->nullable();
+            $table->boolean('isActive')->default(true);
+            $table->unsignedBigInteger('createdBy')->nullable();
+            $table->timestamp('createdAt')->useCurrent();
+            $table->timestamp('updatedAt')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamp('deletedAt')->nullable();
+        });
+
+        // Employee Advance Memo - Loan/Advance tracking
+        Schema::create('EmployeeAdvance', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('employeeId');
+            $table->date('advanceDate');
+            $table->decimal('amount', 15, 2);
+            $table->string('purpose');
+            $table->string('recoveryMonth');
+            $table->integer('recoveryMonths')->default(1);
+            $table->decimal('monthlyDeduction', 15, 2)->default(0);
+            $table->decimal('recoveredAmount', 15, 2)->default(0);
+            $table->decimal('balanceAmount', 15, 2)->default(0);
+            $table->enum('status', ['Pending', 'Approved', 'Partially Recovered', 'Fully Recovered', 'Cancelled'])->default('Pending');
+            $table->text('remarks')->nullable();
+            $table->boolean('isActive')->default(true);
+            $table->unsignedBigInteger('approvedBy')->nullable();
             $table->unsignedBigInteger('createdBy')->nullable();
             $table->timestamp('createdAt')->useCurrent();
             $table->timestamp('updatedAt')->useCurrent()->useCurrentOnUpdate();
@@ -877,7 +934,7 @@ return new class extends Migration {
             'MaterialTransfer', 'MaterialReceiptItem', 'MaterialReceipt', 'MaterialIssueItem', 'MaterialIssue',
             'MaterialIndentItem', 'MaterialIndent', 'Warehouse',
             'IQCRecord',
-            'EmployeeSalarySheet', 'Employee',
+            'EmployeeAdvance', 'EmployeeSalaryStructure', 'SalaryHead', 'EmployeeSalarySheet', 'Employee',
             'JobWorkBill', 'JobChallan', 'JobOrderItem', 'JobOrder',
             'ProductionReport', 'ProductionRouteCard', 'RoutingTable', 'BOMItem', 'BOMHeader', 'Product',
             'PurchaseSchedule', 'PurchasePaymentVoucher', 'PurchaseBill', 'GRNItem', 'GRN',

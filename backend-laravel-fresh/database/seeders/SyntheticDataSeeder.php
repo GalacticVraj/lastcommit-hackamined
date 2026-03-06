@@ -20,6 +20,10 @@ use App\Models\VoucherPaymentReceipt;
 use App\Models\VoucherContra;
 use App\Models\VoucherGST;
 use App\Models\Employee;
+use App\Models\SalaryHead;
+use App\Models\EmployeeSalaryStructure;
+use App\Models\EmployeeSalarySheet;
+use App\Models\EmployeeAdvance;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\GRN;
@@ -89,25 +93,238 @@ class SyntheticDataSeeder extends Seeder
         echo "✅ Created " . count($products) . " products\n";
 
         // ══════════════════════════════════════════════════════════════════════
-        // EMPLOYEES
+        // EMPLOYEES (Comprehensive test data with all fields - 40 employees)
         // ══════════════════════════════════════════════════════════════════════
         $employees = [
-            ['empCode' => 'EMP001', 'name' => 'Amit Kumar', 'designation' => 'Production Manager', 'department' => 'Production', 'mobile' => '9876541001', 'basicSalary' => 45000],
-            ['empCode' => 'EMP002', 'name' => 'Priya Singh', 'designation' => 'Quality Engineer', 'department' => 'Quality', 'mobile' => '9876541002', 'basicSalary' => 35000],
-            ['empCode' => 'EMP003', 'name' => 'Rahul Sharma', 'designation' => 'Sales Executive', 'department' => 'Sales', 'mobile' => '9876541003', 'basicSalary' => 30000],
-            ['empCode' => 'EMP004', 'name' => 'Sneha Patel', 'designation' => 'HR Manager', 'department' => 'HR', 'mobile' => '9876541004', 'basicSalary' => 50000],
-            ['empCode' => 'EMP005', 'name' => 'Vikram Rao', 'designation' => 'Finance Officer', 'department' => 'Finance', 'mobile' => '9876541005', 'basicSalary' => 40000],
-            ['empCode' => 'EMP006', 'name' => 'Anita Desai', 'designation' => 'Purchase Manager', 'department' => 'Purchase', 'mobile' => '9876541006', 'basicSalary' => 42000],
-            ['empCode' => 'EMP007', 'name' => 'Suresh Menon', 'designation' => 'Warehouse Supervisor', 'department' => 'Warehouse', 'mobile' => '9876541007', 'basicSalary' => 28000],
-            ['empCode' => 'EMP008', 'name' => 'Kavita Joshi', 'designation' => 'Accounts Executive', 'department' => 'Finance', 'mobile' => '9876541008', 'basicSalary' => 25000],
+            // Production Department (12 employees - largest)
+            ['empCode' => 'EMP001', 'name' => 'Amit Kumar', 'designation' => 'Production Manager', 'department' => 'Production', 'mobile' => '9876541001', 'email' => 'amit.kumar@techmicra.com', 'panNo' => 'ABCPK1234A', 'aadharNo' => '123456781001', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345001', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 65000, 'hra' => 26000, 'da' => 6500, 'otherAllowances' => 8000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP009', 'name' => 'Rajesh Gupta', 'designation' => 'CNC Operator', 'department' => 'Production', 'mobile' => '9876541009', 'email' => 'rajesh.gupta@techmicra.com', 'panNo' => 'YZARG3456I', 'aadharNo' => '123456781009', 'bankName' => 'Bank of Baroda', 'bankAccount' => '50100012345009', 'ifscCode' => 'BARB0001234', 'basicSalary' => 28000, 'hra' => 11200, 'da' => 2800, 'otherAllowances' => 2000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP015', 'name' => 'Karthik Subramanian', 'designation' => 'Maintenance Engineer', 'department' => 'Production', 'mobile' => '9876541015', 'email' => 'karthik.s@techmicra.com', 'panNo' => 'QRSKS7890O', 'aadharNo' => '123456781015', 'bankName' => 'Indian Bank', 'bankAccount' => '50100012345015', 'ifscCode' => 'IDIB0001234', 'basicSalary' => 38000, 'hra' => 15200, 'da' => 3800, 'otherAllowances' => 4000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP016', 'name' => 'Manoj Tiwari', 'designation' => 'Machine Operator', 'department' => 'Production', 'mobile' => '9876541016', 'email' => 'manoj.tiwari@techmicra.com', 'panNo' => 'TUVMT1234P', 'aadharNo' => '123456781016', 'bankName' => 'SBI', 'bankAccount' => '50100012345016', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 24000, 'hra' => 9600, 'da' => 2400, 'otherAllowances' => 1800, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP017', 'name' => 'Ravi Shankar', 'designation' => 'Shift Supervisor', 'department' => 'Production', 'mobile' => '9876541017', 'email' => 'ravi.shankar@techmicra.com', 'panNo' => 'WXYZRS5678Q', 'aadharNo' => '123456781017', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345017', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 35000, 'hra' => 14000, 'da' => 3500, 'otherAllowances' => 3500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP018', 'name' => 'Gopal Krishnan', 'designation' => 'Assembly Technician', 'department' => 'Production', 'mobile' => '9876541018', 'email' => 'gopal.k@techmicra.com', 'panNo' => 'ABCGK9012R', 'aadharNo' => '123456781018', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345018', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 26000, 'hra' => 10400, 'da' => 2600, 'otherAllowances' => 2000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP019', 'name' => 'Santosh Yadav', 'designation' => 'Welding Operator', 'department' => 'Production', 'mobile' => '9876541019', 'email' => 'santosh.yadav@techmicra.com', 'panNo' => 'DEFSY3456S', 'aadharNo' => '123456781019', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345019', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 23000, 'hra' => 9200, 'da' => 2300, 'otherAllowances' => 1500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP020', 'name' => 'Vinod Sharma', 'designation' => 'Production Planner', 'department' => 'Production', 'mobile' => '9876541020', 'email' => 'vinod.sharma@techmicra.com', 'panNo' => 'GHIVS7890T', 'aadharNo' => '123456781020', 'bankName' => 'Kotak Bank', 'bankAccount' => '50100012345020', 'ifscCode' => 'KKBK0001234', 'basicSalary' => 42000, 'hra' => 16800, 'da' => 4200, 'otherAllowances' => 5000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP021', 'name' => 'Prakash Das', 'designation' => 'Lathe Operator', 'department' => 'Production', 'mobile' => '9876541021', 'email' => 'prakash.das@techmicra.com', 'panNo' => 'JKLPD1234U', 'aadharNo' => '123456781021', 'bankName' => 'SBI', 'bankAccount' => '50100012345021', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 22000, 'hra' => 8800, 'da' => 2200, 'otherAllowances' => 1500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP022', 'name' => 'Ramesh Babu', 'designation' => 'Grinding Operator', 'department' => 'Production', 'mobile' => '9876541022', 'email' => 'ramesh.babu@techmicra.com', 'panNo' => 'MNORB5678V', 'aadharNo' => '123456781022', 'bankName' => 'Canara Bank', 'bankAccount' => '50100012345022', 'ifscCode' => 'CNRB0001234', 'basicSalary' => 21000, 'hra' => 8400, 'da' => 2100, 'otherAllowances' => 1400, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP023', 'name' => 'Sunil Jain', 'designation' => 'Tool Room Incharge', 'department' => 'Production', 'mobile' => '9876541023', 'email' => 'sunil.jain@techmicra.com', 'panNo' => 'PQRSJ9012W', 'aadharNo' => '123456781023', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345023', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 32000, 'hra' => 12800, 'da' => 3200, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP024', 'name' => 'Ajay Patil', 'designation' => 'Helper', 'department' => 'Production', 'mobile' => '9876541024', 'email' => 'ajay.patil@techmicra.com', 'panNo' => 'TUVAP3456X', 'aadharNo' => '123456781024', 'bankName' => 'Bank of Baroda', 'bankAccount' => '50100012345024', 'ifscCode' => 'BARB0001234', 'basicSalary' => 18000, 'hra' => 7200, 'da' => 1800, 'otherAllowances' => 1200, 'pfApplicable' => true, 'esicApplicable' => true],
+
+            // Quality Department (6 employees)
+            ['empCode' => 'EMP002', 'name' => 'Priya Singh', 'designation' => 'Quality Engineer', 'department' => 'Quality', 'mobile' => '9876541002', 'email' => 'priya.singh@techmicra.com', 'panNo' => 'DEFPS5678B', 'aadharNo' => '123456781002', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345002', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 45000, 'hra' => 18000, 'da' => 4500, 'otherAllowances' => 4000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP010', 'name' => 'Meena Iyer', 'designation' => 'Quality Inspector', 'department' => 'Quality', 'mobile' => '9876541010', 'email' => 'meena.iyer@techmicra.com', 'panNo' => 'BCDMI7890J', 'aadharNo' => '123456781010', 'bankName' => 'Canara Bank', 'bankAccount' => '50100012345010', 'ifscCode' => 'CNRB0001234', 'basicSalary' => 28000, 'hra' => 11200, 'da' => 2800, 'otherAllowances' => 2200, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP025', 'name' => 'Naveen Kumar', 'designation' => 'QC Manager', 'department' => 'Quality', 'mobile' => '9876541025', 'email' => 'naveen.kumar@techmicra.com', 'panNo' => 'WXYNK7890Y', 'aadharNo' => '123456781025', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345025', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 55000, 'hra' => 22000, 'da' => 5500, 'otherAllowances' => 6000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP026', 'name' => 'Lakshmi Narayanan', 'designation' => 'Lab Technician', 'department' => 'Quality', 'mobile' => '9876541026', 'email' => 'lakshmi.n@techmicra.com', 'panNo' => 'ABCLN1234Z', 'aadharNo' => '123456781026', 'bankName' => 'SBI', 'bankAccount' => '50100012345026', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 26000, 'hra' => 10400, 'da' => 2600, 'otherAllowances' => 2000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP027', 'name' => 'Shreya Kapoor', 'designation' => 'Metrology Specialist', 'department' => 'Quality', 'mobile' => '9876541027', 'email' => 'shreya.kapoor@techmicra.com', 'panNo' => 'DEFSK5678A', 'aadharNo' => '123456781027', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345027', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 34000, 'hra' => 13600, 'da' => 3400, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP028', 'name' => 'Rahul Mehta', 'designation' => 'Quality Auditor', 'department' => 'Quality', 'mobile' => '9876541028', 'email' => 'rahul.mehta@techmicra.com', 'panNo' => 'GHIRM9012B', 'aadharNo' => '123456781028', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345028', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 38000, 'hra' => 15200, 'da' => 3800, 'otherAllowances' => 3500, 'pfApplicable' => true, 'esicApplicable' => false],
+
+            // Sales Department (8 employees)
+            ['empCode' => 'EMP003', 'name' => 'Rahul Sharma', 'designation' => 'Sales Executive', 'department' => 'Sales', 'mobile' => '9876541003', 'email' => 'rahul.sharma@techmicra.com', 'panNo' => 'GHIRS9012C', 'aadharNo' => '123456781003', 'bankName' => 'SBI', 'bankAccount' => '50100012345003', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 35000, 'hra' => 14000, 'da' => 3500, 'otherAllowances' => 12000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP011', 'name' => 'Deepak Verma', 'designation' => 'Sales Manager', 'department' => 'Sales', 'mobile' => '9876541011', 'email' => 'deepak.verma@techmicra.com', 'panNo' => 'EFGDV1234K', 'aadharNo' => '123456781011', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345011', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 70000, 'hra' => 28000, 'da' => 7000, 'otherAllowances' => 15000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP029', 'name' => 'Neha Agarwal', 'designation' => 'Regional Sales Head', 'department' => 'Sales', 'mobile' => '9876541029', 'email' => 'neha.agarwal@techmicra.com', 'panNo' => 'JKLNA3456C', 'aadharNo' => '123456781029', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345029', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 60000, 'hra' => 24000, 'da' => 6000, 'otherAllowances' => 10000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP030', 'name' => 'Vivek Saxena', 'designation' => 'Sales Executive', 'department' => 'Sales', 'mobile' => '9876541030', 'email' => 'vivek.saxena@techmicra.com', 'panNo' => 'MNOVS7890D', 'aadharNo' => '123456781030', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345030', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 32000, 'hra' => 12800, 'da' => 3200, 'otherAllowances' => 8000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP031', 'name' => 'Poornima Shetty', 'designation' => 'Sales Coordinator', 'department' => 'Sales', 'mobile' => '9876541031', 'email' => 'poornima.shetty@techmicra.com', 'panNo' => 'PQRPS1234E', 'aadharNo' => '123456781031', 'bankName' => 'SBI', 'bankAccount' => '50100012345031', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 28000, 'hra' => 11200, 'da' => 2800, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP032', 'name' => 'Ashwin Rao', 'designation' => 'Business Development', 'department' => 'Sales', 'mobile' => '9876541032', 'email' => 'ashwin.rao@techmicra.com', 'panNo' => 'STUVAR5678F', 'aadharNo' => '123456781032', 'bankName' => 'Kotak Bank', 'bankAccount' => '50100012345032', 'ifscCode' => 'KKBK0001234', 'basicSalary' => 45000, 'hra' => 18000, 'da' => 4500, 'otherAllowances' => 8000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP033', 'name' => 'Ananya Das', 'designation' => 'Inside Sales', 'department' => 'Sales', 'mobile' => '9876541033', 'email' => 'ananya.das@techmicra.com', 'panNo' => 'WXYDD9012G', 'aadharNo' => '123456781033', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345033', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 26000, 'hra' => 10400, 'da' => 2600, 'otherAllowances' => 4000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP034', 'name' => 'Sanjay Kulkarni', 'designation' => 'Key Account Manager', 'department' => 'Sales', 'mobile' => '9876541034', 'email' => 'sanjay.kulkarni@techmicra.com', 'panNo' => 'ABCSK3456H', 'aadharNo' => '123456781034', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345034', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 52000, 'hra' => 20800, 'da' => 5200, 'otherAllowances' => 10000, 'pfApplicable' => true, 'esicApplicable' => false],
+
+            // HR Department (4 employees)
+            ['empCode' => 'EMP004', 'name' => 'Sneha Patel', 'designation' => 'HR Manager', 'department' => 'HR', 'mobile' => '9876541004', 'email' => 'sneha.patel@techmicra.com', 'panNo' => 'JKLSP3456D', 'aadharNo' => '123456781004', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345004', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 58000, 'hra' => 23200, 'da' => 5800, 'otherAllowances' => 7000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP012', 'name' => 'Sunita Reddy', 'designation' => 'HR Executive', 'department' => 'HR', 'mobile' => '9876541012', 'email' => 'sunita.reddy@techmicra.com', 'panNo' => 'HIJSR5678L', 'aadharNo' => '123456781012', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345012', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 32000, 'hra' => 12800, 'da' => 3200, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP035', 'name' => 'Divya Krishnamurthy', 'designation' => 'Payroll Specialist', 'department' => 'HR', 'mobile' => '9876541035', 'email' => 'divya.k@techmicra.com', 'panNo' => 'DEFDK7890I', 'aadharNo' => '123456781035', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345035', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 36000, 'hra' => 14400, 'da' => 3600, 'otherAllowances' => 3500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP036', 'name' => 'Arjun Menon', 'designation' => 'Recruiter', 'department' => 'HR', 'mobile' => '9876541036', 'email' => 'arjun.menon@techmicra.com', 'panNo' => 'GHIAM1234J', 'aadharNo' => '123456781036', 'bankName' => 'SBI', 'bankAccount' => '50100012345036', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 30000, 'hra' => 12000, 'da' => 3000, 'otherAllowances' => 2500, 'pfApplicable' => true, 'esicApplicable' => true],
+
+            // Finance Department (5 employees)
+            ['empCode' => 'EMP005', 'name' => 'Vikram Rao', 'designation' => 'Finance Officer', 'department' => 'Finance', 'mobile' => '9876541005', 'email' => 'vikram.rao@techmicra.com', 'panNo' => 'MNOVR7890E', 'aadharNo' => '123456781005', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345005', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 52000, 'hra' => 20800, 'da' => 5200, 'otherAllowances' => 5500, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP008', 'name' => 'Kavita Joshi', 'designation' => 'Accounts Executive', 'department' => 'Finance', 'mobile' => '9876541008', 'email' => 'kavita.joshi@techmicra.com', 'panNo' => 'VWXKJ9012H', 'aadharNo' => '123456781008', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345008', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 30000, 'hra' => 12000, 'da' => 3000, 'otherAllowances' => 2500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP037', 'name' => 'Girish Hegde', 'designation' => 'Finance Manager', 'department' => 'Finance', 'mobile' => '9876541037', 'email' => 'girish.hegde@techmicra.com', 'panNo' => 'JKLGH5678K', 'aadharNo' => '123456781037', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345037', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 72000, 'hra' => 28800, 'da' => 7200, 'otherAllowances' => 10000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP038', 'name' => 'Ritu Singhania', 'designation' => 'Tax Analyst', 'department' => 'Finance', 'mobile' => '9876541038', 'email' => 'ritu.singhania@techmicra.com', 'panNo' => 'MNORS9012L', 'aadharNo' => '123456781038', 'bankName' => 'Kotak Bank', 'bankAccount' => '50100012345038', 'ifscCode' => 'KKBK0001234', 'basicSalary' => 42000, 'hra' => 16800, 'da' => 4200, 'otherAllowances' => 4000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP039', 'name' => 'Mohan Pillai', 'designation' => 'Accounts Clerk', 'department' => 'Finance', 'mobile' => '9876541039', 'email' => 'mohan.pillai@techmicra.com', 'panNo' => 'PQRMP3456M', 'aadharNo' => '123456781039', 'bankName' => 'SBI', 'bankAccount' => '50100012345039', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 24000, 'hra' => 9600, 'da' => 2400, 'otherAllowances' => 1800, 'pfApplicable' => true, 'esicApplicable' => true],
+
+            // Purchase Department (3 employees)
+            ['empCode' => 'EMP006', 'name' => 'Anita Desai', 'designation' => 'Purchase Manager', 'department' => 'Purchase', 'mobile' => '9876541006', 'email' => 'anita.desai@techmicra.com', 'panNo' => 'PQRAD1234F', 'aadharNo' => '123456781006', 'bankName' => 'Kotak Bank', 'bankAccount' => '50100012345006', 'ifscCode' => 'KKBK0001234', 'basicSalary' => 50000, 'hra' => 20000, 'da' => 5000, 'otherAllowances' => 6000, 'pfApplicable' => true, 'esicApplicable' => false],
+            ['empCode' => 'EMP040', 'name' => 'Bharat Singh', 'designation' => 'Purchase Executive', 'department' => 'Purchase', 'mobile' => '9876541040', 'email' => 'bharat.singh@techmicra.com', 'panNo' => 'STUBS7890N', 'aadharNo' => '123456781040', 'bankName' => 'ICICI Bank', 'bankAccount' => '50100012345040', 'ifscCode' => 'ICIC0001234', 'basicSalary' => 32000, 'hra' => 12800, 'da' => 3200, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP041', 'name' => 'Chitra Nambiar', 'designation' => 'Vendor Coordinator', 'department' => 'Purchase', 'mobile' => '9876541041', 'email' => 'chitra.nambiar@techmicra.com', 'panNo' => 'WXYCN1234O', 'aadharNo' => '123456781041', 'bankName' => 'Axis Bank', 'bankAccount' => '50100012345041', 'ifscCode' => 'UTIB0001234', 'basicSalary' => 28000, 'hra' => 11200, 'da' => 2800, 'otherAllowances' => 2500, 'pfApplicable' => true, 'esicApplicable' => true],
+
+            // Warehouse Department (5 employees)
+            ['empCode' => 'EMP007', 'name' => 'Suresh Menon', 'designation' => 'Warehouse Supervisor', 'department' => 'Warehouse', 'mobile' => '9876541007', 'email' => 'suresh.menon@techmicra.com', 'panNo' => 'STUSM5678G', 'aadharNo' => '123456781007', 'bankName' => 'SBI', 'bankAccount' => '50100012345007', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 35000, 'hra' => 14000, 'da' => 3500, 'otherAllowances' => 3000, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP013', 'name' => 'Arun Nair', 'designation' => 'Store Keeper', 'department' => 'Warehouse', 'mobile' => '9876541013', 'email' => 'arun.nair@techmicra.com', 'panNo' => 'KLMAN9012M', 'aadharNo' => '123456781013', 'bankName' => 'SBI', 'bankAccount' => '50100012345013', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 24000, 'hra' => 9600, 'da' => 2400, 'otherAllowances' => 1800, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP042', 'name' => 'Dinesh Choudhary', 'designation' => 'Inventory Clerk', 'department' => 'Warehouse', 'mobile' => '9876541042', 'email' => 'dinesh.choudhary@techmicra.com', 'panNo' => 'ABCDC5678P', 'aadharNo' => '123456781042', 'bankName' => 'Bank of Baroda', 'bankAccount' => '50100012345042', 'ifscCode' => 'BARB0001234', 'basicSalary' => 22000, 'hra' => 8800, 'da' => 2200, 'otherAllowances' => 1500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP043', 'name' => 'Faisal Ahmed', 'designation' => 'Material Handler', 'department' => 'Warehouse', 'mobile' => '9876541043', 'email' => 'faisal.ahmed@techmicra.com', 'panNo' => 'DEFFA9012Q', 'aadharNo' => '123456781043', 'bankName' => 'Canara Bank', 'bankAccount' => '50100012345043', 'ifscCode' => 'CNRB0001234', 'basicSalary' => 20000, 'hra' => 8000, 'da' => 2000, 'otherAllowances' => 1400, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP044', 'name' => 'Harish Gowda', 'designation' => 'Forklift Operator', 'department' => 'Warehouse', 'mobile' => '9876541044', 'email' => 'harish.gowda@techmicra.com', 'panNo' => 'GHIHG3456R', 'aadharNo' => '123456781044', 'bankName' => 'SBI', 'bankAccount' => '50100012345044', 'ifscCode' => 'SBIN0001234', 'basicSalary' => 21000, 'hra' => 8400, 'da' => 2100, 'otherAllowances' => 1500, 'pfApplicable' => true, 'esicApplicable' => true],
+
+            // Admin Department (2 employees)
+            ['empCode' => 'EMP014', 'name' => 'Pooja Malhotra', 'designation' => 'Admin Executive', 'department' => 'Admin', 'mobile' => '9876541014', 'email' => 'pooja.malhotra@techmicra.com', 'panNo' => 'NOPPM3456N', 'aadharNo' => '123456781014', 'bankName' => 'Punjab National Bank', 'bankAccount' => '50100012345014', 'ifscCode' => 'PUNB0001234', 'basicSalary' => 30000, 'hra' => 12000, 'da' => 3000, 'otherAllowances' => 2500, 'pfApplicable' => true, 'esicApplicable' => true],
+            ['empCode' => 'EMP045', 'name' => 'Isha Bhatt', 'designation' => 'Office Assistant', 'department' => 'Admin', 'mobile' => '9876541045', 'email' => 'isha.bhatt@techmicra.com', 'panNo' => 'JKLIB7890S', 'aadharNo' => '123456781045', 'bankName' => 'HDFC Bank', 'bankAccount' => '50100012345045', 'ifscCode' => 'HDFC0001234', 'basicSalary' => 22000, 'hra' => 8800, 'da' => 2200, 'otherAllowances' => 1800, 'pfApplicable' => true, 'esicApplicable' => true],
         ];
 
         foreach ($employees as $e) {
             Employee::firstOrCreate(['empCode' => $e['empCode']], array_merge($e, [
+                'doj' => now()->subMonths(rand(6, 36))->toDateString(),
                 'isActive' => true,
             ]));
         }
         echo "✅ Created " . count($employees) . " employees\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // HR - SALARY HEADS (5.2)
+        // ══════════════════════════════════════════════════════════════════════
+        $salaryHeads = [
+            ['headCode' => 'BASIC', 'headName' => 'Basic Salary', 'headType' => 'Earning', 'description' => 'Basic pay component'],
+            ['headCode' => 'HRA', 'headName' => 'House Rent Allowance', 'headType' => 'Earning', 'description' => 'Housing allowance'],
+            ['headCode' => 'DA', 'headName' => 'Dearness Allowance', 'headType' => 'Earning', 'description' => 'Inflation adjustment'],
+            ['headCode' => 'TA', 'headName' => 'Transport Allowance', 'headType' => 'Earning', 'description' => 'Travel expenses'],
+            ['headCode' => 'MA', 'headName' => 'Medical Allowance', 'headType' => 'Earning', 'description' => 'Medical benefits'],
+            ['headCode' => 'SA', 'headName' => 'Special Allowance', 'headType' => 'Earning', 'description' => 'Special pay'],
+            ['headCode' => 'PF', 'headName' => 'Provident Fund', 'headType' => 'Deduction', 'description' => '12% PF contribution'],
+            ['headCode' => 'ESIC', 'headName' => 'ESIC', 'headType' => 'Deduction', 'description' => 'Employee State Insurance'],
+            ['headCode' => 'PT', 'headName' => 'Professional Tax', 'headType' => 'Deduction', 'description' => 'State professional tax'],
+            ['headCode' => 'TDS', 'headName' => 'TDS', 'headType' => 'Deduction', 'description' => 'Tax deducted at source'],
+            ['headCode' => 'LOP', 'headName' => 'Loss of Pay', 'headType' => 'Deduction', 'description' => 'Absent day deduction'],
+            ['headCode' => 'LOAN', 'headName' => 'Loan Recovery', 'headType' => 'Deduction', 'description' => 'Monthly loan EMI'],
+        ];
+
+        foreach ($salaryHeads as $h) {
+            SalaryHead::firstOrCreate(['headCode' => $h['headCode']], array_merge($h, ['isActive' => true]));
+        }
+        echo "✅ Created " . count($salaryHeads) . " salary heads\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // HR - EMPLOYEE SALARY STRUCTURES (5.3)
+        // ══════════════════════════════════════════════════════════════════════
+        $allEmployees = Employee::all();
+        foreach ($allEmployees as $emp) {
+            EmployeeSalaryStructure::firstOrCreate(
+                ['employeeId' => $emp->id, 'effectiveDate' => '2026-01-01'],
+                [
+                    'basic' => $emp->basicSalary,
+                    'hra' => $emp->basicSalary * 0.4,
+                    'da' => $emp->basicSalary * 0.1,
+                    'pfPercent' => 12,
+                    'esicPercent' => 0.75,
+                    'otherAllowances' => $emp->basicSalary * 0.1,
+                    'isActive' => true,
+                    'createdBy' => 1,
+                ]
+            );
+        }
+        echo "✅ Created " . count($allEmployees) . " salary structures\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // HR - EMPLOYEE SALARY SHEETS (5.4) - 6 months of data
+        // ══════════════════════════════════════════════════════════════════════
+        $monthsData = [
+            ['month' => 'October', 'year' => 2025, 'days' => 31, 'status' => 'Processed'],
+            ['month' => 'November', 'year' => 2025, 'days' => 30, 'status' => 'Processed'],
+            ['month' => 'December', 'year' => 2025, 'days' => 31, 'status' => 'Processed'],
+            ['month' => 'January', 'year' => 2026, 'days' => 31, 'status' => 'Processed'],
+            ['month' => 'February', 'year' => 2026, 'days' => 28, 'status' => 'Processed'],
+            ['month' => 'March', 'year' => 2026, 'days' => 31, 'status' => 'Draft'],
+        ];
+        $sheetCount = 0;
+        foreach ($allEmployees as $emp) {
+            foreach ($monthsData as $m) {
+                $basic = $emp->basicSalary ?? 25000;
+                $hra = $emp->hra ?? ($basic * 0.4);
+                $da = $emp->da ?? ($basic * 0.1);
+                $other = $emp->otherAllowances ?? ($basic * 0.1);
+                $gross = $basic + $hra + $da + $other;
+                
+                $pfDeduction = $emp->pfApplicable ? ($basic * 0.12) : 0;
+                $esicDeduction = $emp->esicApplicable ? ($gross * 0.0075) : 0;
+                $tdsDeduction = $basic > 40000 ? ($gross * 0.05) : 0; // TDS for higher earners
+                $deductions = $pfDeduction + $esicDeduction + $tdsDeduction;
+                
+                $presentDays = rand($m['days'] - 4, $m['days']);
+                $absentDays = $m['days'] - $presentDays;
+                
+                EmployeeSalarySheet::firstOrCreate(
+                    ['employeeId' => $emp->id, 'month' => $m['month'], 'year' => $m['year']],
+                    [
+                        'totalDays' => $m['days'],
+                        'presentDays' => $presentDays,
+                        'absentDays' => $absentDays,
+                        'grossSalary' => $gross,
+                        'deductions' => $deductions,
+                        'pfDeduction' => $pfDeduction,
+                        'esicDeduction' => $esicDeduction,
+                        'tdsDeduction' => $tdsDeduction,
+                        'otherDeductions' => 0,
+                        'netPay' => $gross - $deductions,
+                        'status' => $m['status'],
+                        'isActive' => true,
+                        'createdBy' => 1,
+                    ]
+                );
+                $sheetCount++;
+            }
+        }
+        echo "✅ Created {$sheetCount} salary sheets (6 months × " . count($allEmployees) . " employees)\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // HR - EMPLOYEE ADVANCES (5.5) - Comprehensive test data with diverse statuses
+        // ══════════════════════════════════════════════════════════════════════
+        $advances = [
+            // Pending Advances (8)
+            ['employeeId' => 3, 'advanceDate' => '2026-02-20', 'amount' => 10000, 'purpose' => 'Vehicle Repair', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 2, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 8, 'advanceDate' => '2026-02-15', 'amount' => 12000, 'purpose' => 'Child Education Fee', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 3, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 10, 'advanceDate' => '2026-03-01', 'amount' => 18000, 'purpose' => 'Festival Advance', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 3, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 16, 'advanceDate' => '2026-03-05', 'amount' => 8000, 'purpose' => 'Medical Checkup', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 2, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 22, 'advanceDate' => '2026-03-10', 'amount' => 15000, 'purpose' => 'Home Renovation', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 3, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 28, 'advanceDate' => '2026-03-08', 'amount' => 25000, 'purpose' => 'Wedding Expense', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 5, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 35, 'advanceDate' => '2026-03-12', 'amount' => 20000, 'purpose' => 'Vehicle Purchase', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 4, 'status' => 'Pending', 'recoveredAmount' => 0],
+            ['employeeId' => 40, 'advanceDate' => '2026-03-15', 'amount' => 12000, 'purpose' => 'Emergency Fund', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 2, 'status' => 'Pending', 'recoveredAmount' => 0],
+
+            // Approved Advances (6)
+            ['employeeId' => 2, 'advanceDate' => '2026-02-01', 'amount' => 15000, 'purpose' => 'Home Repair', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 3, 'status' => 'Approved', 'recoveredAmount' => 0],
+            ['employeeId' => 5, 'advanceDate' => '2026-01-05', 'amount' => 30000, 'purpose' => 'Festival Advance', 'recoveryMonth' => 'February 2026', 'recoveryMonths' => 6, 'status' => 'Approved', 'recoveredAmount' => 5000],
+            ['employeeId' => 18, 'advanceDate' => '2026-02-10', 'amount' => 22000, 'purpose' => 'Education Fees', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 4, 'status' => 'Approved', 'recoveredAmount' => 0],
+            ['employeeId' => 25, 'advanceDate' => '2026-02-20', 'amount' => 35000, 'purpose' => 'Medical Surgery', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 7, 'status' => 'Approved', 'recoveredAmount' => 5000],
+            ['employeeId' => 32, 'advanceDate' => '2026-02-25', 'amount' => 18000, 'purpose' => 'Furniture Purchase', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 3, 'status' => 'Approved', 'recoveredAmount' => 0],
+            ['employeeId' => 38, 'advanceDate' => '2026-03-01', 'amount' => 28000, 'purpose' => 'House Rent Deposit', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 4, 'status' => 'Approved', 'recoveredAmount' => 0],
+
+            // Partially Recovered (10)
+            ['employeeId' => 1, 'advanceDate' => '2026-01-15', 'amount' => 20000, 'purpose' => 'Medical Emergency', 'recoveryMonth' => 'February 2026', 'recoveryMonths' => 4, 'status' => 'Partially Recovered', 'recoveredAmount' => 10000],
+            ['employeeId' => 4, 'advanceDate' => '2025-11-01', 'amount' => 50000, 'purpose' => 'Education Loan', 'recoveryMonth' => 'December 2025', 'recoveryMonths' => 10, 'status' => 'Partially Recovered', 'recoveredAmount' => 25000],
+            ['employeeId' => 7, 'advanceDate' => '2026-01-20', 'amount' => 8000, 'purpose' => 'Marriage Expense', 'recoveryMonth' => 'February 2026', 'recoveryMonths' => 2, 'status' => 'Partially Recovered', 'recoveredAmount' => 4000],
+            ['employeeId' => 9, 'advanceDate' => '2025-10-05', 'amount' => 40000, 'purpose' => 'Medical Treatment', 'recoveryMonth' => 'November 2025', 'recoveryMonths' => 8, 'status' => 'Partially Recovered', 'recoveredAmount' => 20000],
+            ['employeeId' => 11, 'advanceDate' => '2025-09-15', 'amount' => 100000, 'purpose' => 'Home Loan Down Payment', 'recoveryMonth' => 'October 2025', 'recoveryMonths' => 20, 'status' => 'Partially Recovered', 'recoveredAmount' => 35000],
+            ['employeeId' => 14, 'advanceDate' => '2025-12-01', 'amount' => 45000, 'purpose' => 'Vehicle Loan', 'recoveryMonth' => 'January 2026', 'recoveryMonths' => 9, 'status' => 'Partially Recovered', 'recoveredAmount' => 15000],
+            ['employeeId' => 20, 'advanceDate' => '2025-11-15', 'amount' => 60000, 'purpose' => 'Business Investment', 'recoveryMonth' => 'December 2025', 'recoveryMonths' => 12, 'status' => 'Partially Recovered', 'recoveredAmount' => 25000],
+            ['employeeId' => 27, 'advanceDate' => '2025-12-10', 'amount' => 30000, 'purpose' => 'Child Education', 'recoveryMonth' => 'January 2026', 'recoveryMonths' => 6, 'status' => 'Partially Recovered', 'recoveredAmount' => 15000],
+            ['employeeId' => 33, 'advanceDate' => '2026-01-01', 'amount' => 25000, 'purpose' => 'Festival Expenses', 'recoveryMonth' => 'February 2026', 'recoveryMonths' => 5, 'status' => 'Partially Recovered', 'recoveredAmount' => 10000],
+            ['employeeId' => 42, 'advanceDate' => '2025-10-20', 'amount' => 35000, 'purpose' => 'Home Appliances', 'recoveryMonth' => 'November 2025', 'recoveryMonths' => 7, 'status' => 'Partially Recovered', 'recoveredAmount' => 20000],
+
+            // Fully Recovered (8)
+            ['employeeId' => 6, 'advanceDate' => '2025-12-10', 'amount' => 25000, 'purpose' => 'House Rent Deposit', 'recoveryMonth' => 'January 2026', 'recoveryMonths' => 5, 'status' => 'Fully Recovered', 'recoveredAmount' => 25000],
+            ['employeeId' => 12, 'advanceDate' => '2026-01-25', 'amount' => 5000, 'purpose' => 'Emergency Fund', 'recoveryMonth' => 'February 2026', 'recoveryMonths' => 1, 'status' => 'Fully Recovered', 'recoveredAmount' => 5000],
+            ['employeeId' => 3, 'advanceDate' => '2025-08-10', 'amount' => 15000, 'purpose' => 'Bike Purchase', 'recoveryMonth' => 'September 2025', 'recoveryMonths' => 5, 'status' => 'Fully Recovered', 'recoveredAmount' => 15000],
+            ['employeeId' => 15, 'advanceDate' => '2025-07-15', 'amount' => 20000, 'purpose' => 'Medical Treatment', 'recoveryMonth' => 'August 2025', 'recoveryMonths' => 4, 'status' => 'Fully Recovered', 'recoveredAmount' => 20000],
+            ['employeeId' => 21, 'advanceDate' => '2025-08-20', 'amount' => 18000, 'purpose' => 'Education Fees', 'recoveryMonth' => 'September 2025', 'recoveryMonths' => 3, 'status' => 'Fully Recovered', 'recoveredAmount' => 18000],
+            ['employeeId' => 29, 'advanceDate' => '2025-09-01', 'amount' => 12000, 'purpose' => 'Travel Expense', 'recoveryMonth' => 'October 2025', 'recoveryMonths' => 2, 'status' => 'Fully Recovered', 'recoveredAmount' => 12000],
+            ['employeeId' => 36, 'advanceDate' => '2025-10-05', 'amount' => 30000, 'purpose' => 'Laptop Purchase', 'recoveryMonth' => 'November 2025', 'recoveryMonths' => 6, 'status' => 'Fully Recovered', 'recoveredAmount' => 30000],
+            ['employeeId' => 44, 'advanceDate' => '2025-11-10', 'amount' => 10000, 'purpose' => 'Mobile Purchase', 'recoveryMonth' => 'December 2025', 'recoveryMonths' => 2, 'status' => 'Fully Recovered', 'recoveredAmount' => 10000],
+
+            // Cancelled (3)
+            ['employeeId' => 5, 'advanceDate' => '2026-03-05', 'amount' => 20000, 'purpose' => 'Laptop Purchase', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 4, 'status' => 'Cancelled', 'recoveredAmount' => 0],
+            ['employeeId' => 19, 'advanceDate' => '2026-02-28', 'amount' => 15000, 'purpose' => 'Vacation', 'recoveryMonth' => 'March 2026', 'recoveryMonths' => 3, 'status' => 'Cancelled', 'recoveredAmount' => 0],
+            ['employeeId' => 31, 'advanceDate' => '2026-03-02', 'amount' => 25000, 'purpose' => 'Investment', 'recoveryMonth' => 'April 2026', 'recoveryMonths' => 5, 'status' => 'Cancelled', 'recoveredAmount' => 0],
+        ];
+
+        foreach ($advances as $a) {
+            $data = array_merge($a, [
+                'monthlyDeduction' => $a['amount'] / $a['recoveryMonths'],
+                'balanceAmount' => $a['amount'] - $a['recoveredAmount'],
+                'isActive' => true,
+                'createdBy' => 1,
+                'approvedBy' => $a['status'] !== 'Pending' ? 1 : null,
+            ]);
+            EmployeeAdvance::firstOrCreate(
+                ['employeeId' => $a['employeeId'], 'advanceDate' => $a['advanceDate']],
+                $data
+            );
+        }
+        echo "✅ Created " . count($advances) . " employee advances\n";
 
         // ══════════════════════════════════════════════════════════════════════
         // FINANCE - JOURNAL VOUCHERS
