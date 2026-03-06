@@ -27,7 +27,7 @@ export default function SimulationPage() {
     const removeRow = (i) => setInputs(inputs.filter((_, idx) => idx !== i));
     const updateInput = (i, field, value) => {
         const updated = [...inputs];
-        updated[i][field] = field === 'targetQty' || field === 'productId' ? Number(value) : value;
+        updated[i][field] = value;
         setInputs(updated);
     };
 
@@ -77,11 +77,11 @@ export default function SimulationPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
                     <div className="form-group">
                         <label className="form-label">Shift Hours</label>
-                        <input className="form-input" type="number" value={shiftHours} onChange={e => setShiftHours(Number(e.target.value))} />
+                        <input className="form-input" type="number" value={shiftHours} onChange={e => setShiftHours(e.target.value)} />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Worker Count</label>
-                        <input className="form-input" type="number" value={workerCount} onChange={e => setWorkerCount(Number(e.target.value))} />
+                        <input className="form-input" type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
                     </div>
                 </div>
                 <table className="data-table" style={{ marginBottom: '16px' }}>

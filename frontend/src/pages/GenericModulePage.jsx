@@ -295,14 +295,62 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                         <div className="modal-header"><h2>New Record</h2><button className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>✕</button></div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
-                                {(currentTab.formFields || [{ name: 'name', label: 'Name' }]).map(f => (
-                                    <div className="form-group" key={f.name}>
-                                        <label className="form-label">{f.label}</label>
-                                        <input className="form-input" type={f.type || 'text'} required={f.required}
-                                            value={createForm[f.name] || ''}
-                                            onChange={e => setCreateForm({ ...createForm, [f.name]: f.type === 'number' ? Number(e.target.value) : e.target.value })} />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    {(currentTab.formFields || [{ name: 'name', label: 'Name' }]).map(f => (
+                                        <div className="form-group" key={f.name}>
+                                            <label className="form-label">{f.label}</label>
+                                            <input className="form-input" type={f.type || 'text'} required={f.required}
+                                                value={createForm[f.name] || ''}
+                                                onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })} />
+                                        </div>
+                                    ))}
+                                </div>
+                                {currentTab.hasItems && (
+                                    <div style={{ marginTop: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <h4>Line Items</h4>
+                                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCreateForm(prev => ({ ...prev, items: [...(prev.items || []), { productId: '', quantity: 1, rate: 0, gstPercent: 18 }] }))}>
+                                                <Plus size={14} /> Add Row
+                                            </button>
+                                        </div>
+                                        <table className="data-table" style={{ fontSize: '12px' }}>
+                                            <thead><tr><th>Product ID</th><th>Qty</th><th>Rate</th><th>GST %</th><th></th></tr></thead>
+                                            <tbody>
+                                                {(createForm.items || []).map((item, idx) => (
+                                                    <tr key={idx}>
+                                                        <td><input className="form-input" style={{ width: '80px', padding: '4px' }} type="number" required value={item.productId} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].productId = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '60px', padding: '4px' }} type="number" required min="1" value={item.quantity} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].quantity = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '80px', padding: '4px' }} type="number" required min="0" step="0.01" value={item.rate} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].rate = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '60px', padding: '4px' }} type="number" required min="0" value={item.gstPercent} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].gstPercent = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => {
+                                                            const newItems = createForm.items.filter((_, i) => i !== idx);
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }}><Trash2 size={14} /></button></td>
+                                                    </tr>
+                                                ))}
+                                                {(!createForm.items || createForm.items.length === 0) && (
+                                                    <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No items added</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                ))}
+                                )}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>

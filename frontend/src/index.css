@@ -113,8 +113,7 @@ a:hover { color: var(--primary-dark); }
 /* ── Glass Utility ── */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
@@ -133,8 +132,7 @@ a:hover { color: var(--primary-dark); }
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+
 }
 
 .btn-primary {
@@ -161,7 +159,7 @@ a:hover { color: var(--primary-dark); }
   background: rgba(255, 255, 255, 0.2);
   color: var(--text-secondary);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(8px);
+
 }
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.4);
@@ -207,7 +205,7 @@ a:hover { color: var(--primary-dark); }
   font-family: inherit;
   font-size: 14px;
   transition: all 0.2s;
-  backdrop-filter: blur(8px);
+
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -228,8 +226,7 @@ a:hover { color: var(--primary-dark); }
 /* ── Cards - Glass Morphism ── */
 .card {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -270,8 +267,7 @@ a:hover { color: var(--primary-dark); }
 .sidebar {
   width: var(--sidebar-width);
   background: var(--glass-bg-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   position: fixed;
@@ -420,8 +416,7 @@ a:hover { color: var(--primary-dark); }
 .top-header {
   height: var(--header-height);
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   display: flex;
@@ -505,8 +500,7 @@ a:hover { color: var(--primary-dark); }
 
 .stat-card {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -532,7 +526,7 @@ a:hover { color: var(--primary-dark); }
   flex-shrink: 0;
   position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(8px);
+
   border: 1px solid rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
 }
@@ -578,7 +572,7 @@ a:hover { color: var(--primary-dark); }
   gap: 4px;
   padding: 4px 10px;
   border-radius: 20px;
-  backdrop-filter: blur(8px);
+
 }
 
 .stat-trend.up { background: rgba(16, 185, 129, 0.15); color: var(--success); }
@@ -602,8 +596,7 @@ a:hover { color: var(--primary-dark); }
 /* ── Data Table - Glass ── */
 .table-container {
   background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -628,7 +621,7 @@ a:hover { color: var(--primary-dark); }
   font-size: 13px;
   width: 280px;
   transition: all 0.2s;
-  backdrop-filter: blur(8px);
+
 }
 
 .table-search:focus {
@@ -690,7 +683,7 @@ a:hover { color: var(--primary-dark); }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  backdrop-filter: blur(8px);
+
 }
 
 .badge-pending { background: rgba(245, 158, 11, 0.2); color: #B45309; }
@@ -705,7 +698,7 @@ a:hover { color: var(--primary-dark); }
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -715,8 +708,7 @@ a:hover { color: var(--primary-dark); }
 
 .modal-content {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   width: 90%;
@@ -778,8 +770,7 @@ a:hover { color: var(--primary-dark); }
 
 .login-card {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: 48px;
@@ -808,7 +799,7 @@ a:hover { color: var(--primary-dark); }
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -817,8 +808,7 @@ a:hover { color: var(--primary-dark); }
 
 .confirm-box {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 28px;
@@ -994,3 +984,4 @@ a:hover { color: var(--primary-dark); }
   color: var(--primary);
   border-bottom-color: var(--primary);
 }
+

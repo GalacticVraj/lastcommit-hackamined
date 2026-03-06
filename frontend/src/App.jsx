@@ -42,9 +42,9 @@ const purchaseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'vendors', label: 'Vendors', endpoint: '/vendors', columns: ['name', 'gstin', 'city', 'state', 'contactPerson'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'gstin', label: 'GSTIN' }, { name: 'address', label: 'Address' }, { name: 'city', label: 'City' }, { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' }, { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' }] },
-    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'] },
-    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'] },
-    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'] },
+    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true },
+    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true },
+    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true },
   ]
 };
 

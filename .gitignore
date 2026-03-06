@@ -1,0 +1,18 @@
+# Node
+node_modules/
+
+# Vendors (PHP/Laravel)
+vendor/
+
+# Environment
+.env
+.env.*
+
+# Databases
+*.sqlite
+*.db
+dev.db
+
+# OS Files
+.DS_Store
+Thumbs.db

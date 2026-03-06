@@ -25,9 +25,8 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow:
         0 4px 16px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
@@ -35,7 +34,7 @@
 .glass-date-trigger:hover {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 100%);
     border-color: rgba(249, 115, 22, 0.4);
-    box-shadow: 
+    box-shadow:
         0 6px 20px rgba(0, 0, 0, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.6),
         0 0 0 3px rgba(249, 115, 22, 0.08);
@@ -45,7 +44,7 @@
 .glass-date-picker.open .glass-date-trigger {
     border-color: #f97316;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.4) 100%);
-    box-shadow: 
+    box-shadow:
         0 8px 24px rgba(249, 115, 22, 0.12),
         inset 0 1px 0 rgba(255, 255, 255, 0.7),
         0 0 0 4px rgba(249, 115, 22, 0.15);
@@ -82,9 +81,8 @@
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-md);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.18),
         0 4px 12px rgba(0, 0, 0, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -96,6 +94,7 @@
         opacity: 0;
         transform: translateY(-8px) scale(0.98);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
