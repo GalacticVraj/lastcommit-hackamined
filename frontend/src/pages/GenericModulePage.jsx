@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Loader2, Check, X } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DataTable from '../components/DataTable';
 import api from '../lib/api';
@@ -10,6 +10,7 @@ import RecordEditModal from '../components/RecordEditModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ProfileLink from '../components/ProfileLink';
 import FinanceDashboard from '../components/FinanceDashboard';
+import HRDashboard from '../components/HRDashboard';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -39,6 +40,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
     const [showCreate, setShowCreate] = useState(false);
     const [createForm, setCreateForm] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    const [dynamicOptions, setDynamicOptions] = useState({});
 
     // View
     const [viewRecord, setViewRecord] = useState(null);
@@ -79,6 +81,62 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
     }, [activeTab]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    // Load dynamic options for form fields with optionsEndpoint
+    const loadDynamicOptions = useCallback(async () => {
+        const fields = currentTab.formFields || [];
+        const endpointsToFetch = fields.filter(f => f.optionsEndpoint && !dynamicOptions[f.optionsEndpoint]);
+        
+        for (const field of endpointsToFetch) {
+            try {
+                const res = await api.get(field.optionsEndpoint);
+                const items = res.data.data || res.data || [];
+                setDynamicOptions(prev => ({
+                    ...prev,
+                    [field.optionsEndpoint]: items.map(item => ({
+                        value: field.optionsValue ? item[field.optionsValue] : item.id,
+                        label: field.optionsLabel ? item[field.optionsLabel] : item.name || item.empCode || String(item.id)
+                    }))
+                }));
+            } catch (err) {
+                console.error(`Failed to load options from ${field.optionsEndpoint}:`, err);
+            }
+        }
+    }, [currentTab.formFields, dynamicOptions]);
+
+    // Load dynamic options when create form opens
+    useEffect(() => {
+        if (showCreate) loadDynamicOptions();
+    }, [showCreate, loadDynamicOptions]);
+
+    // Handle auto-population when a field with autoPopulateEndpoint changes
+    const handleAutoPopulate = async (field, value) => {
+        if (!field.autoPopulateEndpoint || !value) return;
+        
+        try {
+            // Replace {value} placeholder in endpoint with actual selected value
+            const endpoint = field.autoPopulateEndpoint.replace('{value}', value);
+            const res = await api.get(endpoint);
+            const data = res.data.data;
+            
+            if (data && field.autoPopulateMap) {
+                // autoPopulateMap: { 'calculated.grossSalary': 'grossSalary', 'calculated.pfDeduction': 'pfDeduction', ... }
+                const updates = {};
+                for (const [sourcePath, targetField] of Object.entries(field.autoPopulateMap)) {
+                    // Get nested value from source path like 'calculated.grossSalary'
+                    const pathParts = sourcePath.split('.');
+                    let val = data;
+                    for (const part of pathParts) {
+                        val = val?.[part];
+                    }
+                    if (val !== undefined) updates[targetField] = val;
+                }
+                setCreateForm(prev => ({ ...prev, ...updates }));
+            }
+        } catch (err) {
+            console.error('Auto-populate failed:', err);
+        }
+    };
 
     // Fetch full record for view panel
     const handleViewOpen = async (item) => {
@@ -163,7 +221,10 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
             if (colKey === 'salesman.name' || colKey === 'salesPerson') return <ProfileLink id={item.salesmanId || item.salesPerson} name={val} type="salesman" />;
             if (activeTab === 'salesmen' && colKey === 'name') return <ProfileLink id={item.id} name={val} type="salesman" />;
 
-            if (colKey === 'status') return <span className="badge badge-active">{val}</span>;
+            if (colKey === 'status') {
+                const statusClass = val?.toLowerCase().replace(/\s+/g, '-') || 'active';
+                return <span className={`badge badge-${statusClass}`}>{val}</span>;
+            }
             if (typeof val === 'number' && val > 999) return `₹${val.toLocaleString()}`;
             return val ?? '—';
         }
@@ -183,17 +244,23 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 </button>
             </PermissionGate>
 
-            {(currentTab.statusActions || []).map(action => (
-                item.status !== action.status && (
+            {(currentTab.statusActions || []).map(action => {
+                if (item.status === action.status) return null;
+                const isApprove = action.status === 'Approved';
+                const isCancel = action.status === 'Cancelled';
+                const iconColor = isApprove ? '#059669' : isCancel ? '#DC2626' : undefined;
+                const ActionIcon = isApprove ? Check : isCancel ? X : null;
+                return (
                     <PermissionGate key={action.label} permission={`${moduleName}.edit`}>
-                        <button className={`btn btn-sm ${action.class || 'btn-ghost'}`}
-                            title={action.label} style={{ padding: '4px 8px', fontSize: '12px' }}
+                        <button className="btn btn-ghost btn-sm"
+                            title={action.label} 
+                            style={{ padding: '4px 8px', color: iconColor }}
                             onClick={() => handleStatusAction(item, action)}>
-                            {action.label}
+                            {ActionIcon ? <ActionIcon size={14} /> : action.label}
                         </button>
                     </PermissionGate>
-                )
-            ))}
+                );
+            })}
 
             <PermissionGate permission={currentTab.deletePermission || `${moduleName}.delete`}>
                 <button className="btn btn-ghost btn-sm" title="Delete"
@@ -229,8 +296,13 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 <FinanceDashboard />
             )}
 
-            {/* Dashboard stats for non-Finance modules */}
-            {activeTab === 'dashboard' && apiBase !== '/finance' && stats && (
+            {/* Dashboard - HR gets special component */}
+            {activeTab === 'dashboard' && apiBase === '/hr' && (
+                <HRDashboard />
+            )}
+
+            {/* Dashboard stats for other modules */}
+            {activeTab === 'dashboard' && apiBase !== '/finance' && apiBase !== '/hr' && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
                         <div className="stat-card" key={key}>
@@ -308,11 +380,21 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                                             {f.type === 'select' ? (
                                                 <select className="form-input" required={f.required}
                                                     value={createForm[f.name] || ''}
-                                                    onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })}>
+                                                    onChange={e => {
+                                                        const newValue = e.target.value;
+                                                        setCreateForm({ ...createForm, [f.name]: newValue });
+                                                        // Auto-populate related fields if configured
+                                                        if (f.autoPopulateEndpoint) handleAutoPopulate(f, newValue);
+                                                    }}>
                                                     <option value="">Select {f.label}</option>
-                                                    {(f.options || []).map(opt => (
-                                                        <option key={opt} value={opt}>{opt}</option>
-                                                    ))}
+                                                    {f.optionsEndpoint 
+                                                        ? (dynamicOptions[f.optionsEndpoint] || []).map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))
+                                                        : (f.options || []).map(opt => (
+                                                            <option key={opt} value={opt}>{opt}</option>
+                                                        ))
+                                                    }
                                                 </select>
                                             ) : (
                                                 <input className="form-input" type={f.type || 'text'} required={f.required}

@@ -59,21 +59,57 @@ export default function DataTable({
         onSort?.(col.key, newDir);
     };
 
-    // CSV Export
+    // CSV Export - exports ALL fields from data, not just displayed columns
     const exportCSV = () => {
-        const headers = columns.map(c => c.label).join(',');
+        if (!data.length) return;
+        
+        // Get all unique keys from all rows (including nested objects)
+        const getAllKeys = (obj, prefix = '') => {
+            let keys = [];
+            for (const key of Object.keys(obj)) {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key]) && !(obj[key] instanceof Date)) {
+                    keys = keys.concat(getAllKeys(obj[key], fullKey));
+                } else if (!Array.isArray(obj[key])) {
+                    keys.push(fullKey);
+                }
+            }
+            return keys;
+        };
+        
+        // Collect all keys from all rows
+        const allKeysSet = new Set();
+        data.forEach(row => {
+            getAllKeys(row).forEach(key => allKeysSet.add(key));
+        });
+        const allKeys = Array.from(allKeysSet);
+        
+        // Create header labels (convert camelCase to Title Case)
+        const headers = allKeys.map(key => {
+            const label = key.split('.').pop()
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, c => c.toUpperCase())
+                .trim();
+            return `"${label}"`;
+        }).join(',');
+        
+        // Create rows
         const rows = data.map(row =>
-            columns.map(c => {
-                const val = c.key.split('.').reduce((o, k) => o?.[k], row);
-                return `"${String(val ?? '').replace(/"/g, '""')}"`;
+            allKeys.map(key => {
+                const val = key.split('.').reduce((o, k) => o?.[k], row);
+                // Format values for CSV
+                if (val === null || val === undefined) return '""';
+                if (typeof val === 'boolean') return val ? '"Yes"' : '"No"';
+                return `"${String(val).replace(/"/g, '""')}"`;
             }).join(',')
         );
+        
         const csv = [headers, ...rows].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${moduleName}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `${moduleName}-full-export-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -116,8 +152,8 @@ export default function DataTable({
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: 'auto' }}>
-                <table className="data-table" style={{ minWidth: '600px' }}>
+            <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                <table className="data-table" style={{ width: '100%', tableLayout: 'auto' }}>
                     <thead>
                         <tr>
                             {columns.map(col => (

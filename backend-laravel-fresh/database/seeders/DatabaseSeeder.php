@@ -103,5 +103,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         echo "✅ Seeded: admin@erp.com / password, sales@erp.com / password\n";
+
+        // ── 4. Synthetic Test Data ──
+        $this->call(SyntheticDataSeeder::class);
     }
 }

@@ -219,12 +219,48 @@ Route::prefix('v1')->group(function () {
 
         // ── HR ────────────────────────────────────────────────────────────────
         Route::get('hr/dashboard', [HrController::class, 'dashboard']);
+        
+        // Employees (5.1 Employee Master)
         Route::get('hr/employees', [HrController::class, 'listEmployees']);
         Route::post('hr/employees', [HrController::class, 'createEmployee']);
         Route::get('hr/employees/{id}', [HrController::class, 'getEmployee']);
         Route::put('hr/employees/{id}', [HrController::class, 'updateEmployee']);
         Route::delete('hr/employees/{id}', [HrController::class, 'deleteEmployee']);
+        
+        // Salary Heads (5.2 Salary Head Master)
+        Route::get('hr/salary-heads', [HrController::class, 'listSalaryHeads']);
+        Route::post('hr/salary-heads', [HrController::class, 'createSalaryHead']);
+        Route::get('hr/salary-heads/{id}', [HrController::class, 'getSalaryHead']);
+        Route::put('hr/salary-heads/{id}', [HrController::class, 'updateSalaryHead']);
+        Route::delete('hr/salary-heads/{id}', [HrController::class, 'deleteSalaryHead']);
+        
+        // Salary Structures (5.3 Employee Salary Structure)
+        Route::get('hr/salary-structures', [HrController::class, 'listSalaryStructures']);
+        Route::post('hr/salary-structures', [HrController::class, 'createSalaryStructure']);
+        Route::get('hr/salary-structures/{id}', [HrController::class, 'getSalaryStructure']);
+        Route::put('hr/salary-structures/{id}', [HrController::class, 'updateSalaryStructure']);
+        Route::delete('hr/salary-structures/{id}', [HrController::class, 'deleteSalaryStructure']);
+        
+        // Salary Sheets (5.4 Employee Salary Sheet)
         Route::get('hr/salary-sheets', [HrController::class, 'listSalarySheets']);
+        Route::post('hr/salary-sheets', [HrController::class, 'createSalarySheet']);
+        Route::get('hr/salary-sheets/{id}', [HrController::class, 'getSalarySheet']);
+        Route::put('hr/salary-sheets/{id}', [HrController::class, 'updateSalarySheet']);
+        Route::delete('hr/salary-sheets/{id}', [HrController::class, 'deleteSalarySheet']);
+        
+        // Advances (5.5 Employee Advance Memo)
+        Route::get('hr/advances', [HrController::class, 'listAdvances']);
+        Route::post('hr/advances', [HrController::class, 'createAdvance']);
+        Route::get('hr/advances/{id}', [HrController::class, 'getAdvance']);
+        Route::put('hr/advances/{id}', [HrController::class, 'updateAdvance']);
+        Route::delete('hr/advances/{id}', [HrController::class, 'deleteAdvance']);
+        Route::post('hr/advances/{id}/approve', [HrController::class, 'approveAdvance']);
+        
+        // Dropdowns & Lookups (Referential Integrity)
+        Route::get('hr/dropdown/employees', [HrController::class, 'getEmployeesDropdown']);
+        Route::get('hr/dropdown/salary-heads', [HrController::class, 'getSalaryHeadsDropdown']);
+        Route::get('hr/dropdown/employees-with-structures', [HrController::class, 'getEmployeesWithStructures']);
+        Route::get('hr/employee/{employeeId}/salary-structure', [HrController::class, 'getEmployeeSalaryStructure']);
 
         // ── Quality ───────────────────────────────────────────────────────────
         Route::get('quality/dashboard', [QualityController::class, 'dashboard']);

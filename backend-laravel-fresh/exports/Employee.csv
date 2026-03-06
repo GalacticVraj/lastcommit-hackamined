@@ -1,0 +1,9 @@
+id,empCode,name,designation,department,doj,mobile,email,panNo,aadharNo,bankName,bankAccount,ifscCode,basicSalary,hra,da,otherAllowances,esicApplicable,pfApplicable,isActive,createdBy,updatedBy,createdAt,updatedAt,deletedAt
+1,EMP001,"Amit Kumar","Production Manager",Production,,9876541001,,,,,,,45000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+2,EMP002,"Priya Singh","Quality Engineer",Quality,,9876541002,,,,,,,35000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+3,EMP003,"Rahul Sharma","Sales Executive",Sales,,9876541003,,,,,,,30000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+4,EMP004,"Sneha Patel","HR Manager",HR,,9876541004,,,,,,,50000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+5,EMP005,"Vikram Rao","Finance Officer",Finance,,9876541005,,,,,,,40000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+6,EMP006,"Anita Desai","Purchase Manager",Purchase,,9876541006,,,,,,,42000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+7,EMP007,"Suresh Menon","Warehouse Supervisor",Warehouse,,9876541007,,,,,,,28000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
+8,EMP008,"Kavita Joshi","Accounts Executive",Finance,,9876541008,,,,,,,25000,0,0,0,0,0,1,,,"2026-03-06 05:33","2026-03-06 05:33",
