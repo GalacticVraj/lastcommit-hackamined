@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class BOMHeader extends Model
+class WarehouseStock extends Model
 {
-    protected $table = 'bom_headers';
+    protected $table = 'warehouse_stocks';
     protected $guarded = [];
 }
 

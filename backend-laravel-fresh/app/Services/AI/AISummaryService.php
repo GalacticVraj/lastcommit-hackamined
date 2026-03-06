@@ -321,8 +321,13 @@ class AISummaryService
         ];
 
         try {
-            $apiKey = "AIzaSyCltsk19BcD3DZyd31y9ieE9K82m_nnmpc"; // Using explicitly provided Gemini key
-            
+            $apiKey = config('services.gemini.api_key');
+
+            if (empty($apiKey)) {
+                Log::warning('Gemini API key not configured. Add GEMINI_API_KEY to .env file.');
+                return $fallback;
+            }
+
             $jsonString = json_encode($data);
 
             // Switching to Gemini API as per user instructions

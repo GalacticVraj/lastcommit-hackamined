@@ -177,10 +177,12 @@ Route::prefix('v1')->group(function () {
         Route::get('production/job-orders', [ProductionController::class, 'listJobOrders']);
 
         // ── Simulation ────────────────────────────────────────────────────────
+        Route::get('simulation/products-with-bom', [SimulationController::class, 'productsWithBom']);
         Route::post('simulation/run', [SimulationController::class, 'runSimulation']);
-        Route::post('simulation/{id}/save', [SimulationController::class, 'saveSimulation']);
+        Route::post('simulation/save', [SimulationController::class, 'saveSimulation']);
         Route::get('simulation/history', [SimulationController::class, 'listSimulations']);
         Route::get('simulation/{id}', [SimulationController::class, 'getSimulation']);
+
 
         // ── Finance ───────────────────────────────────────────────────────────
         Route::get('finance/dashboard', [FinanceController::class, 'dashboard']);
