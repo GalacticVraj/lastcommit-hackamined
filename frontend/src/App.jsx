@@ -402,11 +402,29 @@ const statutoryConfig = {
   title: 'Statutory / GST', apiBase: '/statutory',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'gst', label: 'GST Master', endpoint: '/gst-master', columns: ['hsnCode', 'description', 'igstPercent', 'cgstPercent', 'sgstPercent'], formFields: [{ name: 'hsnCode', label: 'HSN Code', required: true }, { name: 'description', label: 'Description' }, { name: 'igstPercent', label: 'IGST %', type: 'number' }, { name: 'cgstPercent', label: 'CGST %', type: 'number' }, { name: 'sgstPercent', label: 'SGST %', type: 'number' }] },
-    { key: 'gstr1', label: 'GSTR-1', endpoint: '/gstr1', columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount'] },
-    { key: 'tds', label: 'TDS', endpoint: '/tds', columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount'] },
-    { key: 'challans', label: 'Challans', endpoint: '/challans', columns: ['challanNo', 'taxType', 'amount', 'bankName'] },
-    { key: 'cheques', label: 'Cheque Books', endpoint: '/cheque-books', columns: ['bankAccount', 'startLeafNo', 'endLeafNo'] },
+    {
+      key: 'gst',
+      label: 'GST Master',
+      endpoint: '/gst-master',
+      columns: ['hsnCode', 'description', 'igstPercent', 'cgstPercent', 'sgstPercent'],
+      hasPrint: true,
+      printType: 'statutory-gst-master',
+      formFields: [
+        { name: 'hsnCode', label: 'HSN Code', required: true },
+        { name: 'description', label: 'Description', required: true },
+        { name: 'igstPercent', label: 'IGST %', type: 'number', required: true },
+        { name: 'cgstPercent', label: 'CGST %', type: 'number', required: true },
+        { name: 'sgstPercent', label: 'SGST %', type: 'number', required: true },
+      ]
+    },
+    { key: 'gstr1', label: 'GSTR-1 Upload', endpoint: '/gstr1', columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount', 'state'], hasPrint: true, printType: 'statutory-gstr1' },
+    { key: 'gst2a', label: 'GST2A Reconcile', endpoint: '/gst2a', columns: ['month', 'vendorGSTIN', 'totalInputTaxCredit', 'matchedAmount', 'mismatchAmount'], hasPrint: true, printType: 'statutory-gst2a' },
+    { key: 'challans', label: 'GST Challans', endpoint: '/challans', columns: ['challanNo', 'cpin', 'date', 'bank', 'taxType', 'amount'], hasPrint: true, printType: 'statutory-challan' },
+    { key: 'tds', label: 'TDS Trace', endpoint: '/tds', columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount', 'certificateNo'], hasPrint: true, printType: 'statutory-tds' },
+    { key: 'tcs', label: 'TCS Details', endpoint: '/tcs', columns: ['customerName', 'saleValue', 'tcsRate', 'tcsAmount'], hasPrint: true, printType: 'statutory-tcs' },
+    { key: 'gstr-register', label: 'GSTR Registers', endpoint: '/gstr-register', columns: ['month', 'transactionType', 'totalTaxLiability'], hasPrint: true, printType: 'statutory-gstr-register' },
+    { key: 'cheques', label: 'Cheque Book Mgmt', endpoint: '/cheque-books', columns: ['bankAccount', 'startLeafNo', 'endLeafNo', 'leafNo', 'status', 'issuedTo', 'date'], hasPrint: true, printType: 'statutory-cheque-book' },
+    { key: 'balance-sheet', label: 'Balance Sheet', endpoint: '/balance-sheet', columns: ['asOnDate', 'assetsTotal', 'liabilitiesTotal', 'capitalAccount', 'currentAssets'], hasPrint: true, printType: 'statutory-balance-sheet' },
   ]
 };
 

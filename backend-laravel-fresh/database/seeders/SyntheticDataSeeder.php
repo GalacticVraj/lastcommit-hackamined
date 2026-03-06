@@ -38,6 +38,7 @@ use App\Models\BankReconciliation;
 use App\Models\CreditCardStatement;
 use App\Services\AutoNumber;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class SyntheticDataSeeder extends Seeder
 {
@@ -76,6 +77,54 @@ class SyntheticDataSeeder extends Seeder
         }
         $vendor = Vendor::where('name', 'Steel Authority of India')->first();
         echo "✅ Created " . count($vendors) . " vendors\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // STATUTORY - GST MASTER (12.1)
+        // ══════════════════════════════════════════════════════════════════════
+        $gstEntries = [
+            ['hsnCode' => '8708', 'description' => 'Parts and accessories of motor vehicles', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+            ['hsnCode' => '7208', 'description' => 'Flat-rolled products of iron/steel', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+            ['hsnCode' => '7318', 'description' => 'Screws, bolts, nuts and washers', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+            ['hsnCode' => '3208', 'description' => 'Paints and varnishes', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+            ['hsnCode' => '4008', 'description' => 'Plates, sheets and strips of rubber', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+        ];
+
+        foreach (['GSTMaster', 'gst_masters'] as $gstTable) {
+            if (!Schema::hasTable($gstTable)) {
+                continue;
+            }
+
+            $hasCreatedAt = Schema::hasColumn($gstTable, 'createdAt');
+            $hasUpdatedAt = Schema::hasColumn($gstTable, 'updatedAt');
+            $hasCreatedAtSnake = Schema::hasColumn($gstTable, 'created_at');
+            $hasUpdatedAtSnake = Schema::hasColumn($gstTable, 'updated_at');
+            $hasIsActive = Schema::hasColumn($gstTable, 'isActive');
+
+            foreach ($gstEntries as $entry) {
+                $payload = $entry;
+                if ($hasIsActive) {
+                    $payload['isActive'] = true;
+                }
+                if ($hasCreatedAt) {
+                    $payload['createdAt'] = now();
+                }
+                if ($hasUpdatedAt) {
+                    $payload['updatedAt'] = now();
+                }
+                if ($hasCreatedAtSnake) {
+                    $payload['created_at'] = now();
+                }
+                if ($hasUpdatedAtSnake) {
+                    $payload['updated_at'] = now();
+                }
+
+                DB::table($gstTable)->updateOrInsert(
+                    ['hsnCode' => $entry['hsnCode']],
+                    $payload
+                );
+            }
+        }
+        echo "✅ Created " . count($gstEntries) . " GST master entries\n";
 
         // ══════════════════════════════════════════════════════════════════════
         // PRODUCTS
