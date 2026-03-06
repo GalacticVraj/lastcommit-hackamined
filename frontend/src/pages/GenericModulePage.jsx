@@ -9,6 +9,7 @@ import RecordViewPanel from '../components/RecordViewPanel';
 import RecordEditModal from '../components/RecordEditModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ProfileLink from '../components/ProfileLink';
+import FinanceDashboard from '../components/FinanceDashboard';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -223,8 +224,13 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 ))}
             </div>
 
-            {/* Dashboard stats */}
-            {activeTab === 'dashboard' && stats && (
+            {/* Dashboard - Finance gets special component, others get stats grid */}
+            {activeTab === 'dashboard' && apiBase === '/finance' && (
+                <FinanceDashboard />
+            )}
+
+            {/* Dashboard stats for non-Finance modules */}
+            {activeTab === 'dashboard' && apiBase !== '/finance' && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
                         <div className="stat-card" key={key}>
@@ -299,9 +305,20 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                                     {(currentTab.formFields || [{ name: 'name', label: 'Name' }]).map(f => (
                                         <div className="form-group" key={f.name}>
                                             <label className="form-label">{f.label}</label>
-                                            <input className="form-input" type={f.type || 'text'} required={f.required}
-                                                value={createForm[f.name] || ''}
-                                                onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })} />
+                                            {f.type === 'select' ? (
+                                                <select className="form-input" required={f.required}
+                                                    value={createForm[f.name] || ''}
+                                                    onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })}>
+                                                    <option value="">Select {f.label}</option>
+                                                    {(f.options || []).map(opt => (
+                                                        <option key={opt} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <input className="form-input" type={f.type || 'text'} required={f.required}
+                                                    value={createForm[f.name] || ''}
+                                                    onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })} />
+                                            )}
                                         </div>
                                     ))}
                                 </div>

@@ -64,7 +64,60 @@ const financeConfig = {
   title: 'Finance Management', apiBase: '/finance',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'vouchers', label: 'Vouchers', endpoint: '/vouchers', columns: ['voucherNo', 'voucherType', 'debitAccount', 'creditAccount', 'amount'], formFields: [{ name: 'voucherType', label: 'Type' }, { name: 'debitAccount', label: 'Debit Account', required: true }, { name: 'creditAccount', label: 'Credit Account', required: true }, { name: 'amount', label: 'Amount', type: 'number', required: true }, { name: 'narration', label: 'Narration' }] },
+    { 
+      key: 'voucherJournals', 
+      label: 'Voucher Journal', 
+      endpoint: '/voucher-journals', 
+      columns: ['journalNo', 'date', 'debitAccount', 'creditAccount', 'amount', 'narration'], 
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true }, 
+        { name: 'debitAccount', label: 'Debit Account', required: true }, 
+        { name: 'creditAccount', label: 'Credit Account', required: true }, 
+        { name: 'amount', label: 'Amount', type: 'number', required: true }, 
+        { name: 'narration', label: 'Narration' }
+      ] 
+    },
+    { 
+      key: 'voucherPaymentReceipts', 
+      label: 'Payment & Receipt', 
+      endpoint: '/voucher-payment-receipts', 
+      columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'], 
+      formFields: [
+        { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true }, 
+        { name: 'date', label: 'Date', type: 'date', required: true }, 
+        { name: 'partyName', label: 'Party Name', required: true }, 
+        { name: 'amount', label: 'Amount', type: 'number', required: true }, 
+        { name: 'mode', label: 'Mode', type: 'select', options: ['Cash', 'Bank', 'Cheque', 'Online', 'UPI', 'Card'], required: true },
+        { name: 'referenceNo', label: 'Reference No' },
+        { name: 'remarks', label: 'Remarks' }
+      ] 
+    },
+    { 
+      key: 'voucherContras', 
+      label: 'Voucher Contra', 
+      endpoint: '/voucher-contras', 
+      columns: ['voucherNo', 'date', 'fromAccount', 'toAccount', 'amount'], 
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true }, 
+        { name: 'fromAccount', label: 'From Account (e.g., Cash)', required: true }, 
+        { name: 'toAccount', label: 'To Account (e.g., Bank)', required: true }, 
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'remarks', label: 'Remarks' }
+      ] 
+    },
+    { 
+      key: 'voucherGSTs', 
+      label: 'Journal Voucher (GST)', 
+      endpoint: '/voucher-gsts', 
+      columns: ['voucherNo', 'date', 'gstLedger', 'adjustmentType', 'amount'], 
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true }, 
+        { name: 'gstLedger', label: 'GST Ledger', type: 'select', options: ['Input', 'Output'], required: true }, 
+        { name: 'adjustmentType', label: 'Adjustment Type', type: 'select', options: ['Reversal', 'Adjustment', 'Correction', 'Refund'], required: true }, 
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'remarks', label: 'Remarks' }
+      ] 
+    },
     { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'] },
     { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'] },
   ]

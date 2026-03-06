@@ -8,8 +8,7 @@ class UserRole extends Model
 {
     protected $table = 'UserRole';
     protected $guarded = [];
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    public $timestamps = false;
 
     public function role()
     {

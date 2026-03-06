@@ -8,8 +8,7 @@ class RolePermission extends Model
 {
     protected $table = 'RolePermission';
     protected $guarded = [];
-    const CREATED_AT = 'createdAt';
-    const UPDATED_AT = 'updatedAt';
+    public $timestamps = false;
 
     public function permission()
     {

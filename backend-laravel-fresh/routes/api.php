@@ -162,13 +162,60 @@ Route::prefix('v1')->group(function () {
 
         // ── Finance ───────────────────────────────────────────────────────────
         Route::get('finance/dashboard', [FinanceController::class, 'dashboard']);
+        
+        // 4.1. Voucher Journal - Adjustment Entry
+        Route::get('finance/voucher-journals', [FinanceController::class, 'listVoucherJournals']);
+        Route::post('finance/voucher-journals', [FinanceController::class, 'createVoucherJournal']);
+        Route::get('finance/voucher-journals/{id}', [FinanceController::class, 'getVoucherJournal']);
+        Route::put('finance/voucher-journals/{id}', [FinanceController::class, 'updateVoucherJournal']);
+        Route::delete('finance/voucher-journals/{id}', [FinanceController::class, 'deleteVoucherJournal']);
+        
+        // 4.2. Voucher Payment & Receipt - Bank/Cash transactions
+        Route::get('finance/voucher-payment-receipts', [FinanceController::class, 'listVoucherPaymentReceipts']);
+        Route::post('finance/voucher-payment-receipts', [FinanceController::class, 'createVoucherPaymentReceipt']);
+        Route::get('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'getVoucherPaymentReceipt']);
+        Route::put('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'updateVoucherPaymentReceipt']);
+        Route::delete('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'deleteVoucherPaymentReceipt']);
+        
+        // 4.3. Voucher Contra - Cash Deposit/Withdrawal
+        Route::get('finance/voucher-contras', [FinanceController::class, 'listVoucherContras']);
+        Route::post('finance/voucher-contras', [FinanceController::class, 'createVoucherContra']);
+        Route::get('finance/voucher-contras/{id}', [FinanceController::class, 'getVoucherContra']);
+        Route::put('finance/voucher-contras/{id}', [FinanceController::class, 'updateVoucherContra']);
+        Route::delete('finance/voucher-contras/{id}', [FinanceController::class, 'deleteVoucherContra']);
+        
+        // 4.4. Journal Voucher (GST) - Tax Adjustments
+        Route::get('finance/voucher-gsts', [FinanceController::class, 'listVoucherGSTs']);
+        Route::post('finance/voucher-gsts', [FinanceController::class, 'createVoucherGST']);
+        Route::get('finance/voucher-gsts/{id}', [FinanceController::class, 'getVoucherGST']);
+        Route::put('finance/voucher-gsts/{id}', [FinanceController::class, 'updateVoucherGST']);
+        Route::delete('finance/voucher-gsts/{id}', [FinanceController::class, 'deleteVoucherGST']);
+        
+        // Legacy voucher endpoints (backward compatibility)
         Route::get('finance/vouchers', [FinanceController::class, 'listVouchers']);
         Route::post('finance/vouchers', [FinanceController::class, 'createVoucher']);
         Route::get('finance/vouchers/{id}', [FinanceController::class, 'getVoucher']);
         Route::put('finance/vouchers/{id}', [FinanceController::class, 'updateVoucher']);
         Route::delete('finance/vouchers/{id}', [FinanceController::class, 'deleteVoucher']);
-        Route::get('finance/bank-reconciliation', [FinanceController::class, 'listBankReconciliation']);
-        Route::get('finance/credit-card', [FinanceController::class, 'listCreditCard']);
+        
+        // 4.5. Bank Reconciliation
+        Route::get('finance/bank-reconciliations', [FinanceController::class, 'listBankReconciliations']);
+        Route::post('finance/bank-reconciliations', [FinanceController::class, 'createBankReconciliation']);
+        Route::get('finance/bank-reconciliations/{id}', [FinanceController::class, 'getBankReconciliation']);
+        Route::put('finance/bank-reconciliations/{id}', [FinanceController::class, 'updateBankReconciliation']);
+        Route::delete('finance/bank-reconciliations/{id}', [FinanceController::class, 'deleteBankReconciliation']);
+        Route::post('finance/bank-reconciliations/{id}/match', [FinanceController::class, 'matchBankReconciliation']);
+        
+        // 4.6. Credit Card Statement
+        Route::get('finance/credit-card-statements', [FinanceController::class, 'listCreditCardStatements']);
+        Route::post('finance/credit-card-statements', [FinanceController::class, 'createCreditCardStatement']);
+        Route::get('finance/credit-card-statements/{id}', [FinanceController::class, 'getCreditCardStatement']);
+        Route::put('finance/credit-card-statements/{id}', [FinanceController::class, 'updateCreditCardStatement']);
+        Route::delete('finance/credit-card-statements/{id}', [FinanceController::class, 'deleteCreditCardStatement']);
+        
+        // Legacy endpoints (backward compatibility)
+        Route::get('finance/bank-reconciliation', [FinanceController::class, 'listBankReconciliations']);
+        Route::get('finance/credit-card', [FinanceController::class, 'listCreditCardStatements']);
 
         // ── HR ────────────────────────────────────────────────────────────────
         Route::get('hr/dashboard', [HrController::class, 'dashboard']);

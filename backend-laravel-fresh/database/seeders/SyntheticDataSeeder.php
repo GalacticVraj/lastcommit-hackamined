@@ -14,62 +14,252 @@ use App\Models\SaleOrder;
 use App\Models\SaleOrderItem;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\JournalVoucher;
+use App\Models\VoucherJournal;
+use App\Models\VoucherPaymentReceipt;
+use App\Models\VoucherContra;
+use App\Models\VoucherGST;
+use App\Models\Employee;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\GRN;
+use App\Models\GRNItem;
+use App\Models\BankReconciliation;
+use App\Models\CreditCardStatement;
 use App\Services\AutoNumber;
 
 class SyntheticDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Ensure at least one customer
-        $customer = Customer::firstOrCreate(
-            ['name' => 'Tata Motors Ltd'],
-            [
-                'gstin' => '27AAACT2727Q1ZZ',
-                'address' => 'Pimpri, Pune',
-                'city' => 'Pune',
-                'state' => 'Maharashtra',
-                'contactPerson' => 'Rajesh Kumar',
-                'phone' => '9876543210',
-                'isActive' => true
-            ]
-        );
+        // ══════════════════════════════════════════════════════════════════════
+        // CUSTOMERS
+        // ══════════════════════════════════════════════════════════════════════
+        $customers = [
+            ['name' => 'Tata Motors Ltd', 'gstin' => '27AAACT2727Q1ZZ', 'address' => 'Pimpri, Pune', 'city' => 'Pune', 'state' => 'Maharashtra', 'contactPerson' => 'Rajesh Kumar', 'phone' => '9876543210'],
+            ['name' => 'Mahindra & Mahindra', 'gstin' => '27AAACM4839G1ZZ', 'address' => 'Kandivali, Mumbai', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'contactPerson' => 'Suresh Patel', 'phone' => '9876543211'],
+            ['name' => 'Bajaj Auto Ltd', 'gstin' => '27AAACB7814N1ZZ', 'address' => 'Akurdi, Pune', 'city' => 'Pune', 'state' => 'Maharashtra', 'contactPerson' => 'Amit Shah', 'phone' => '9876543212'],
+            ['name' => 'Hero MotoCorp', 'gstin' => '06AAACH5753R1ZZ', 'address' => 'Dharuhera', 'city' => 'Rewari', 'state' => 'Haryana', 'contactPerson' => 'Vikram Singh', 'phone' => '9876543213'],
+            ['name' => 'Ashok Leyland', 'gstin' => '33AAACA3955E1ZH', 'address' => 'Ennore', 'city' => 'Chennai', 'state' => 'Tamil Nadu', 'contactPerson' => 'Ravi Shankar', 'phone' => '9876543214'],
+        ];
+        
+        foreach ($customers as $c) {
+            Customer::firstOrCreate(['name' => $c['name']], array_merge($c, ['isActive' => true]));
+        }
+        $customer = Customer::where('name', 'Tata Motors Ltd')->first();
+        echo "✅ Created " . count($customers) . " customers\n";
 
-        // 2. Ensure some products
-        $p1 = Product::firstOrCreate(['code' => 'FG-ALTO-001'], ['name' => 'Alto Assembly Unit', 'category' => 'Finished Good', 'unit' => 'PCS', 'gstPercent' => 28, 'currentStock' => 10]);
-        $p2 = Product::firstOrCreate(['code' => 'FG-SWIFT-001'], ['name' => 'Swift Assembly Unit', 'category' => 'Finished Good', 'unit' => 'PCS', 'gstPercent' => 28, 'currentStock' => 5]);
+        // ══════════════════════════════════════════════════════════════════════
+        // VENDORS
+        // ══════════════════════════════════════════════════════════════════════
+        $vendors = [
+            ['name' => 'Steel Authority of India', 'gstin' => '07AAACS6765E1ZG', 'address' => 'Lodi Road', 'city' => 'New Delhi', 'state' => 'Delhi', 'contactPerson' => 'Rahul Verma', 'phone' => '9988776655'],
+            ['name' => 'Tata Steel Ltd', 'gstin' => '20AAACT2727Q1ZY', 'address' => 'Bistupur', 'city' => 'Jamshedpur', 'state' => 'Jharkhand', 'contactPerson' => 'Ankit Gupta', 'phone' => '9988776656'],
+            ['name' => 'Asian Paints Ltd', 'gstin' => '27AAACA9001E1ZX', 'address' => 'Andheri East', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'contactPerson' => 'Priya Sharma', 'phone' => '9988776657'],
+            ['name' => 'Havells India Ltd', 'gstin' => '09AAACH0875G1ZE', 'address' => 'Sector 32', 'city' => 'Noida', 'state' => 'Uttar Pradesh', 'contactPerson' => 'Deepak Kumar', 'phone' => '9988776658'],
+            ['name' => 'JSW Steel Ltd', 'gstin' => '29AAACJ0901G1ZF', 'address' => 'Toranagallu', 'city' => 'Bellary', 'state' => 'Karnataka', 'contactPerson' => 'Sunil Reddy', 'phone' => '9988776659'],
+        ];
 
-        // 3. Create a complete Sales Cycle (Inquiry -> Quotation -> SO -> Invoice)
+        foreach ($vendors as $v) {
+            Vendor::firstOrCreate(['name' => $v['name']], array_merge($v, ['isActive' => true]));
+        }
+        $vendor = Vendor::where('name', 'Steel Authority of India')->first();
+        echo "✅ Created " . count($vendors) . " vendors\n";
 
+        // ══════════════════════════════════════════════════════════════════════
+        // PRODUCTS
+        // ══════════════════════════════════════════════════════════════════════
+        $products = [
+            ['code' => 'FG-ALTO-001', 'name' => 'Alto Assembly Unit', 'category' => 'Finished Good', 'unit' => 'PCS', 'gstPercent' => 28, 'currentStock' => 15],
+            ['code' => 'FG-SWIFT-001', 'name' => 'Swift Assembly Unit', 'category' => 'Finished Good', 'unit' => 'PCS', 'gstPercent' => 28, 'currentStock' => 8],
+            ['code' => 'FG-BALENO-001', 'name' => 'Baleno Assembly Unit', 'category' => 'Finished Good', 'unit' => 'PCS', 'gstPercent' => 28, 'currentStock' => 5],
+            ['code' => 'RM-STEEL-001', 'name' => 'Steel Sheet 1.2mm', 'category' => 'Raw Material', 'unit' => 'KG', 'gstPercent' => 18, 'currentStock' => 5000],
+            ['code' => 'RM-STEEL-002', 'name' => 'Steel Rod 10mm', 'category' => 'Raw Material', 'unit' => 'KG', 'gstPercent' => 18, 'currentStock' => 3000],
+            ['code' => 'RM-RUBBER-001', 'name' => 'Rubber Sheet 5mm', 'category' => 'Raw Material', 'unit' => 'KG', 'gstPercent' => 18, 'currentStock' => 1500],
+            ['code' => 'RM-PAINT-001', 'name' => 'Industrial Paint White', 'category' => 'Raw Material', 'unit' => 'LTR', 'gstPercent' => 28, 'currentStock' => 800],
+            ['code' => 'RM-BOLT-001', 'name' => 'Hex Bolt M10', 'category' => 'Raw Material', 'unit' => 'PCS', 'gstPercent' => 18, 'currentStock' => 20000],
+            ['code' => 'RM-WIRE-001', 'name' => 'Copper Wire 2.5mm', 'category' => 'Raw Material', 'unit' => 'MTR', 'gstPercent' => 18, 'currentStock' => 2000],
+        ];
+
+        foreach ($products as $p) {
+            Product::firstOrCreate(['code' => $p['code']], $p);
+        }
+        $p1 = Product::where('code', 'FG-ALTO-001')->first();
+        $p2 = Product::where('code', 'FG-SWIFT-001')->first();
+        echo "✅ Created " . count($products) . " products\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // EMPLOYEES
+        // ══════════════════════════════════════════════════════════════════════
+        $employees = [
+            ['empCode' => 'EMP001', 'name' => 'Amit Kumar', 'designation' => 'Production Manager', 'department' => 'Production', 'mobile' => '9876541001', 'basicSalary' => 45000],
+            ['empCode' => 'EMP002', 'name' => 'Priya Singh', 'designation' => 'Quality Engineer', 'department' => 'Quality', 'mobile' => '9876541002', 'basicSalary' => 35000],
+            ['empCode' => 'EMP003', 'name' => 'Rahul Sharma', 'designation' => 'Sales Executive', 'department' => 'Sales', 'mobile' => '9876541003', 'basicSalary' => 30000],
+            ['empCode' => 'EMP004', 'name' => 'Sneha Patel', 'designation' => 'HR Manager', 'department' => 'HR', 'mobile' => '9876541004', 'basicSalary' => 50000],
+            ['empCode' => 'EMP005', 'name' => 'Vikram Rao', 'designation' => 'Finance Officer', 'department' => 'Finance', 'mobile' => '9876541005', 'basicSalary' => 40000],
+            ['empCode' => 'EMP006', 'name' => 'Anita Desai', 'designation' => 'Purchase Manager', 'department' => 'Purchase', 'mobile' => '9876541006', 'basicSalary' => 42000],
+            ['empCode' => 'EMP007', 'name' => 'Suresh Menon', 'designation' => 'Warehouse Supervisor', 'department' => 'Warehouse', 'mobile' => '9876541007', 'basicSalary' => 28000],
+            ['empCode' => 'EMP008', 'name' => 'Kavita Joshi', 'designation' => 'Accounts Executive', 'department' => 'Finance', 'mobile' => '9876541008', 'basicSalary' => 25000],
+        ];
+
+        foreach ($employees as $e) {
+            Employee::firstOrCreate(['empCode' => $e['empCode']], array_merge($e, [
+                'isActive' => true,
+            ]));
+        }
+        echo "✅ Created " . count($employees) . " employees\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // FINANCE - JOURNAL VOUCHERS
+        // ══════════════════════════════════════════════════════════════════════
+        $journalVouchers = [
+            ['voucherNo' => 'JV-001', 'voucherType' => 'Journal', 'debitAccount' => 'Raw Material Purchase', 'creditAccount' => 'Accounts Payable', 'amount' => 150000, 'narration' => 'Steel sheets purchase from SAIL'],
+            ['voucherNo' => 'JV-002', 'voucherType' => 'Journal', 'debitAccount' => 'Salary Expense', 'creditAccount' => 'Cash/Bank', 'amount' => 285000, 'narration' => 'Monthly salary disbursement'],
+            ['voucherNo' => 'JV-003', 'voucherType' => 'Payment', 'debitAccount' => 'Vendor Payment', 'creditAccount' => 'HDFC Bank', 'amount' => 75000, 'narration' => 'Payment to Asian Paints'],
+            ['voucherNo' => 'JV-004', 'voucherType' => 'Receipt', 'debitAccount' => 'ICICI Bank', 'creditAccount' => 'Accounts Receivable', 'amount' => 450000, 'narration' => 'Receipt from Tata Motors'],
+            ['voucherNo' => 'JV-005', 'voucherType' => 'Contra', 'debitAccount' => 'Petty Cash', 'creditAccount' => 'SBI Bank', 'amount' => 25000, 'narration' => 'Cash withdrawal for petty expenses'],
+            ['voucherNo' => 'JV-006', 'voucherType' => 'Journal', 'debitAccount' => 'Electricity Expense', 'creditAccount' => 'Accounts Payable', 'amount' => 45000, 'narration' => 'Factory electricity bill'],
+            ['voucherNo' => 'JV-007', 'voucherType' => 'Payment', 'debitAccount' => 'GST Payable', 'creditAccount' => 'HDFC Bank', 'amount' => 125000, 'narration' => 'GST payment for Feb 2026'],
+            ['voucherNo' => 'JV-008', 'voucherType' => 'Receipt', 'debitAccount' => 'SBI Bank', 'creditAccount' => 'Sales Revenue', 'amount' => 780000, 'narration' => 'Advance from Mahindra'],
+            ['voucherNo' => 'JV-009', 'voucherType' => 'Journal', 'debitAccount' => 'Depreciation Expense', 'creditAccount' => 'Accumulated Depreciation', 'amount' => 85000, 'narration' => 'Monthly depreciation entry'],
+            ['voucherNo' => 'JV-010', 'voucherType' => 'Journal', 'debitAccount' => 'Rent Expense', 'creditAccount' => 'Cash/Bank', 'amount' => 120000, 'narration' => 'Factory rent for March 2026'],
+        ];
+
+        foreach ($journalVouchers as $jv) {
+            JournalVoucher::firstOrCreate(['voucherNo' => $jv['voucherNo']], array_merge($jv, [
+                'isActive' => true,
+                'createdBy' => 1,
+            ]));
+        }
+        echo "✅ Created " . count($journalVouchers) . " journal vouchers (legacy)\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // FINANCE - NEW VOUCHER TYPES (for frontend Finance module)
+        // ══════════════════════════════════════════════════════════════════════
+        
+        // Journal Vouchers (Tab 1) - Extended data for dashboard testing
+        $voucherJournals = [
+            ['journalNo' => 'JV-2026-001', 'date' => now()->subDays(45), 'debitAccount' => 'Raw Material Purchase', 'creditAccount' => 'Accounts Payable', 'amount' => 150000, 'narration' => 'Steel sheets purchase from SAIL', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-002', 'date' => now()->subDays(42), 'debitAccount' => 'Salary Expense', 'creditAccount' => 'Bank Account', 'amount' => 285000, 'narration' => 'Monthly salary disbursement Feb 2026', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-003', 'date' => now()->subDays(38), 'debitAccount' => 'Electricity Expense', 'creditAccount' => 'Accounts Payable', 'amount' => 45000, 'narration' => 'Factory electricity bill', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-004', 'date' => now()->subDays(35), 'debitAccount' => 'Depreciation Expense', 'creditAccount' => 'Accumulated Depreciation', 'amount' => 85000, 'narration' => 'Monthly depreciation entry', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-005', 'date' => now()->subDays(32), 'debitAccount' => 'Rent Expense', 'creditAccount' => 'Bank Account', 'amount' => 120000, 'narration' => 'Factory rent for March 2026', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-006', 'date' => now()->subDays(28), 'debitAccount' => 'Insurance Expense', 'creditAccount' => 'Prepaid Insurance', 'amount' => 95000, 'narration' => 'Annual insurance amortization', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-007', 'date' => now()->subDays(25), 'debitAccount' => 'Machinery Repairs', 'creditAccount' => 'Accounts Payable', 'amount' => 67000, 'narration' => 'CNC machine maintenance', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-008', 'date' => now()->subDays(20), 'debitAccount' => 'Marketing Expense', 'creditAccount' => 'Bank Account', 'amount' => 125000, 'narration' => 'Digital marketing campaign', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-009', 'date' => now()->subDays(15), 'debitAccount' => 'Travel Expense', 'creditAccount' => 'Petty Cash', 'amount' => 38000, 'narration' => 'Sales team travel expenses', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-010', 'date' => now()->subDays(12), 'debitAccount' => 'Office Supplies', 'creditAccount' => 'Bank Account', 'amount' => 22000, 'narration' => 'Stationery and consumables', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-011', 'date' => now()->subDays(10), 'debitAccount' => 'Professional Fees', 'creditAccount' => 'Accounts Payable', 'amount' => 75000, 'narration' => 'Legal consultation fees', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-012', 'date' => now()->subDays(8), 'debitAccount' => 'Telephone Expense', 'creditAccount' => 'Bank Account', 'amount' => 18500, 'narration' => 'Monthly telecom bills', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-013', 'date' => now()->subDays(5), 'debitAccount' => 'Security Expense', 'creditAccount' => 'Accounts Payable', 'amount' => 45000, 'narration' => 'Factory security services', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-014', 'date' => now()->subDays(3), 'debitAccount' => 'Water Charges', 'creditAccount' => 'Bank Account', 'amount' => 12000, 'narration' => 'Industrial water supply', 'createdBy' => 1],
+            ['journalNo' => 'JV-2026-015', 'date' => now()->subDays(1), 'debitAccount' => 'Salary Expense', 'creditAccount' => 'Bank Account', 'amount' => 295000, 'narration' => 'Monthly salary disbursement Mar 2026', 'createdBy' => 1],
+        ];
+        VoucherJournal::withTrashed()->whereIn('journalNo', collect($voucherJournals)->pluck('journalNo'))->forceDelete();
+        foreach ($voucherJournals as $vj) {
+            VoucherJournal::create($vj);
+        }
+        echo "✅ Created " . count($voucherJournals) . " voucher journals\n";
+
+        // Payment & Receipt Vouchers (Tab 2) - Extended with all payment modes
+        $paymentReceipts = [
+            // Payments - Various modes
+            ['voucherNo' => 'PV-2026-001', 'voucherType' => 'Payment', 'date' => now()->subDays(44), 'partyName' => 'SAIL - Steel Authority', 'amount' => 75000, 'mode' => 'Bank', 'referenceNo' => 'TXN001', 'remarks' => 'Payment to SAIL for steel', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-002', 'voucherType' => 'Payment', 'date' => now()->subDays(40), 'partyName' => 'GST Department', 'amount' => 125000, 'mode' => 'Online', 'referenceNo' => 'GST-FEB-26', 'remarks' => 'GST payment for Feb 2026', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-003', 'voucherType' => 'Payment', 'date' => now()->subDays(36), 'partyName' => 'Asian Paints Ltd', 'amount' => 45000, 'mode' => 'Cheque', 'referenceNo' => 'CHQ-7890', 'remarks' => 'Paint supplies payment', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-004', 'voucherType' => 'Payment', 'date' => now()->subDays(32), 'partyName' => 'Havells India Ltd', 'amount' => 68000, 'mode' => 'UPI', 'referenceNo' => 'UPI-2026-001', 'remarks' => 'Electrical supplies', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-005', 'voucherType' => 'Payment', 'date' => now()->subDays(28), 'partyName' => 'Tata Steel Ltd', 'amount' => 185000, 'mode' => 'Bank', 'referenceNo' => 'TXN002', 'remarks' => 'Steel rods payment', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-006', 'voucherType' => 'Payment', 'date' => now()->subDays(24), 'partyName' => 'JSW Steel Ltd', 'amount' => 95000, 'mode' => 'Online', 'referenceNo' => 'NET-003', 'remarks' => 'Steel sheets advance', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-007', 'voucherType' => 'Payment', 'date' => now()->subDays(20), 'partyName' => 'Petty Cash Reimb.', 'amount' => 15000, 'mode' => 'Cash', 'referenceNo' => 'PCR-001', 'remarks' => 'Office petty expenses', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-008', 'voucherType' => 'Payment', 'date' => now()->subDays(16), 'partyName' => 'Electricity Board', 'amount' => 48000, 'mode' => 'Online', 'referenceNo' => 'EB-MAR-26', 'remarks' => 'March electricity bill', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-009', 'voucherType' => 'Payment', 'date' => now()->subDays(12), 'partyName' => 'Transport Vendor', 'amount' => 35000, 'mode' => 'UPI', 'referenceNo' => 'UPI-2026-002', 'remarks' => 'Logistics charges', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-010', 'voucherType' => 'Payment', 'date' => now()->subDays(8), 'partyName' => 'Security Services', 'amount' => 42000, 'mode' => 'Bank', 'referenceNo' => 'TXN003', 'remarks' => 'Monthly security charges', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-011', 'voucherType' => 'Payment', 'date' => now()->subDays(4), 'partyName' => 'Office Rent', 'amount' => 85000, 'mode' => 'Cheque', 'referenceNo' => 'CHQ-7891', 'remarks' => 'Office space rent', 'createdBy' => 1],
+            ['voucherNo' => 'PV-2026-012', 'voucherType' => 'Payment', 'date' => now()->subDays(2), 'partyName' => 'Canteen Vendor', 'amount' => 28000, 'mode' => 'Cash', 'referenceNo' => 'PCR-002', 'remarks' => 'Monthly canteen expenses', 'createdBy' => 1],
+            // Receipts - Various modes
+            ['voucherNo' => 'RV-2026-001', 'voucherType' => 'Receipt', 'date' => now()->subDays(42), 'partyName' => 'Tata Motors Ltd', 'amount' => 450000, 'mode' => 'Bank', 'referenceNo' => 'INV-001', 'remarks' => 'Receipt from Tata Motors', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-002', 'voucherType' => 'Receipt', 'date' => now()->subDays(38), 'partyName' => 'Mahindra & Mahindra', 'amount' => 780000, 'mode' => 'Cheque', 'referenceNo' => 'CHQ-4567', 'remarks' => 'Advance from Mahindra', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-003', 'voucherType' => 'Receipt', 'date' => now()->subDays(34), 'partyName' => 'Bajaj Auto Ltd', 'amount' => 325000, 'mode' => 'Bank', 'referenceNo' => 'INV-002', 'remarks' => 'Invoice payment', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-004', 'voucherType' => 'Receipt', 'date' => now()->subDays(30), 'partyName' => 'Hero MotoCorp', 'amount' => 520000, 'mode' => 'Online', 'referenceNo' => 'NEFT-001', 'remarks' => 'Online transfer received', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-005', 'voucherType' => 'Receipt', 'date' => now()->subDays(26), 'partyName' => 'Ashok Leyland', 'amount' => 680000, 'mode' => 'Bank', 'referenceNo' => 'INV-003', 'remarks' => 'Bulk order payment', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-006', 'voucherType' => 'Receipt', 'date' => now()->subDays(22), 'partyName' => 'Tata Motors Ltd', 'amount' => 390000, 'mode' => 'UPI', 'referenceNo' => 'UPI-RCV-001', 'remarks' => 'Partial invoice payment', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-007', 'voucherType' => 'Receipt', 'date' => now()->subDays(18), 'partyName' => 'Mahindra & Mahindra', 'amount' => 445000, 'mode' => 'Cheque', 'referenceNo' => 'CHQ-4568', 'remarks' => 'Balance payment', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-008', 'voucherType' => 'Receipt', 'date' => now()->subDays(14), 'partyName' => 'Bajaj Auto Ltd', 'amount' => 275000, 'mode' => 'Online', 'referenceNo' => 'RTGS-001', 'remarks' => 'RTGS transfer', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-009', 'voucherType' => 'Receipt', 'date' => now()->subDays(10), 'partyName' => 'Cash Sales', 'amount' => 85000, 'mode' => 'Cash', 'referenceNo' => 'CSR-001', 'remarks' => 'Counter cash sale', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-010', 'voucherType' => 'Receipt', 'date' => now()->subDays(6), 'partyName' => 'Hero MotoCorp', 'amount' => 620000, 'mode' => 'Bank', 'referenceNo' => 'INV-004', 'remarks' => 'Final settlement', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-011', 'voucherType' => 'Receipt', 'date' => now()->subDays(3), 'partyName' => 'Ashok Leyland', 'amount' => 510000, 'mode' => 'UPI', 'referenceNo' => 'UPI-RCV-002', 'remarks' => 'Advance for new order', 'createdBy' => 1],
+            ['voucherNo' => 'RV-2026-012', 'voucherType' => 'Receipt', 'date' => now()->subDays(1), 'partyName' => 'Tata Motors Ltd', 'amount' => 295000, 'mode' => 'Card', 'referenceNo' => 'CC-RCV-001', 'remarks' => 'Credit card payment', 'createdBy' => 1],
+        ];
+        VoucherPaymentReceipt::withTrashed()->whereIn('voucherNo', collect($paymentReceipts)->pluck('voucherNo'))->forceDelete();
+        foreach ($paymentReceipts as $pr) {
+            VoucherPaymentReceipt::create($pr);
+        }
+        echo "✅ Created " . count($paymentReceipts) . " payment/receipt vouchers\n";
+
+        // Contra Vouchers (Tab 3) - Extended data
+        $contraVouchers = [
+            ['voucherNo' => 'CV-2026-001', 'date' => now()->subDays(43), 'fromAccount' => 'SBI Bank', 'toAccount' => 'Petty Cash', 'amount' => 25000, 'remarks' => 'Cash withdrawal for petty expenses', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-002', 'date' => now()->subDays(37), 'fromAccount' => 'HDFC Bank', 'toAccount' => 'Petty Cash', 'amount' => 15000, 'remarks' => 'Cash withdrawal for office expenses', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-003', 'date' => now()->subDays(31), 'fromAccount' => 'Cash', 'toAccount' => 'ICICI Bank', 'amount' => 50000, 'remarks' => 'Cash deposit to bank', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-004', 'date' => now()->subDays(27), 'fromAccount' => 'HDFC Bank', 'toAccount' => 'SBI Bank', 'amount' => 200000, 'remarks' => 'Inter-bank transfer for operations', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-005', 'date' => now()->subDays(23), 'fromAccount' => 'ICICI Bank', 'toAccount' => 'Petty Cash', 'amount' => 35000, 'remarks' => 'Petty cash replenishment', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-006', 'date' => now()->subDays(19), 'fromAccount' => 'Cash', 'toAccount' => 'HDFC Bank', 'amount' => 75000, 'remarks' => 'Cash sales deposit', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-007', 'date' => now()->subDays(15), 'fromAccount' => 'SBI Bank', 'toAccount' => 'ICICI Bank', 'amount' => 150000, 'remarks' => 'Fund transfer for vendor payments', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-008', 'date' => now()->subDays(11), 'fromAccount' => 'HDFC Bank', 'toAccount' => 'Cash', 'amount' => 40000, 'remarks' => 'Cash withdrawal for wages', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-009', 'date' => now()->subDays(7), 'fromAccount' => 'Cash', 'toAccount' => 'SBI Bank', 'amount' => 85000, 'remarks' => 'Collection deposit', 'createdBy' => 1],
+            ['voucherNo' => 'CV-2026-010', 'date' => now()->subDays(3), 'fromAccount' => 'ICICI Bank', 'toAccount' => 'HDFC Bank', 'amount' => 300000, 'remarks' => 'Salary account funding', 'createdBy' => 1],
+        ];
+        VoucherContra::withTrashed()->whereIn('voucherNo', collect($contraVouchers)->pluck('voucherNo'))->forceDelete();
+        foreach ($contraVouchers as $cv) {
+            VoucherContra::create($cv);
+        }
+        echo "✅ Created " . count($contraVouchers) . " contra vouchers\n";
+
+        // GST Vouchers (Tab 4) - Extended data
+        $gstVouchers = [
+            ['voucherNo' => 'GV-2026-001', 'date' => now()->subDays(40), 'gstLedger' => 'Input', 'adjustmentType' => 'Reversal', 'amount' => 45000, 'remarks' => 'ITC reversal on exempt goods', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-002', 'date' => now()->subDays(35), 'gstLedger' => 'Output', 'adjustmentType' => 'Adjustment', 'amount' => 32000, 'remarks' => 'Output GST adjustment', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-003', 'date' => now()->subDays(30), 'gstLedger' => 'Input', 'adjustmentType' => 'Correction', 'amount' => 18000, 'remarks' => 'ITC correction for debit note', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-004', 'date' => now()->subDays(28), 'gstLedger' => 'Output', 'adjustmentType' => 'Reversal', 'amount' => 55000, 'remarks' => 'Credit note adjustment', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-005', 'date' => now()->subDays(25), 'gstLedger' => 'Input', 'adjustmentType' => 'Adjustment', 'amount' => 28000, 'remarks' => 'ITC claim for imports', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-006', 'date' => now()->subDays(20), 'gstLedger' => 'Output', 'adjustmentType' => 'Correction', 'amount' => 42000, 'remarks' => 'Invoice correction adjustment', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-007', 'date' => now()->subDays(15), 'gstLedger' => 'Input', 'adjustmentType' => 'Reversal', 'amount' => 35000, 'remarks' => 'Vendor non-compliance reversal', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-008', 'date' => now()->subDays(10), 'gstLedger' => 'Output', 'adjustmentType' => 'Adjustment', 'amount' => 68000, 'remarks' => 'Export refund claim', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-009', 'date' => now()->subDays(6), 'gstLedger' => 'Input', 'adjustmentType' => 'Correction', 'amount' => 22000, 'remarks' => 'Purchase return ITC correction', 'createdBy' => 1],
+            ['voucherNo' => 'GV-2026-010', 'date' => now()->subDays(2), 'gstLedger' => 'Output', 'adjustmentType' => 'Reversal', 'amount' => 38000, 'remarks' => 'Sales return reversal', 'createdBy' => 1],
+        ];
+        VoucherGST::withTrashed()->whereIn('voucherNo', collect($gstVouchers)->pluck('voucherNo'))->forceDelete();
+        foreach ($gstVouchers as $gv) {
+            VoucherGST::create($gv);
+        }
+        echo "✅ Created " . count($gstVouchers) . " GST vouchers\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // SALES CYCLE (Inquiry -> Quotation -> SO -> Invoice)
+        // ══════════════════════════════════════════════════════════════════════
+        
         // Inquiry
-        $inq = Inquiry::create([
-            'inquiryNo' => AutoNumber::generate('INQ', 'INQ'),
+        $inq = Inquiry::firstOrCreate(['inquiryNo' => 'INQ-001'], [
             'customerId' => $customer->id,
-            'salesPerson' => 'Admin User',
+            'salesPerson' => 'Rahul Sharma',
             'status' => 'Quoted',
             'createdBy' => 1,
-            'createdAt' => now(),
-            'updatedAt' => now()
         ]);
-        InquiryItem::create(['inquiryId' => $inq->id, 'productId' => $p1->id, 'quantity' => 2]);
-
+        InquiryItem::firstOrCreate(['inquiryId' => $inq->id, 'productId' => $p1->id], ['quantity' => 5]);
+        
         // Quotation
-        $qty = 2;
+        $qty = 5;
         $rate = 450000;
         $total = $qty * $rate * 1.28;
-        $qt = Quotation::create([
-            'quoteNo' => AutoNumber::generate('QT', 'QT'),
+        $qt = Quotation::firstOrCreate(['quoteNo' => 'QT-001'], [
             'customerId' => $customer->id,
             'inquiryId' => $inq->id,
             'status' => 'Accepted',
             'totalAmount' => $total,
             'createdBy' => 1,
             'validUntil' => now()->addDays(30),
-            'createdAt' => now(),
-            'updatedAt' => now()
         ]);
-        QuotationItem::create([
-            'quotationId' => $qt->id,
-            'productId' => $p1->id,
+        QuotationItem::firstOrCreate(['quotationId' => $qt->id, 'productId' => $p1->id], [
             'quantity' => $qty,
             'rate' => $rate,
             'gstPercent' => 28,
@@ -77,19 +267,14 @@ class SyntheticDataSeeder extends Seeder
         ]);
 
         // Sale Order
-        $so = SaleOrder::create([
-            'soNo' => AutoNumber::generate('SO', 'SO'),
+        $so = SaleOrder::firstOrCreate(['soNo' => 'SO-001'], [
             'customerId' => $customer->id,
             'quotationId' => $qt->id,
             'status' => 'Pending',
             'totalAmount' => $total,
             'createdBy' => 1,
-            'createdAt' => now(),
-            'updatedAt' => now()
         ]);
-        SaleOrderItem::create([
-            'saleOrderId' => $so->id,
-            'productId' => $p1->id,
+        SaleOrderItem::firstOrCreate(['saleOrderId' => $so->id, 'productId' => $p1->id], [
             'quantity' => $qty,
             'rate' => $rate,
             'gstPercent' => 28,
@@ -99,8 +284,7 @@ class SyntheticDataSeeder extends Seeder
         // Invoice
         $taxable = $qty * $rate;
         $gst = $taxable * 0.28;
-        $invoice = Invoice::create([
-            'invoiceNo' => AutoNumber::generate('INV', 'INV'),
+        $invoice = Invoice::firstOrCreate(['invoiceNo' => 'INV-001'], [
             'customerId' => $customer->id,
             'saleOrderId' => $so->id,
             'invoiceDate' => now(),
@@ -110,12 +294,8 @@ class SyntheticDataSeeder extends Seeder
             'grandTotal' => $taxable + $gst,
             'status' => 'Unpaid',
             'createdBy' => 1,
-            'createdAt' => now(),
-            'updatedAt' => now()
         ]);
-        InvoiceItem::create([
-            'invoiceId' => $invoice->id,
-            'productId' => $p1->id,
+        InvoiceItem::firstOrCreate(['invoiceId' => $invoice->id, 'productId' => $p1->id], [
             'quantity' => $qty,
             'rate' => $rate,
             'gstPercent' => 28,
@@ -123,6 +303,116 @@ class SyntheticDataSeeder extends Seeder
             'total' => $taxable + $gst
         ]);
 
-        echo "✅ Synthetic sales data created for Tata Motors\n";
+        // Additional sales records
+        $inq2 = Inquiry::firstOrCreate(['inquiryNo' => 'INQ-002'], [
+            'customerId' => Customer::where('name', 'Mahindra & Mahindra')->first()->id,
+            'salesPerson' => 'Rahul Sharma',
+            'status' => 'New',
+            'createdBy' => 1,
+        ]);
+        InquiryItem::firstOrCreate(['inquiryId' => $inq2->id, 'productId' => $p2->id], ['quantity' => 3]);
+
+        echo "✅ Sales cycle data created (Inquiries, Quotations, SOs, Invoices)\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PURCHASE CYCLE (PO -> GRN)
+        // ══════════════════════════════════════════════════════════════════════
+        $rmSteel = Product::where('code', 'RM-STEEL-001')->first();
+        
+        $po = PurchaseOrder::firstOrCreate(['poNo' => 'PO-001'], [
+            'vendorId' => $vendor->id,
+            'status' => 'Approved',
+            'totalAmount' => 500 * 85 * 1.18,
+            'createdBy' => 1,
+        ]);
+        PurchaseOrderItem::firstOrCreate(['purchaseOrderId' => $po->id, 'productId' => $rmSteel->id], [
+            'quantity' => 500,
+            'rate' => 85,
+            'gstPercent' => 18,
+            'total' => 500 * 85 * 1.18
+        ]);
+
+        $grn = GRN::firstOrCreate(['grnNo' => 'GRN-001'], [
+            'purchaseOrderId' => $po->id,
+            'vendorId' => $vendor->id,
+            'status' => 'Received',
+            'createdBy' => 1,
+        ]);
+        GRNItem::firstOrCreate(['grnId' => $grn->id, 'productId' => $rmSteel->id], [
+            'quantity' => 500,
+        ]);
+
+        echo "✅ Purchase cycle data created (POs, GRNs)\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 4.5 BANK RECONCILIATION - Extended with more records
+        // ══════════════════════════════════════════════════════════════════════
+        $bankReconciliations = [
+            // HDFC Bank records
+            ['bankAccount' => 'HDFC Bank - Current A/c 1234', 'statementDate' => now()->subDays(60), 'systemBalance' => 980000.00, 'bankBalance' => 980000.00, 'status' => 'Reconciled', 'remarks' => 'Jan 2026 reconciliation complete'],
+            ['bankAccount' => 'HDFC Bank - Current A/c 1234', 'statementDate' => now()->subDays(45), 'systemBalance' => 1250000.00, 'bankBalance' => 1250000.00, 'status' => 'Reconciled', 'remarks' => 'Feb mid-month reconciliation'],
+            ['bankAccount' => 'HDFC Bank - Current A/c 1234', 'statementDate' => now()->subDays(30), 'systemBalance' => 1485000.00, 'bankBalance' => 1482500.00, 'status' => 'Pending', 'remarks' => 'Unreconciled: ₹2,500 cheque in transit'],
+            ['bankAccount' => 'HDFC Bank - Current A/c 1234', 'statementDate' => now()->subDays(15), 'systemBalance' => 1620000.00, 'bankBalance' => 1618500.00, 'status' => 'Pending', 'remarks' => 'Bank charges pending adjustment'],
+            ['bankAccount' => 'HDFC Bank - Current A/c 1234', 'statementDate' => now()->subDays(5), 'systemBalance' => 1750000.00, 'bankBalance' => 1750000.00, 'status' => 'Reconciled', 'remarks' => 'March 2026 reconciliation done'],
+            // ICICI Bank records
+            ['bankAccount' => 'ICICI Bank - Current A/c 5678', 'statementDate' => now()->subDays(60), 'systemBalance' => 720000.00, 'bankBalance' => 720000.00, 'status' => 'Reconciled', 'remarks' => 'Jan 2026 reconciliation done'],
+            ['bankAccount' => 'ICICI Bank - Current A/c 5678', 'statementDate' => now()->subDays(45), 'systemBalance' => 875000.00, 'bankBalance' => 875000.00, 'status' => 'Reconciled', 'remarks' => 'All entries matched'],
+            ['bankAccount' => 'ICICI Bank - Current A/c 5678', 'statementDate' => now()->subDays(30), 'systemBalance' => 923500.00, 'bankBalance' => 920000.00, 'status' => 'Pending', 'remarks' => 'Unreconciled: ₹3,500 bank charges pending'],
+            ['bankAccount' => 'ICICI Bank - Current A/c 5678', 'statementDate' => now()->subDays(15), 'systemBalance' => 1050000.00, 'bankBalance' => 1050000.00, 'status' => 'Reconciled', 'remarks' => 'Reconciliation complete'],
+            ['bankAccount' => 'ICICI Bank - Current A/c 5678', 'statementDate' => now()->subDays(3), 'systemBalance' => 1180000.00, 'bankBalance' => 1175000.00, 'status' => 'Pending', 'remarks' => 'Outstanding cheques ₹5,000'],
+            // SBI Bank records
+            ['bankAccount' => 'SBI - Current A/c 9012', 'statementDate' => now()->subDays(60), 'systemBalance' => 520000.00, 'bankBalance' => 520000.00, 'status' => 'Reconciled', 'remarks' => 'Jan 2026 fully matched'],
+            ['bankAccount' => 'SBI - Current A/c 9012', 'statementDate' => now()->subDays(45), 'systemBalance' => 650000.00, 'bankBalance' => 650000.00, 'status' => 'Reconciled', 'remarks' => 'Feb 2026 reconciliation done'],
+            ['bankAccount' => 'SBI - Current A/c 9012', 'statementDate' => now()->subDays(30), 'systemBalance' => 712500.00, 'bankBalance' => 710500.00, 'status' => 'Pending', 'remarks' => 'Unreconciled: ₹2,000 interest credit pending'],
+            ['bankAccount' => 'SBI - Current A/c 9012', 'statementDate' => now()->subDays(15), 'systemBalance' => 830000.00, 'bankBalance' => 830000.00, 'status' => 'Reconciled', 'remarks' => 'All transactions matched'],
+            ['bankAccount' => 'SBI - Current A/c 9012', 'statementDate' => now()->subDays(2), 'systemBalance' => 920000.00, 'bankBalance' => 918000.00, 'status' => 'Pending', 'remarks' => 'Pending deposit ₹2,000'],
+        ];
+        foreach ($bankReconciliations as $br) {
+            BankReconciliation::updateOrCreate(
+                ['bankAccount' => $br['bankAccount'], 'statementDate' => $br['statementDate']],
+                array_merge($br, ['createdBy' => 1])
+            );
+        }
+        echo "✅ Created " . count($bankReconciliations) . " bank reconciliation records\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 4.6 CREDIT CARD STATEMENT - Extended with more expense heads
+        // ══════════════════════════════════════════════════════════════════════
+        $creditCardStatements = [
+            // HDFC Card - Various expense heads
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-01', 'transactionDate' => now()->subDays(55), 'merchant' => 'Dell India', 'amount' => 185000.00, 'expenseHead' => 'IT Equipment', 'description' => 'Laptop purchase for new hires'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-01', 'transactionDate' => now()->subDays(50), 'merchant' => 'Amazon Business', 'amount' => 45000.00, 'expenseHead' => 'Office Supplies', 'description' => 'Stationery and desk accessories'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(40), 'merchant' => 'Flipkart Wholesale', 'amount' => 32500.00, 'expenseHead' => 'IT Equipment', 'description' => 'Monitor and peripherals'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(35), 'merchant' => 'Indian Oil', 'amount' => 15000.00, 'expenseHead' => 'Fuel', 'description' => 'Company vehicle refuel'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(28), 'merchant' => 'MakeMyTrip', 'amount' => 58000.00, 'expenseHead' => 'Travel', 'description' => 'Flight tickets sales team'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(15), 'merchant' => 'Taj Hotels', 'amount' => 28500.00, 'expenseHead' => 'Travel & Accommodation', 'description' => 'Client meeting hotel stay'],
+            ['cardNo' => 'HDFC-XXXX-1234', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(8), 'merchant' => 'Uber Business', 'amount' => 12000.00, 'expenseHead' => 'Travel', 'description' => 'Monthly cab charges'],
+            // ICICI Card - Various expense heads
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-01', 'transactionDate' => now()->subDays(52), 'merchant' => 'Godrej Interio', 'amount' => 125000.00, 'expenseHead' => 'Furniture', 'description' => 'Office furniture purchase'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(38), 'merchant' => 'Eureka Forbes', 'amount' => 18000.00, 'expenseHead' => 'Maintenance', 'description' => 'Water purifier service'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(32), 'merchant' => 'Big Basket', 'amount' => 8500.00, 'expenseHead' => 'Pantry Supplies', 'description' => 'Monthly groceries'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(25), 'merchant' => 'Urban Company', 'amount' => 22000.00, 'expenseHead' => 'Maintenance', 'description' => 'AC servicing all offices'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(12), 'merchant' => 'IndiGo Airlines', 'amount' => 42000.00, 'expenseHead' => 'Travel', 'description' => 'Flight tickets for management'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(5), 'merchant' => 'Reliance Digital', 'amount' => 65000.00, 'expenseHead' => 'IT Equipment', 'description' => 'Conference room display'],
+            ['cardNo' => 'ICICI-XXXX-5678', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(2), 'merchant' => 'Swiggy Corporate', 'amount' => 15000.00, 'expenseHead' => 'Entertainment', 'description' => 'Team lunch orders'],
+            // SBI Card - Various expense heads
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-01', 'transactionDate' => now()->subDays(58), 'merchant' => 'HP India', 'amount' => 125000.00, 'expenseHead' => 'IT Equipment', 'description' => 'Printer and accessories'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-01', 'transactionDate' => now()->subDays(48), 'merchant' => 'CBRE Services', 'amount' => 95000.00, 'expenseHead' => 'Maintenance', 'description' => 'Annual maintenance contract'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(42), 'merchant' => 'Cafe Coffee Day', 'amount' => 5500.00, 'expenseHead' => 'Entertainment', 'description' => 'Client refreshments'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(30), 'merchant' => 'Airtel Business', 'amount' => 35000.00, 'expenseHead' => 'Telecom', 'description' => 'Internet and phone bills'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-02', 'transactionDate' => now()->subDays(22), 'merchant' => 'Staples India', 'amount' => 28000.00, 'expenseHead' => 'Office Supplies', 'description' => 'Bulk stationery purchase'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(10), 'merchant' => 'Microsoft India', 'amount' => 150000.00, 'expenseHead' => 'Software', 'description' => 'Office 365 annual subscription'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(4), 'merchant' => 'BHIM Petrol', 'amount' => 18000.00, 'expenseHead' => 'Fuel', 'description' => 'Fleet vehicle fuel'],
+            ['cardNo' => 'SBI-XXXX-9012', 'statementMonth' => '2026-03', 'transactionDate' => now()->subDays(1), 'merchant' => 'Zomato Business', 'amount' => 8500.00, 'expenseHead' => 'Entertainment', 'description' => 'Team celebration dinner'],
+        ];
+        foreach ($creditCardStatements as $cc) {
+            CreditCardStatement::updateOrCreate(
+                ['cardNo' => $cc['cardNo'], 'transactionDate' => $cc['transactionDate'], 'merchant' => $cc['merchant']],
+                array_merge($cc, ['createdBy' => 1])
+            );
+        }
+        echo "✅ Created " . count($creditCardStatements) . " credit card statement records\n";
+
+        echo "\n🎉 All synthetic test data seeded successfully!\n";
     }
 }

@@ -28,30 +28,18 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
     };
 
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                onClick={onClose}
+        <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+            {/* Modal */}
+            <div 
+                className="modal-content"
+                onClick={e => e.stopPropagation()}
                 style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-                    zIndex: 1000, background: 'rgba(0, 0, 0, 0.4)'
-                }}
-            />
-
-            {/* Panel */}
-            <div style={{
-                position: 'fixed', top: 0, right: 0, height: '100vh', width: '480px', maxWidth: '95vw',
-                background: 'var(--bg-card)', borderLeft: '1px solid var(--border)',
-                zIndex: 1001, display: 'flex', flexDirection: 'column',
-                boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
-                animation: 'slideInRight 0.25s ease-out'
-            }}>
-                {/* Header */}
-                <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '20px 24px', borderBottom: '1px solid var(--border)',
-                    background: 'var(--bg-elevated)', flexShrink: 0
+                    width: '520px', maxWidth: '95vw', maxHeight: '90vh',
+                    display: 'flex', flexDirection: 'column',
+                    animation: 'fadeIn 0.2s ease-out'
                 }}>
+                {/* Header */}
+                <div className="modal-header">
                     <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{title}</h2>
                     <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '6px' }}>
                         <X size={18} />
@@ -59,7 +47,7 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
                 </div>
 
                 {/* Scrollable body */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+                <div className="modal-body" style={{ flex: 1, overflowY: 'auto', maxHeight: 'calc(90vh - 140px)' }}>
                     {/* Main fields */}
                     <div style={{
                         background: 'var(--bg-elevated)', borderRadius: '12px',
@@ -117,10 +105,7 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
 
                 {/* Footer */}
                 {canEdit && (
-                    <div style={{
-                        padding: '16px 24px', borderTop: '1px solid var(--border)',
-                        background: 'var(--bg-elevated)', flexShrink: 0
-                    }}>
+                    <div className="modal-footer">
                         <button className="btn btn-primary" style={{ width: '100%' }} onClick={onEdit}>
                             <Edit size={16} style={{ marginRight: '8px' }} />
                             Edit Record
@@ -128,13 +113,6 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
                     </div>
                 )}
             </div>
-
-            <style>{`
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to   { transform: translateX(0);    opacity: 1; }
-                }
-            `}</style>
-        </>
+        </div>
     );
 }
