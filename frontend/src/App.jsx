@@ -358,15 +358,6 @@ const logisticsConfig = {
   ]
 };
 
-const contractorsConfig = {
-  title: 'Contractors HR', apiBase: '/contractors',
-  tabs: [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'workers', label: 'Workers', endpoint: '/workers', columns: ['workerId', 'workerName', 'contractorFirm', 'skillLevel'], formFields: [{ name: 'workerId', label: 'Worker ID', required: true }, { name: 'workerName', label: 'Name', required: true }, { name: 'contractorFirm', label: 'Contractor Firm' }, { name: 'skillLevel', label: 'Skill Level' }] },
-    { key: 'sheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['worker.workerName', 'month', 'year', 'daysWorked', 'netPayable'] },
-  ]
-};
-
 const maintenanceConfig = {
   title: 'Maintenance', apiBase: '/maintenance',
   tabs: [
@@ -421,7 +412,6 @@ export default function App() {
           <Route path="warehouse" element={<GenericModulePage {...warehouseConfig} />} />
           <Route path="statutory" element={<GenericModulePage {...statutoryConfig} />} />
           <Route path="logistics" element={<GenericModulePage {...logisticsConfig} />} />
-          <Route path="contractors" element={<GenericModulePage {...contractorsConfig} />} />
           <Route path="maintenance" element={<GenericModulePage {...maintenanceConfig} />} />
           <Route path="assets" element={<GenericModulePage {...assetsConfig} />} />
           <Route path="reports" element={<ReportsPage />} />

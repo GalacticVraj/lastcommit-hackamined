@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Eye, Edit, Trash2, Loader2, Printer, Check, X } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DataTable from '../components/DataTable';
@@ -24,7 +25,9 @@ const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
  *   tabs        [{key, label, endpoint, columns, viewFields, editFields, formFields, sections?, deletePermission?, statusActions?}]
  */
 export default function GenericModulePage({ title, apiBase, statCards = [], tabs = [] }) {
-    const [activeTab, setActiveTab] = useState(tabs[0]?.key || 'list');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlTab = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(urlTab || tabs[0]?.key || 'list');
     const [data, setData] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -79,6 +82,11 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
     useEffect(() => {
         setPage(1); // Reset page on tab change
     }, [activeTab]);
+
+    // Sync activeTab with URL param
+    useEffect(() => {
+        setActiveTab(urlTab || tabs[0]?.key || 'list');
+    }, [urlTab, tabs]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -296,7 +304,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 {tabs.map(t => (
-                    <button key={t.key} className={`btn ${t.key === activeTab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setActiveTab(t.key)}>
+                    <button key={t.key} className={`btn ${t.key === activeTab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => { setActiveTab(t.key); setSearchParams({ tab: t.key }, { replace: false }); }}>
                         {t.label}
                     </button>
                 ))}

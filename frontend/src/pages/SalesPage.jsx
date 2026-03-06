@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../lib/api';
@@ -186,7 +187,9 @@ const TAB_CONFIG = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SalesPage() {
-    const [tab, setTab] = useState('dashboard');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlTab = searchParams.get('tab');
+    const [tab, setTab] = useState(urlTab || 'dashboard');
     const [data, setData] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -222,6 +225,11 @@ export default function SalesPage() {
     }, [tab, search]);
 
     useEffect(() => { loadData(); }, [tab]);
+
+    // Sync tab with URL param
+    useEffect(() => {
+        setTab(urlTab || 'dashboard');
+    }, [urlTab]);
 
     // Fetch full record for view panel
     const handleViewOpen = async (item) => {
@@ -304,7 +312,7 @@ export default function SalesPage() {
                 <div className="page-header"><h1>Sales Management</h1></div>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
                     {tabs.map(t => (
-                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab(t)}>
+                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
                             {t.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}
                         </button>
                     ))}
@@ -348,7 +356,7 @@ export default function SalesPage() {
                 <h1>Sales — {tab.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}</h1>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {tabs.map(t => (
-                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => setTab(t)}>
+                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
                             {t.replace('-', ' ').replace(/^\w/, c => c.toUpperCase())}
                         </button>
                     ))}

@@ -17,7 +17,6 @@ async function main() {
         { module: 'warehouse', actions: ['view', 'create', 'transfer.create', 'srv.create'] },
         { module: 'statutory', actions: ['view', 'gst.create', 'tds.create', 'tcs.create', 'cheque.create', 'challan.create'] },
         { module: 'logistics', actions: ['view', 'transporter.create', 'order.create', 'bill.create'] },
-        { module: 'contractors', actions: ['view', 'worker.create', 'salary.create', 'advance.create'] },
         { module: 'maintenance', actions: ['view', 'tool.create', 'chart.create', 'calibration.create', 'rectification.create'] },
         { module: 'assets', actions: ['view', 'create', 'addition.create', 'allocation.create', 'sale.create', 'depreciation.create'] },
     ];

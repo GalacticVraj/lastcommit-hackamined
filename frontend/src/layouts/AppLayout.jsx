@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, HardHat, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
+import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
 import useAuthStore from '../lib/auth';
 
 const navGroups = [
@@ -21,7 +21,6 @@ const navGroups = [
         label: 'Finance & HR', items: [
             { to: '/finance', icon: DollarSign, label: 'Finance', permission: 'finance.view' },
             { to: '/hr', icon: Users, label: 'HR', permission: 'hr.view' },
-            { to: '/contractors', icon: HardHat, label: 'Contractors', permission: 'contractors.view' },
         ]
     },
     {
@@ -45,17 +44,24 @@ const navGroups = [
 const routeLabels = {
     '/': 'Dashboard', '/sales': 'Sales', '/purchase': 'Purchase',
     '/production': 'Production', '/simulation': 'Simulation', '/finance': 'Finance',
-    '/hr': 'HR', '/contractors': 'Contractors', '/quality': 'Quality',
+    '/hr': 'HR', '/quality': 'Quality',
     '/warehouse': 'Warehouse', '/logistics': 'Logistics', '/maintenance': 'Maintenance',
     '/assets': 'Assets', '/statutory': 'Statutory/GST', '/reports': 'Reports',
 };
 
 // Sample notifications (replace with real API later)
 const SAMPLE_NOTIFICATIONS = [
-    { id: 1, title: 'Invoice #INV-0042 overdue', time: '2 hours ago', type: 'warning' },
-    { id: 2, title: 'New inquiry received from customer', time: '5 hours ago', type: 'info' },
-    { id: 3, title: 'GRN #GRN-0018 pending IQC', time: '1 day ago', type: 'info' },
-    { id: 4, title: 'PO #PO-0031 delivery delayed', time: '2 days ago', type: 'warning' },
+    { id: 1, title: 'Invoice #INV-0042 overdue', time: '2 hours ago', type: 'warning', link: '/sales?tab=invoices', read: false },
+    { id: 2, title: 'New inquiry received from customer', time: '5 hours ago', type: 'info', link: '/sales?tab=inquiries', read: false },
+    { id: 3, title: 'GRN #GRN-0018 pending IQC', time: '1 day ago', type: 'info', link: '/quality?tab=iqc', read: false },
+    { id: 4, title: 'PO #PO-0031 delivery delayed', time: '2 days ago', type: 'warning', link: '/purchase?tab=orders', read: false },
+    { id: 5, title: 'Voucher #VCH-0125 pending approval', time: '3 hours ago', type: 'info', link: '/finance?tab=vouchers', read: false },
+    { id: 6, title: 'Employee leave request pending', time: '4 hours ago', type: 'info', link: '/hr?tab=leaves', read: false },
+    { id: 7, title: 'Low stock alert: Steel Rods', time: '6 hours ago', type: 'warning', link: '/warehouse?tab=dashboard', read: false },
+    { id: 8, title: 'Shipment #SHP-0089 in transit', time: '1 day ago', type: 'info', link: '/logistics?tab=shipments', read: false },
+    { id: 9, title: 'Machine #M-005 maintenance due', time: '2 days ago', type: 'warning', link: '/maintenance?tab=schedules', read: false },
+    { id: 10, title: 'Asset depreciation report ready', time: '3 days ago', type: 'info', link: '/assets?tab=dashboard', read: false },
+    { id: 11, title: 'GST return filing due this week', time: '1 day ago', type: 'warning', link: '/statutory?tab=gst', read: false },
 ];
 
 export default function AppLayout() {
@@ -86,6 +92,10 @@ export default function AppLayout() {
 
     const dismissNotif = (id) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
+    };
+
+    const markAsRead = (id) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     };
 
     return (
@@ -127,7 +137,7 @@ export default function AppLayout() {
                         <div style={{ position: 'relative' }}>
                             <button className="btn btn-ghost btn-sm notif-trigger" onClick={() => setNotifOpen(!notifOpen)} style={{ position: 'relative', padding: '8px' }}>
                                 <Bell size={18} strokeWidth={1.5} />
-                                {notifications.length > 0 && (
+                                {notifications.some(n => !n.read) && (
                                     <span style={{
                                         position: 'absolute', top: '4px', right: '4px',
                                         width: '8px', height: '8px', borderRadius: '50%',
@@ -136,40 +146,52 @@ export default function AppLayout() {
                                 )}
                             </button>
                             {notifOpen && (
-                                <div className="notif-panel" style={{
-                                    position: 'absolute', top: '100%', right: 0, width: '340px',
-                                    background: 'var(--bg-secondary, #1E293B)', border: '1px solid var(--border, #334155)',
-                                    borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-                                    zIndex: 1100, marginTop: '8px', overflow: 'hidden'
-                                }}>
-                                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border, #334155)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <strong style={{ fontSize: '14px' }}>Notifications</strong>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => setNotifications([])}>Clear all</span>
-                                    </div>
-                                    <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                                        {notifications.length === 0 && (
-                                            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No notifications</div>
-                                        )}
-                                        {notifications.map(n => (
-                                            <div key={n.id} style={{
-                                                padding: '12px 16px', borderBottom: '1px solid var(--border, #334155)',
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px',
-                                                cursor: 'pointer', transition: 'background 0.15s',
-                                            }}
-                                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                            >
-                                                <div>
-                                                    <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: n.type === 'warning' ? 'var(--amber, #D97706)' : 'var(--text-primary)' }}>{n.title}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{n.time}</div>
+                                <>
+                                    {/* Blurred backdrop */}
+                                    <div style={{
+                                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                        background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)',
+                                        zIndex: 1099
+                                    }} onClick={() => setNotifOpen(false)} />
+                                    {/* Notification panel */}
+                                    <div className="notif-panel" style={{
+                                        position: 'absolute', top: '100%', right: 0, width: '340px',
+                                        background: '#ffffff', border: '1px solid #e5e7eb',
+                                        borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                                        zIndex: 1100, marginTop: '8px', overflow: 'hidden'
+                                    }}>
+                                        <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <strong style={{ fontSize: '14px', color: '#1f2937' }}>Notifications</strong>
+                                            <span style={{ fontSize: '12px', color: '#6b7280', cursor: 'pointer' }} onClick={() => setNotifications([])}>Clear all</span>
+                                        </div>
+                                        <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                                            {notifications.length === 0 && (
+                                                <div style={{ padding: '32px 16px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>No notifications</div>
+                                            )}
+                                            {notifications.map(n => (
+                                                <div key={n.id} style={{
+                                                    padding: '12px 16px', borderBottom: '1px solid #e5e7eb',
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px',
+                                                    cursor: 'pointer', transition: 'background 0.15s',
+                                                    background: n.read ? '#f9fafb' : '#ffffff',
+                                                    opacity: n.read ? 0.7 : 1,
+                                                }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = n.read ? '#f9fafb' : '#ffffff'}
+                                                    onClick={() => { markAsRead(n.id); if (n.link) { navigate(n.link); setNotifOpen(false); } }}
+                                                >
+                                                    <div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: n.type === 'warning' ? '#D97706' : '#1f2937' }}>{n.title}</div>
+                                                        <div style={{ fontSize: '11px', color: '#9ca3af' }}>{n.time}</div>
+                                                    </div>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '2px', minWidth: 'auto', color: '#6b7280' }} onClick={(e) => { e.stopPropagation(); dismissNotif(n.id); }}>
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
-                                                <button className="btn btn-ghost btn-sm" style={{ padding: '2px', minWidth: 'auto' }} onClick={(e) => { e.stopPropagation(); dismissNotif(n.id); }}>
-                                                    <X size={14} />
-                                                </button>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
