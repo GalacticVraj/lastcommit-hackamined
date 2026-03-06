@@ -333,6 +333,7 @@ const qualityConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'], hasPrint: true, printType: 'quality-iqc' },
+    { key: 'mts', label: 'MTS', endpoint: '/mts', columns: ['mtaRef', 'item', 'qtyChecked', 'status'], hasPrint: true, printType: 'quality-mts' },
     { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'], hasPrint: true, printType: 'quality-pqc' },
     { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'], hasPrint: true, printType: 'quality-pdi' },
     { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'], hasPrint: true, printType: 'quality-qrd' },
@@ -345,6 +346,10 @@ const warehouseConfig = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'warehouses', label: 'Warehouses', endpoint: '/warehouses', columns: ['name', 'address', 'managerName'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'address', label: 'Address' }, { name: 'managerName', label: 'Manager Name' }] },
     { key: 'stocks', label: 'Stocks', endpoint: '/stocks', columns: ['warehouse.name', 'product.name', 'quantity', 'value'] },
+    { key: 'openings', label: 'Openings', endpoint: '/openings', columns: ['warehouseName', 'itemName', 'openingQty', 'date'] },
+    { key: 'dispatch-srv', label: 'Dispatch SRV', endpoint: '/dispatch-srv', columns: ['srvNo', 'date', 'partyName', 'itemName', 'qty'], hasPrint: true, printType: 'warehouse-dispatch-srv' },
+    { key: 'transfers', label: 'Transfers', endpoint: '/transfers', columns: ['transferId', 'fromWarehouse', 'toWarehouse', 'itemName', 'qty', 'status'], hasPrint: true, printType: 'warehouse-stock-transfer' },
+    { key: 'material-receipts', label: 'Material Receipts', endpoint: '/material-receipts', columns: ['receiptId', 'sourceDocRef', 'itemName', 'qtyReceived', 'receiptDate'], hasPrint: true, printType: 'warehouse-material-receipt' },
   ]
 };
 
@@ -365,6 +370,7 @@ const maintenanceConfig = {
     { key: 'tools', label: 'Tools', endpoint: '/tools', columns: ['assetCode', 'toolName', 'location', 'maintenanceInterval'], formFields: [{ name: 'assetCode', label: 'Asset Code', required: true }, { name: 'toolName', label: 'Tool Name', required: true }, { name: 'location', label: 'Location' }, { name: 'maintenanceInterval', label: 'Maintenance Interval (days)', type: 'number' }] },
     { key: 'charts', label: 'Maintenance Charts', endpoint: '/maintenance-charts', columns: ['tool.toolName', 'scheduledDate', 'status'] },
     { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'], hasPrint: true, printType: 'maintenance-calibration' },
+    { key: 'rectification', label: 'Rectification', endpoint: '/rectification', columns: ['jobId', 'toolName', 'issue', 'cost', 'technician'], hasPrint: true, printType: 'maintenance-rectification' },
   ]
 };
 
