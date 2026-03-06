@@ -16,3 +16,5 @@ dev.db
 # OS Files
 .DS_Store
 Thumbs.db
+
+*.env.backup
