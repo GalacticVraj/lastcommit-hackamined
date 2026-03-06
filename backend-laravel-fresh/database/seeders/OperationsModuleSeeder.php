@@ -52,6 +52,13 @@ class OperationsModuleSeeder extends Seeder
                     'updatedAt' => $now,
                 ]);
             }
+            // Extra warehouses for variety
+            foreach (['Raw Material Store' => 'Plant 2', 'Finished Goods Store' => 'Plant 3'] as $wName => $wAddr) {
+                DB::table($warehouseTable)->updateOrInsert(
+                    ['name' => $wName],
+                    ['address' => $wAddr, 'managerName' => 'Manager', 'isActive' => true, 'createdBy' => 1, 'createdAt' => $now, 'updatedAt' => $now]
+                );
+            }
         }
 
         $employeeId = Schema::hasTable('Employee') ? DB::table('Employee')->orderBy('id')->value('id') : null;
@@ -62,6 +69,7 @@ class OperationsModuleSeeder extends Seeder
         $this->seedWarehouse($warehouseId, $productIds, $now);
         $this->seedLogistics($now);
         $assetIds = $this->seedAssets($employeeId, $now);
+        $this->seedStatutory($now);
 
         if (!empty($assetIds) && !empty($workerIds) && Schema::hasTable('ContractorSalarySheet')) {
             DB::table('ContractorSalarySheet')
@@ -82,9 +90,13 @@ class OperationsModuleSeeder extends Seeder
     private function seedQuality($productIds, Carbon $now): void
     {
         if (Schema::hasTable('IQCRecord')) {
+            // Link IQC records to actual GRN IDs for cross-module sync
+            $grnTable = $this->tableName(['GRN', 'grns']);
+            $grnIds = $grnTable ? DB::table($grnTable)->whereNull('deletedAt')->orderBy('id')->pluck('id')->values() : collect();
+
             foreach (range(0, 5) as $index) {
                 DB::table('IQCRecord')->insert([
-                    'grnId' => null,
+                    'grnId' => $grnIds->isNotEmpty() ? $grnIds[$index % $grnIds->count()] : null,
                     'productId' => $productIds[$index % $productIds->count()],
                     'sampleQty' => 20 + $index,
                     'totalQty' => 20 + $index,
@@ -631,6 +643,30 @@ class OperationsModuleSeeder extends Seeder
                     ]
                 );
             }
+        }
+    }
+
+    private function seedStatutory(Carbon $now): void
+    {
+        // GST Master
+        if (Schema::hasTable('GstMaster')) {
+            $gstRates = [
+                ['hsnCode' => '7208', 'description' => 'Steel Flat Products', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+                ['hsnCode' => '7213', 'description' => 'Steel Bars and Rods', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+                ['hsnCode' => '4002', 'description' => 'Synthetic Rubber', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+                ['hsnCode' => '3208', 'description' => 'Industrial Paints', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+                ['hsnCode' => '7318', 'description' => 'Screws, Bolts, Nuts', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+                ['hsnCode' => '8544', 'description' => 'Insulated Wire/Cable', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+                ['hsnCode' => '8703', 'description' => 'Motor Vehicles', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+                ['hsnCode' => '8708', 'description' => 'Motor Vehicle Parts', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+            ];
+            foreach ($gstRates as $row) {
+                DB::table('GstMaster')->updateOrInsert(
+                    ['hsnCode' => $row['hsnCode']],
+                    array_merge($row, ['isActive' => true, 'createdBy' => 1, 'createdAt' => $now, 'updatedAt' => $now])
+                );
+            }
+            echo "✅ Statutory: 8 GST Master entries seeded\n";
         }
     }
 }
