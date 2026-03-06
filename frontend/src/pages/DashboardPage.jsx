@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, FileText, DollarSign, AlertTriangle, Package, Factory, Warehouse as WarehouseIcon, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 
@@ -87,16 +88,16 @@ export default function DashboardPage() {
                     <div className="card-header"><span className="card-title">Invoice Status</span></div>
                     <ResponsiveContainer width="100%" height={350}>
                         <PieChart margin={{ top: 40, right: 100, left: 100, bottom: 40 }}>
-                            <Pie 
-                                data={pieData} 
-                                cx="50%" 
-                                cy="50%" 
-                                innerRadius={70} 
-                                outerRadius={110} 
-                                paddingAngle={1} 
-                                dataKey="value" 
-                                stroke="#1F2937" 
-                                strokeWidth={1} 
+                            <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={70}
+                                outerRadius={110}
+                                paddingAngle={1}
+                                dataKey="value"
+                                stroke="#1F2937"
+                                strokeWidth={1}
                                 label={({ name, percent, cx, cy, midAngle, outerRadius }) => {
                                     const RADIAN = Math.PI / 180;
                                     const radius = outerRadius + 45;
@@ -150,9 +151,9 @@ export default function DashboardPage() {
                         { label: 'Generate Payroll', to: '/hr' },
                         { label: 'View Reports', to: '/reports' },
                     ].map(action => (
-                        <a href={action.to} key={action.label} className="btn btn-ghost quick-action-btn">
+                        <Link to={action.to} key={action.label} className="btn btn-ghost quick-action-btn">
                             {action.label}
-                        </a>
+                        </Link>
                     ))}
                 </div>
             </div>

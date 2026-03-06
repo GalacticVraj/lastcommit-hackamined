@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './lib/auth';
@@ -10,6 +11,7 @@ import SimulationPage from './pages/SimulationPage';
 import ReportsPage from './pages/ReportsPage';
 import GenericModulePage from './pages/GenericModulePage';
 import TopProgressBar from './components/TopProgressBar';
+import PrintPage from './pages/PrintPage';
 
 import CustomerProfilePage from './pages/CustomerProfilePage';
 import VendorProfilePage from './pages/VendorProfilePage';
@@ -19,8 +21,17 @@ import SalesmanProfilePage from './pages/SalesmanProfilePage';
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const token = useAuthStore(s => s.token) || localStorage.getItem('erp_token');
+  const rehydrate = useAuthStore(s => s.rehydrate);
+  const permissionsLoaded = useAuthStore(s => s.permissionsLoaded);
 
-  useSessionTimeout(60); // 60 minutes timeout
+  useSessionTimeout(60);
+
+  // Rehydrate permissions from backend on page refresh
+  useEffect(() => {
+    if (token && !permissionsLoaded) {
+      rehydrate();
+    }
+  }, [token, permissionsLoaded, rehydrate]);
 
   return (isAuthenticated && token) ? children : <Navigate to="/login" replace />;
 }
@@ -31,9 +42,9 @@ const purchaseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'vendors', label: 'Vendors', endpoint: '/vendors', columns: ['name', 'gstin', 'city', 'state', 'contactPerson'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'gstin', label: 'GSTIN' }, { name: 'address', label: 'Address' }, { name: 'city', label: 'City' }, { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' }, { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' }] },
-    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'] },
-    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'] },
-    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'] },
+    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true },
+    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true },
+    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true },
   ]
 };
 
@@ -148,6 +159,7 @@ export default function App() {
       }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/print/:type/:id" element={<ProtectedRoute><PrintPage /></ProtectedRoute>} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route index element={<DashboardPage />} />
           <Route path="sales" element={<SalesPage />} />

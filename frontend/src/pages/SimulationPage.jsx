@@ -27,7 +27,7 @@ export default function SimulationPage() {
     const removeRow = (i) => setInputs(inputs.filter((_, idx) => idx !== i));
     const updateInput = (i, field, value) => {
         const updated = [...inputs];
-        updated[i][field] = field === 'targetQty' || field === 'productId' ? Number(value) : value;
+        updated[i][field] = value;
         setInputs(updated);
     };
 
@@ -37,7 +37,7 @@ export default function SimulationPage() {
         setLoading(true);
         try {
             // send according to spec alias endpoint
-            const res = await api.post('/production-simulation', { mps: validInputs.map(i => ({ product_id: i.productId, target_qty: i.targetQty })), shift_hours: shiftHours, worker_count: workerCount });
+            const res = await api.post('/simulation/run', { mps: validInputs.map(i => ({ product_id: i.productId, target_qty: i.targetQty })), shift_hours: shiftHours, worker_count: workerCount });
             setResult(res.data.data);
             setLastRunId(res.data.data.simulationId);
             setIsSaved(false);
@@ -77,11 +77,11 @@ export default function SimulationPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
                     <div className="form-group">
                         <label className="form-label">Shift Hours</label>
-                        <input className="form-input" type="number" value={shiftHours} onChange={e => setShiftHours(Number(e.target.value))} />
+                        <input className="form-input" type="number" value={shiftHours} onChange={e => setShiftHours(e.target.value)} />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Worker Count</label>
-                        <input className="form-input" type="number" value={workerCount} onChange={e => setWorkerCount(Number(e.target.value))} />
+                        <input className="form-input" type="number" value={workerCount} onChange={e => setWorkerCount(e.target.value)} />
                     </div>
                 </div>
                 <table className="data-table" style={{ marginBottom: '16px' }}>
@@ -90,8 +90,8 @@ export default function SimulationPage() {
                         {inputs.map((input, i) => (
                             <tr key={i}>
                                 <td>
-                                    <GlassSelect 
-                                        value={input.productId} 
+                                    <GlassSelect
+                                        value={input.productId}
                                         onChange={e => updateInput(i, 'productId', e.target.value)}
                                         placeholder="Select Product..."
                                         options={products.map(p => ({ value: p.id, label: `${p.name} (${p.code})` }))}

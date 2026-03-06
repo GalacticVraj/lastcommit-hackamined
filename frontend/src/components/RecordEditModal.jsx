@@ -27,8 +27,12 @@ export default function RecordEditModal({ open, onClose, onSaved, record, endpoi
                     ? f.key.split('.').reduce((o, k) => o?.[k], record)
                     : record[f.name];
                 if (f.type === 'date' && val) {
-                    // format as YYYY-MM-DD for <input type=date>
-                    val = new Date(val).toISOString().split('T')[0];
+                    try {
+                        // format as YYYY-MM-DD for <input type=date>
+                        val = new Date(val).toISOString().split('T')[0];
+                    } catch (e) {
+                        val = '';
+                    }
                 }
                 initial[f.name] = val ?? '';
             });
@@ -52,7 +56,7 @@ export default function RecordEditModal({ open, onClose, onSaved, record, endpoi
     };
 
     const handleChange = (name, value, type) => {
-        setForm(prev => ({ ...prev, [name]: type === 'number' ? Number(value) : value }));
+        setForm(prev => ({ ...prev, [name]: value }));
     };
 
     if (!open || !record) return null;

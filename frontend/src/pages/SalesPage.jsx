@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -92,11 +92,13 @@ const TAB_CONFIG = {
             { name: 'validUntil', label: 'Valid Until', type: 'date', required: true },
             { name: 'paymentTerms', label: 'Payment Terms' },
         ],
+        hasItems: true,
         deletePermission: 'sales.quotation.delete',
         statusActions: [
             { label: 'Mark Sent', status: 'Sent', confirmMessage: 'Send this quotation to the customer?', icon: CheckCircle, class: 'btn-primary' },
             { label: 'Mark Accepted', status: 'Accepted', confirmMessage: 'Mark this quotation as Accepted?', icon: CheckCircle, class: 'btn-success' },
         ],
+        hasPrint: true,
     },
     'sale-orders': {
         endpoint: '/sales/sale-orders',
@@ -117,9 +119,11 @@ const TAB_CONFIG = {
         sections: [{ title: 'Line Items', dataKey: 'items', columns: [{ key: 'product.name', label: 'Product', render: r => r.product?.name || r.productId }, { key: 'quantity', label: 'Qty' }, { key: 'rate', label: 'Rate', render: r => `₹${Number(r.rate).toLocaleString()}` }, { key: 'status', label: 'Status' }] }],
         formFields: [
             { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+            { name: 'quotationId', label: 'Quotation ID', type: 'number' },
             { name: 'customerPoNo', label: 'Customer PO No.' },
             { name: 'billingAddress', label: 'Billing Address' }, { name: 'shippingAddress', label: 'Shipping Address' },
         ],
+        hasItems: true,
         deletePermission: 'sales.saleorder.delete',
         statusActions: [
             { label: 'Dispatch', status: 'Dispatched', confirmMessage: 'Mark this Sale Order as Dispatched? All line items will be updated.', icon: Truck, class: 'btn-primary' },
@@ -151,7 +155,9 @@ const TAB_CONFIG = {
             { name: 'saleOrderId', label: 'Sale Order ID', type: 'number' },
             { name: 'placeOfSupply', label: 'Place of Supply' }, { name: 'ewayBillNo', label: 'E-Way Bill No.' },
         ],
+        hasItems: true,
         deletePermission: 'sales.invoice.delete',
+        hasPrint: true,
     },
     receipts: {
         endpoint: '/sales/receipts',
@@ -352,7 +358,7 @@ export default function SalesPage() {
                 <div className="table-toolbar">
                     <input className="table-search" placeholder="Search…" value={search}
                         onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadData()} />
-                    <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                    <PermissionGate permission="sales.create">
                         <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}><Plus size={16} /> New</button>
                     </PermissionGate>
                 </div>
@@ -388,17 +394,25 @@ export default function SalesPage() {
                                                 </button>
 
                                                 {/* Edit */}
-                                                <PermissionGate permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                <PermissionGate permission="sales.edit">
                                                     <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}
                                                         onClick={() => setEditRecord(item)}>
                                                         <Edit size={14} />
                                                     </button>
                                                 </PermissionGate>
 
+                                                {/* Print */}
+                                                {cfg.hasPrint && (
+                                                    <button className="btn btn-ghost btn-sm" title="Print" style={{ padding: '4px 8px' }}
+                                                        onClick={() => window.open(`/print/${tab.replace(/s$/, '')}/${item.id}`, '_blank')}>
+                                                        <Printer size={14} />
+                                                    </button>
+                                                )}
+
                                                 {/* Status actions */}
                                                 {(cfg.statusActions || []).map(action => (
                                                     item.status !== action.status && (
-                                                        <PermissionGate key={action.label} permission={`sales.${tab.replace('s', '')}.edit`}>
+                                                        <PermissionGate key={action.label} permission="sales.edit">
                                                             <button
                                                                 className={`btn btn-sm ${action.class || 'btn-ghost'}`}
                                                                 title={action.label}
@@ -412,7 +426,7 @@ export default function SalesPage() {
                                                 ))}
 
                                                 {/* Delete */}
-                                                <PermissionGate permission={cfg.deletePermission}>
+                                                <PermissionGate permission="sales.delete">
                                                     <button className="btn btn-ghost btn-sm" title="Delete" style={{ padding: '4px 8px', color: 'var(--danger)' }}
                                                         onClick={() => handleDelete(item)}>
                                                         <Trash2 size={14} />
@@ -474,18 +488,66 @@ export default function SalesPage() {
                         </div>
                         <form onSubmit={handleCreate}>
                             <div className="modal-body">
-                                {(cfg.formFields || []).map(f => (
-                                    <div className="form-group" key={f.name}>
-                                        <label className="form-label">{f.label}</label>
-                                        <input className="form-input" type={f.type || 'text'} required={f.required}
-                                            value={createForm[f.name] || ''}
-                                            onChange={e => setCreateForm({ ...createForm, [f.name]: f.type === 'number' ? Number(e.target.value) : e.target.value })} />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    {(cfg.formFields || []).map(f => (
+                                        <div className="form-group" key={f.name}>
+                                            <label className="form-label">{f.label}</label>
+                                            <input className="form-input" type={f.type || 'text'} required={f.required}
+                                                value={createForm[f.name] || ''}
+                                                onChange={e => setCreateForm({ ...createForm, [f.name]: e.target.value })} />
+                                        </div>
+                                    ))}
+                                </div>
+                                {cfg.hasItems && (
+                                    <div style={{ marginTop: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <h4>Line Items</h4>
+                                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCreateForm(prev => ({ ...prev, items: [...(prev.items || []), { productId: '', quantity: 1, rate: 0, gstPercent: 18 }] }))}>
+                                                <Plus size={14} /> Add Row
+                                            </button>
+                                        </div>
+                                        <table className="data-table" style={{ fontSize: '12px' }}>
+                                            <thead><tr><th>Product ID</th><th>Qty</th><th>Rate</th><th>GST %</th><th></th></tr></thead>
+                                            <tbody>
+                                                {(createForm.items || []).map((item, idx) => (
+                                                    <tr key={idx}>
+                                                        <td><input className="form-input" style={{ width: '80px', padding: '4px' }} type="number" required value={item.productId} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].productId = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '60px', padding: '4px' }} type="number" required min="1" value={item.quantity} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].quantity = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '80px', padding: '4px' }} type="number" required min="0" step="0.01" value={item.rate} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].rate = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><input className="form-input" style={{ width: '60px', padding: '4px' }} type="number" required min="0" value={item.gstPercent} onChange={e => {
+                                                            const newItems = [...createForm.items];
+                                                            newItems[idx].gstPercent = e.target.value;
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }} /></td>
+                                                        <td><button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => {
+                                                            const newItems = createForm.items.filter((_, i) => i !== idx);
+                                                            setCreateForm({ ...createForm, items: newItems });
+                                                        }}><Trash2 size={14} /></button></td>
+                                                    </tr>
+                                                ))}
+                                                {(!createForm.items || createForm.items.length === 0) && (
+                                                    <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No items added</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                ))}
+                                )}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-                                <PermissionGate permission={`sales.${tab.replace('s', '')}.create`}>
+                                <PermissionGate permission="sales.create">
                                     <button type="submit" className="btn btn-primary">Create</button>
                                 </PermissionGate>
                             </div>

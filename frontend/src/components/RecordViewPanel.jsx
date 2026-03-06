@@ -34,7 +34,7 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
                 onClick={onClose}
                 style={{
                     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-                    zIndex: 1000, backdropFilter: 'blur(2px)'
+                    zIndex: 1000, background: 'rgba(0, 0, 0, 0.4)'
                 }}
             />
 
