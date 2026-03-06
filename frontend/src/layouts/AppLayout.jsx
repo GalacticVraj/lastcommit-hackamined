@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
 import useAuthStore from '../lib/auth';
+import AIInsideButton from '../components/ai/AIInsideButton';
 
 const navGroups = [
     {
@@ -64,8 +65,16 @@ const SAMPLE_NOTIFICATIONS = [
     { id: 11, title: 'GST return filing due this week', time: '1 day ago', type: 'warning', link: '/statutory?tab=gst', read: false },
 ];
 
+import useUIStore from '../lib/uiStore';
+
 export default function AppLayout() {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    // Wait, the original Sidebar doesn't have a state here, it uses the local useState.
+    // I need to be careful not to break existing sidebar toggle.
+
+    // Actually, I'll just use the store for aiPanelOpen.
+    const aiPanelOpen = useUIStore(state => state.aiPanelOpen);
+
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState(SAMPLE_NOTIFICATIONS);
     const { user, logout, hasPermission } = useAuthStore();
@@ -98,21 +107,32 @@ export default function AppLayout() {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     };
 
+    const blurStyle = aiPanelOpen ? {
+        filter: 'blur(3px)',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        transition: 'all 300ms ease'
+    } : {
+        transition: 'all 300ms ease'
+    };
+
+    const [sidebarLocalOpen, setSidebarLocalOpen] = useState(true);
+
     return (
         <div className="app-layout">
-            <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+            <aside className={`sidebar ${sidebarLocalOpen ? '' : 'collapsed'}`} style={blurStyle}>
                 <div className="sidebar-logo">
                     <BarChart3 size={22} strokeWidth={1.5} style={{ color: 'var(--gray-700)' }} />
-                    {sidebarOpen && <h1>TechMicra ERP</h1>}
+                    {sidebarLocalOpen && <h1>TechMicra ERP</h1>}
                 </div>
                 <nav className="sidebar-nav">
                     {navGroups.map((group) => (
                         <div className="nav-group" key={group.label}>
-                            {sidebarOpen && <div className="nav-group-label">{group.label}</div>}
+                            {sidebarLocalOpen && <div className="nav-group-label">{group.label}</div>}
                             {group.items.filter(item => !item.permission || hasPermission(item.permission)).map((item) => (
                                 <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                     <item.icon size={18} strokeWidth={1.5} />
-                                    {sidebarOpen && <span>{item.label}</span>}
+                                    {sidebarLocalOpen && <span>{item.label}</span>}
                                 </NavLink>
                             ))}
                         </div>
@@ -120,10 +140,10 @@ export default function AppLayout() {
                 </nav>
             </aside>
 
-            <div className={`main-content ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
+            <div className={`main-content ${sidebarLocalOpen ? '' : 'sidebar-collapsed'}`} style={blurStyle}>
                 <header className="top-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '8px' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setSidebarLocalOpen(!sidebarLocalOpen)} style={{ padding: '8px' }}>
                             <Menu size={18} strokeWidth={1.5} />
                         </button>
                         <div className="breadcrumb">
@@ -196,7 +216,7 @@ export default function AppLayout() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="avatar">{user?.name?.[0] || 'A'}</div>
-                            {sidebarOpen && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}
+                            {sidebarLocalOpen && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}
                         </div>
                         <button className="btn btn-ghost btn-sm" onClick={handleLogout} style={{ padding: '8px' }}>
                             <LogOut size={16} strokeWidth={1.5} />
@@ -207,6 +227,7 @@ export default function AppLayout() {
                     <Outlet />
                 </main>
             </div>
+            <AIInsideButton />
         </div>
     );
 }
