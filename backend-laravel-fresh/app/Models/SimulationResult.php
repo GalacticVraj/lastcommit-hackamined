@@ -10,6 +10,8 @@ class SimulationResult extends Model
     protected $guarded = [];
     
     protected $casts = [
+        'mrp_breakdown' => 'array',
+        'crp_breakdown' => 'array',
         'material_breakdown' => 'array',
         'resource_breakdown' => 'array',
         'cost_breakdown' => 'array',

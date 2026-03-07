@@ -103,7 +103,7 @@ class SimulationDemoSeeder extends Seeder
                             'bom_header_id' => $bhId,
                             'raw_material_id' => $productIds[$item['code']],
                             'qty_per_unit' => $item['qty'],
-                            'createdAt' => $now
+                            'createdAt' => $now,
                         ]);
                     }
                 }
@@ -137,7 +137,7 @@ class SimulationDemoSeeder extends Seeder
                     'process_name' => $r['name'],
                     'man_hours_per_unit' => $r['man'],
                     'machine_hours_per_unit' => $r['mach'],
-                    'createdAt' => $now
+                    'createdAt' => $now,
                 ]);
             }
         }

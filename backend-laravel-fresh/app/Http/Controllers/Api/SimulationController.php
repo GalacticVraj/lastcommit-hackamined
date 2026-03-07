@@ -81,9 +81,11 @@ class SimulationController extends Controller
             'simulation_name' => 'nullable|string|max:255',
             'shift_hours' => 'required|numeric',
             'worker_count' => 'required|integer',
-            'summary' => 'required|array',
-            'material_breakdown' => 'present|array',
-            'resource_breakdown' => 'present|array',
+            'summary' => 'nullable|array',
+            'crp_summary' => 'nullable|array',
+            'material_breakdown' => 'nullable|array',
+            'mrp_breakdown' => 'nullable|array',
+            'resource_breakdown' => 'nullable|array',
             'cost_breakdown' => 'required|array',
             'mps' => 'required|array',
         ]);
@@ -103,6 +105,7 @@ class SimulationController extends Controller
     public function listSimulations(Request $request)
     {
         $sims = SimulationResult::orderBy('id', 'desc')->paginate(25);
+        $sims->getCollection()->transform(fn ($sim) => $this->mapSimulationPayload($sim));
         return $this->paginatedResponse($sims);
     }
 
@@ -116,7 +119,78 @@ class SimulationController extends Controller
             return $this->errorResponse('Simulation not found', 404);
         }
 
-        return $this->successResponse($sim);
+        return $this->successResponse($this->mapSimulationPayload($sim));
+    }
+
+    private function mapSimulationPayload(SimulationResult $sim): array
+    {
+        $mrp = $sim->mrp_breakdown;
+        if (is_string($mrp)) {
+            $mrp = json_decode($mrp, true);
+        }
+
+        $crp = $sim->crp_breakdown;
+        if (is_string($crp)) {
+            $crp = json_decode($crp, true);
+        }
+
+        $cost = $sim->cost_breakdown;
+        if (is_string($cost)) {
+            $cost = json_decode($cost, true);
+        }
+
+        $mrp = is_array($mrp) ? $mrp : [];
+        $crp = is_array($crp) ? $crp : [];
+        $cost = is_array($cost) ? $cost : [];
+
+        return [
+            'id' => $sim->id,
+            'simulation_name' => $sim->simulation_name,
+            'shift_hours' => $sim->shift_hours,
+            'worker_count' => $sim->worker_count,
+            'crp_summary' => [
+                'total_man_hours' => (float) ($sim->total_man_hours ?? 0),
+                'total_machine_hours' => (float) ($sim->total_machine_hours ?? 0),
+                'days_required' => (float) ($sim->days_required ?? 0),
+                'estimated_completion' => $sim->estimated_completion,
+                'overload_alert' => (bool) ($sim->overload_alert ?? false),
+                'crp_breakdown' => $crp,
+            ],
+            'summary' => [
+                'total_man_hours' => (float) ($sim->total_man_hours ?? 0),
+                'total_machine_hours' => (float) ($sim->total_machine_hours ?? 0),
+                'days_required' => (float) ($sim->days_required ?? 0),
+                'estimated_completion' => $sim->estimated_completion,
+                'material_readiness_pct' => (float) ($sim->material_readiness_pct ?? 0),
+                'overload_alert' => (bool) ($sim->overload_alert ?? false),
+            ],
+            'material_readiness_percent' => (float) ($sim->material_readiness_pct ?? 0),
+            'material_readiness_pct' => (float) ($sim->material_readiness_pct ?? 0),
+            'mrp_breakdown' => $mrp,
+            'material_breakdown' => $mrp,
+            'resource_breakdown' => $crp,
+            'cost_breakdown' => [
+                'labor_cost' => (float) ($sim->labor_cost ?? ($cost['labor_cost'] ?? 0)),
+                'material_cost' => (float) ($sim->material_cost ?? ($cost['material_cost'] ?? 0)),
+                'electricity_cost' => (float) ($sim->electricity_cost ?? ($cost['electricity_cost'] ?? 0)),
+                'total_cost' => (float) ($sim->total_cost ?? ($cost['total_cost'] ?? 0)),
+                'labor' => (float) ($sim->labor_cost ?? ($cost['labor'] ?? $cost['labor_cost'] ?? 0)),
+                'material' => (float) ($sim->material_cost ?? ($cost['material'] ?? $cost['material_cost'] ?? 0)),
+                'electricity' => (float) ($sim->electricity_cost ?? ($cost['electricity'] ?? $cost['electricity_cost'] ?? 0)),
+                'total' => (float) ($sim->total_cost ?? ($cost['total'] ?? $cost['total_cost'] ?? 0)),
+            ],
+            'total_cost' => (float) ($sim->total_cost ?? 0),
+            'days_required' => (float) ($sim->days_required ?? 0),
+            'created_at' => $sim->created_at,
+            'updated_at' => $sim->updated_at,
+            'mps' => $sim->relationLoaded('mpsItems')
+                ? $sim->mpsItems->map(fn ($mps) => [
+                    'productId' => $mps->product_id,
+                    'targetQty' => (float) $mps->target_qty,
+                    'product' => $mps->product,
+                ])->values()->all()
+                : [],
+        ];
     }
 }
 

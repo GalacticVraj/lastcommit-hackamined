@@ -113,6 +113,34 @@ class SimulationService
                 }
             }
 
+            if (empty($materialBreakdown) || !collect($materialBreakdown)->contains(fn ($row) => ($row['parent_name'] ?? null) === $product->name)) {
+                $fallbackRequired = $targetQty;
+                $fallbackAvailable = floatval($product->currentStock ?? $product->current_stock ?? 0);
+                $fallbackPrice = floatval($product->lastPurchasePrice ?? $product->last_purchase_price ?? 0);
+                if ($fallbackPrice <= 0) {
+                    $fallbackPrice = 50.0;
+                }
+                $fallbackShortfall = max(0, $fallbackRequired - $fallbackAvailable);
+                $fallbackCost = $fallbackRequired * $fallbackPrice;
+
+                $costBreakdown['material'] += $fallbackCost;
+
+                $materialBreakdown[] = [
+                    'item_id' => $product->id,
+                    'item_code' => $product->code,
+                    'item_name' => $product->name,
+                    'parent_name' => $product->name,
+                    'required_qty' => $fallbackRequired,
+                    'current_stock' => $fallbackAvailable,
+                    'available_qty' => $fallbackAvailable,
+                    'shortfall' => $fallbackShortfall,
+                    'unit' => $product->unit ?? 'Pcs',
+                    'unit_price' => $fallbackPrice,
+                    'material_cost' => $fallbackCost,
+                    'status' => $fallbackShortfall > 0 ? 'SHORTAGE' : 'READY',
+                ];
+            }
+
             // b. Capacity Requirements (Routing)
             $routingsQuery = RoutingTable::query();
             if ($routingProductCol) {
@@ -138,6 +166,15 @@ class SimulationService
                 $manHrs = $manHrsPerUnit * $targetQty;
                 $macHrs = $macHrsPerUnit * $targetQty;
 
+                $totalManHours += $manHrs;
+                $totalMachineHours += $macHrs;
+                $prodManHours += $manHrs;
+                $prodMacHours += $macHrs;
+            }
+
+            if ($routings->isEmpty()) {
+                $manHrs = 0.5 * $targetQty;
+                $macHrs = 0.3 * $targetQty;
                 $totalManHours += $manHrs;
                 $totalMachineHours += $macHrs;
                 $prodManHours += $manHrs;
@@ -251,24 +288,35 @@ class SimulationService
     public function save(array $data, array $mps)
     {
         return DB::transaction(function() use ($data, $mps) {
+            $materialBreakdownCol = $this->resolveColumn('simulation_results', ['material_breakdown', 'mrp_breakdown']);
+            $resourceBreakdownCol = $this->resolveColumn('simulation_results', ['resource_breakdown', 'crp_breakdown']);
+
+            $summary = $data['summary'] ?? [];
+            $cost = $data['cost_breakdown'] ?? [];
+
             $resultPayload = [
                 'simulation_name' => $data['simulation_name'] ?? 'Simulation_' . now()->timestamp,
                 'shift_hours' => $data['shift_hours'],
                 'worker_count' => $data['worker_count'],
-                'total_man_hours' => $data['summary']['total_man_hours'],
-                'total_machine_hours' => $data['summary']['total_machine_hours'],
-                'days_required' => $data['summary']['days_required'],
-                'estimated_completion' => $data['summary']['estimated_completion'],
-                'labor_cost' => $data['cost_breakdown']['labor'],
-                'material_cost' => $data['cost_breakdown']['material'],
-                'electricity_cost' => $data['cost_breakdown']['electricity'],
-                'total_cost' => $data['cost_breakdown']['total'],
-                'material_readiness_pct' => $data['summary']['material_readiness_pct'],
-                'overload_alert' => $data['summary']['overload_alert'],
-                'material_breakdown' => json_encode($data['material_breakdown']),
-                'resource_breakdown' => json_encode($data['resource_breakdown']),
-                'cost_breakdown' => json_encode($data['cost_breakdown']),
+                'total_man_hours' => $summary['total_man_hours'] ?? ($data['crp_summary']['total_man_hours'] ?? 0),
+                'total_machine_hours' => $summary['total_machine_hours'] ?? ($data['crp_summary']['total_machine_hours'] ?? 0),
+                'days_required' => $summary['days_required'] ?? ($data['crp_summary']['days_required'] ?? 0),
+                'estimated_completion' => $summary['estimated_completion'] ?? ($data['crp_summary']['estimated_completion'] ?? now()->toDateString()),
+                'labor_cost' => $cost['labor'] ?? ($cost['labor_cost'] ?? 0),
+                'material_cost' => $cost['material'] ?? ($cost['material_cost'] ?? 0),
+                'electricity_cost' => $cost['electricity'] ?? ($cost['electricity_cost'] ?? 0),
+                'total_cost' => $cost['total'] ?? ($cost['total_cost'] ?? 0),
+                'material_readiness_pct' => $summary['material_readiness_pct'] ?? ($data['material_readiness_percent'] ?? 0),
+                'overload_alert' => $summary['overload_alert'] ?? ($data['crp_summary']['overload_alert'] ?? false),
+                'cost_breakdown' => json_encode($data['cost_breakdown'] ?? []),
             ];
+
+            if ($materialBreakdownCol) {
+                $resultPayload[$materialBreakdownCol] = json_encode($data['material_breakdown'] ?? $data['mrp_breakdown'] ?? []);
+            }
+            if ($resourceBreakdownCol) {
+                $resultPayload[$resourceBreakdownCol] = json_encode($data['resource_breakdown'] ?? $data['crp_summary']['crp_breakdown'] ?? []);
+            }
 
             $createdByCol = $this->resolveColumn('simulation_results', ['created_by', 'createdBy']);
             if ($createdByCol) {
