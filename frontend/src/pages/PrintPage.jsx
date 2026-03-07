@@ -51,6 +51,15 @@ const endpointMap = {
     'production-route-card': (id) => `/production/route-cards/${id}`,
     'production-report': (id) => `/production/reports/${id}`,
     'production-job-order': (id) => `/production/job-orders/${id}`,
+    'statutory-gst-master': (id) => `/statutory/gst-master/${id}`,
+    'statutory-gstr1': (id) => `/statutory/gstr1/${id}`,
+    'statutory-gst2a': (id) => `/statutory/gst2a/${id}`,
+    'statutory-challan': (id) => `/statutory/challans/${id}`,
+    'statutory-tds': (id) => `/statutory/tds/${id}`,
+    'statutory-tcs': (id) => `/statutory/tcs/${id}`,
+    'statutory-gstr-register': (id) => `/statutory/gstr-register/${id}`,
+    'statutory-cheque-book': (id) => `/statutory/cheque-books/${id}`,
+    'statutory-balance-sheet': (id) => `/statutory/balance-sheet/${id}`,
 };
 
 const fallbackData = {
@@ -187,6 +196,15 @@ const fallbackData = {
     'production-route-card': { routeCardNo: 'RC-001', productCode: 'FG-ALTO-001', productName: 'Alto Assembly Unit', batchNo: 'BATCH-01', planQty: 100, actualQty: 92, status: 'In Progress' },
     'production-report': { routeCardNo: 'RC-001', productCode: 'FG-ALTO-001', productName: 'Alto Assembly Unit', reportDate: new Date().toISOString(), productionQty: 92, rejectionQty: 4, remarks: 'Shift A report' },
     'production-job-order': { jobOrderNo: 'JOB-001', contractorName: 'Tech Contractors', processRequired: 'CNC Machining', status: 'Open', createdAt: new Date().toISOString() }
+    , 'statutory-gst-master': { hsnCode: '8708', description: 'Auto Components', igstPercent: 18, cgstPercent: 9, sgstPercent: 9 }
+    , 'statutory-gstr1': { month: '2026-03', invoiceNo: 'INV-2026-001', customerGSTIN: '27AAACT2727Q1ZZ', taxableValue: 1250000, taxAmount: 225000, state: 'Maharashtra' }
+    , 'statutory-gst2a': { month: '2026-03', vendorGSTIN: '07AAACS6765E1ZG', totalInputTaxCredit: 145000, matchedAmount: 132000, mismatchAmount: 13000 }
+    , 'statutory-challan': { challanNo: 'CHL-000001', cpin: 'CPIN0000000001', date: new Date().toISOString(), bank: 'HDFC Bank', taxType: 'CGST/SGST', amount: 94000 }
+    , 'statutory-tds': { section: '194C', deducteeName: 'Steel Authority of India', paymentAmount: 620000, tdsRate: 2, tdsAmount: 12400, certificateNo: 'TDS-000001' }
+    , 'statutory-tcs': { customerName: 'Tata Motors Ltd', saleValue: 1450000, tcsRate: 0.1, tcsAmount: 1450 }
+    , 'statutory-gstr-register': { month: '2026-03', transactionType: 'B2B', totalTaxLiability: 385000 }
+    , 'statutory-cheque-book': { bankAccount: 'HDFC Current A/c', startLeafNo: 7890, endLeafNo: 7915, leafNo: 7890, status: 'Used', issuedTo: 'Asian Paints Ltd', date: new Date().toISOString() }
+    , 'statutory-balance-sheet': { asOnDate: new Date().toISOString().split('T')[0], assetsTotal: 42500000, liabilitiesTotal: 21800000, capitalAccount: 14500000, currentAssets: 18950000 }
 };
 
 const genericPrintConfigs = {
@@ -212,6 +230,15 @@ const genericPrintConfigs = {
     'production-route-card': { title: 'Production Route Card', fields: [{ key: 'routeCardNo', label: 'Route Card No' }, { key: 'productCode', label: 'Product Code' }, { key: 'productName', label: 'Product Name' }, { key: 'batchNo', label: 'Batch No' }, { key: 'planQty', label: 'Planned Qty' }, { key: 'actualQty', label: 'Actual Qty' }, { key: 'status', label: 'Status' }] },
     'production-report': { title: 'Production Report', fields: [{ key: 'routeCardNo', label: 'Route Card No' }, { key: 'productCode', label: 'Product Code' }, { key: 'productName', label: 'Product Name' }, { key: 'reportDate', label: 'Report Date' }, { key: 'productionQty', label: 'Production Qty' }, { key: 'rejectionQty', label: 'Rejection Qty' }, { key: 'remarks', label: 'Remarks' }] },
     'production-job-order': { title: 'Production Job Order', fields: [{ key: 'jobOrderNo', label: 'Job Order No' }, { key: 'contractorName', label: 'Contractor Name' }, { key: 'processRequired', label: 'Process Required' }, { key: 'status', label: 'Status' }, { key: 'createdAt', label: 'Created At' }] },
+    'statutory-gst-master': { title: 'GST Taxation Master', fields: [{ key: 'hsnCode', label: 'HSN Code' }, { key: 'description', label: 'Description' }, { key: 'igstPercent', label: 'IGST %' }, { key: 'cgstPercent', label: 'CGST %' }, { key: 'sgstPercent', label: 'SGST %' }] },
+    'statutory-gstr1': { title: 'GSTR-1 Upload (Sales)', fields: [{ key: 'month', label: 'Month' }, { key: 'invoiceNo', label: 'Invoice No' }, { key: 'customerGSTIN', label: 'Customer GSTIN' }, { key: 'taxableValue', label: 'Taxable Value' }, { key: 'taxAmount', label: 'Tax Amount' }, { key: 'state', label: 'State' }] },
+    'statutory-gst2a': { title: 'GST2A Reconciliation (Purchase)', fields: [{ key: 'month', label: 'Month' }, { key: 'vendorGSTIN', label: 'Vendor GSTIN' }, { key: 'totalInputTaxCredit', label: 'Total ITC' }, { key: 'matchedAmount', label: 'Matched Amount' }, { key: 'mismatchAmount', label: 'Mismatch Amount' }] },
+    'statutory-challan': { title: 'GST Deposit Challan', fields: [{ key: 'challanNo', label: 'Challan No' }, { key: 'cpin', label: 'CPIN' }, { key: 'date', label: 'Date' }, { key: 'bank', label: 'Bank' }, { key: 'taxType', label: 'Tax Type' }, { key: 'amount', label: 'Amount' }] },
+    'statutory-tds': { title: 'TDS Trace & Details', fields: [{ key: 'section', label: 'Section' }, { key: 'deducteeName', label: 'Deductee Name' }, { key: 'paymentAmount', label: 'Payment Amount' }, { key: 'tdsRate', label: 'TDS Rate' }, { key: 'tdsAmount', label: 'TDS Amount' }, { key: 'certificateNo', label: 'Certificate No' }] },
+    'statutory-tcs': { title: 'TCS Details', fields: [{ key: 'customerName', label: 'Customer Name' }, { key: 'saleValue', label: 'Sale Value' }, { key: 'tcsRate', label: 'TCS Rate (%)' }, { key: 'tcsAmount', label: 'TCS Amount' }] },
+    'statutory-gstr-register': { title: 'GSTR1 & GSTR2 Register', fields: [{ key: 'month', label: 'Month' }, { key: 'transactionType', label: 'Transaction Type' }, { key: 'totalTaxLiability', label: 'Total Tax Liability' }] },
+    'statutory-cheque-book': { title: 'Cheque Book Management', fields: [{ key: 'bankAccount', label: 'Bank Account' }, { key: 'startLeafNo', label: 'Start Leaf No' }, { key: 'endLeafNo', label: 'End Leaf No' }, { key: 'leafNo', label: 'Leaf No' }, { key: 'status', label: 'Status' }, { key: 'issuedTo', label: 'Issued To' }, { key: 'date', label: 'Date' }] },
+    'statutory-balance-sheet': { title: 'Balance Sheet', fields: [{ key: 'asOnDate', label: 'As On Date' }, { key: 'assetsTotal', label: 'Assets Total' }, { key: 'liabilitiesTotal', label: 'Liabilities Total' }, { key: 'capitalAccount', label: 'Capital Account' }, { key: 'currentAssets', label: 'Current Assets' }] },
 };
 
 export default function PrintPage() {

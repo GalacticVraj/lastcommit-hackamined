@@ -365,9 +365,21 @@ Route::prefix('v1')->group(function () {
         Route::put('statutory/gst-master/{id}', [StatutoryController::class, 'updateGstMaster']);
         Route::delete('statutory/gst-master/{id}', [StatutoryController::class, 'deleteGstMaster']);
         Route::get('statutory/gstr1', [StatutoryController::class, 'listGstr1']);
+        Route::get('statutory/gstr1/{id}', [StatutoryController::class, 'getGstr1']);
+        Route::get('statutory/gst2a', [StatutoryController::class, 'listGst2a']);
+        Route::get('statutory/gst2a/{id}', [StatutoryController::class, 'getGst2a']);
         Route::get('statutory/tds', [StatutoryController::class, 'listTds']);
+        Route::get('statutory/tds/{id}', [StatutoryController::class, 'getTds']);
+        Route::get('statutory/tcs', [StatutoryController::class, 'listTcs']);
+        Route::get('statutory/tcs/{id}', [StatutoryController::class, 'getTcs']);
         Route::get('statutory/challans', [StatutoryController::class, 'listChallans']);
+        Route::get('statutory/challans/{id}', [StatutoryController::class, 'getChallan']);
+        Route::get('statutory/gstr-register', [StatutoryController::class, 'listGstrRegister']);
+        Route::get('statutory/gstr-register/{id}', [StatutoryController::class, 'getGstrRegister']);
         Route::get('statutory/cheque-books', [StatutoryController::class, 'listChequeBooks']);
+        Route::get('statutory/cheque-books/{id}', [StatutoryController::class, 'getChequeBook']);
+        Route::get('statutory/balance-sheet', [StatutoryController::class, 'listBalanceSheet']);
+        Route::get('statutory/balance-sheet/{id}', [StatutoryController::class, 'getBalanceSheet']);
 
         // ── Logistics ─────────────────────────────────────────────────────────
         Route::get('logistics/dashboard', [LogisticsController::class, 'dashboard']);
@@ -471,6 +483,7 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/purchase', [ReportsController::class, 'purchaseReport']);
         Route::get('reports/production', [ReportsController::class, 'productionReport']);
         Route::get('reports/finance', [ReportsController::class, 'financeReport']);
+        Route::get('reports/{type}', [ReportsController::class, 'generate']);
 
         // ── Dashboard (Global) ────────────────────────────────────────────────
         Route::get('dashboard', [DashboardController::class, 'index']);

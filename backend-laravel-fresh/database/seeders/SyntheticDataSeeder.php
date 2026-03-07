@@ -36,8 +36,11 @@ use App\Models\ProductionReport;
 use App\Models\JobOrder;
 use App\Models\BankReconciliation;
 use App\Models\CreditCardStatement;
+use App\Models\DispatchAdvice;
 use App\Services\AutoNumber;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class SyntheticDataSeeder extends Seeder
 {
@@ -76,6 +79,54 @@ class SyntheticDataSeeder extends Seeder
         }
         $vendor = Vendor::where('name', 'Steel Authority of India')->first();
         echo "✅ Created " . count($vendors) . " vendors\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // STATUTORY - GST MASTER (12.1)
+        // ══════════════════════════════════════════════════════════════════════
+        $gstEntries = [
+            ['hsnCode' => '8708', 'description' => 'Parts and accessories of motor vehicles', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+            ['hsnCode' => '7208', 'description' => 'Flat-rolled products of iron/steel', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+            ['hsnCode' => '7318', 'description' => 'Screws, bolts, nuts and washers', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+            ['hsnCode' => '3208', 'description' => 'Paints and varnishes', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
+            ['hsnCode' => '4008', 'description' => 'Plates, sheets and strips of rubber', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
+        ];
+
+        foreach (['GSTMaster', 'gst_masters'] as $gstTable) {
+            if (!Schema::hasTable($gstTable)) {
+                continue;
+            }
+
+            $hasCreatedAt = Schema::hasColumn($gstTable, 'createdAt');
+            $hasUpdatedAt = Schema::hasColumn($gstTable, 'updatedAt');
+            $hasCreatedAtSnake = Schema::hasColumn($gstTable, 'created_at');
+            $hasUpdatedAtSnake = Schema::hasColumn($gstTable, 'updated_at');
+            $hasIsActive = Schema::hasColumn($gstTable, 'isActive');
+
+            foreach ($gstEntries as $entry) {
+                $payload = $entry;
+                if ($hasIsActive) {
+                    $payload['isActive'] = true;
+                }
+                if ($hasCreatedAt) {
+                    $payload['createdAt'] = now();
+                }
+                if ($hasUpdatedAt) {
+                    $payload['updatedAt'] = now();
+                }
+                if ($hasCreatedAtSnake) {
+                    $payload['created_at'] = now();
+                }
+                if ($hasUpdatedAtSnake) {
+                    $payload['updated_at'] = now();
+                }
+
+                DB::table($gstTable)->updateOrInsert(
+                    ['hsnCode' => $entry['hsnCode']],
+                    $payload
+                );
+            }
+        }
+        echo "✅ Created " . count($gstEntries) . " GST master entries\n";
 
         // ══════════════════════════════════════════════════════════════════════
         // PRODUCTS
@@ -459,129 +510,143 @@ class SyntheticDataSeeder extends Seeder
         echo "✅ Created " . count($gstVouchers) . " GST vouchers\n";
 
         // ══════════════════════════════════════════════════════════════════════
-        // SALES CYCLE (Inquiry -> Quotation -> SO -> Invoice)
+        // SALES CYCLE — 8 full pipelines across all customers
         // ══════════════════════════════════════════════════════════════════════
-        
-        // Inquiry
-        $inq = Inquiry::firstOrCreate(['inquiryNo' => 'INQ-001'], [
-            'customerId' => $customer->id,
-            'salesPerson' => 'Rahul Sharma',
-            'status' => 'Quoted',
-            'createdBy' => 1,
-        ]);
-        InquiryItem::firstOrCreate(['inquiryId' => $inq->id, 'productId' => $p1->id], ['quantity' => 5]);
-        
-        // Quotation
-        $qty = 5;
-        $rate = 450000;
-        $total = $qty * $rate * 1.28;
-        $qt = Quotation::firstOrCreate(['quoteNo' => 'QT-001'], [
-            'customerId' => $customer->id,
-            'inquiryId' => $inq->id,
-            'status' => 'Accepted',
-            'totalAmount' => $total,
-            'createdBy' => 1,
-            'validUntil' => now()->addDays(30),
-        ]);
-        QuotationItem::firstOrCreate(['quotationId' => $qt->id, 'productId' => $p1->id], [
-            'quantity' => $qty,
-            'rate' => $rate,
-            'gstPercent' => 28,
-            'total' => $total
-        ]);
+        $allCustomers = Customer::whereNull('deletedAt')->get();
+        $allProducts  = Product::whereNull('deletedAt')->get();
+        $salesPeople  = ['Rahul Sharma', 'Deepak Verma', 'Neha Agarwal', 'Vivek Saxena', 'Sanjay Kulkarni'];
+        $soStatuses   = ['Pending', 'Confirmed', 'In Production', 'Dispatched', 'Pending', 'Confirmed', 'Dispatched', 'Pending'];
+        $invStatuses  = ['Unpaid', 'Paid', 'Partially Paid', 'Overdue', 'Unpaid', 'Paid', 'Unpaid', 'Overdue'];
 
-        // Sale Order
-        $so = SaleOrder::firstOrCreate(['soNo' => 'SO-001'], [
-            'customerId' => $customer->id,
-            'quotationId' => $qt->id,
-            'status' => 'Pending',
-            'totalAmount' => $total,
-            'createdBy' => 1,
-        ]);
-        SaleOrderItem::firstOrCreate(['saleOrderId' => $so->id, 'productId' => $p1->id], [
-            'quantity' => $qty,
-            'rate' => $rate,
-            'gstPercent' => 28,
-            'total' => $total
-        ]);
+        $firstInvoice = null;
+        for ($i = 1; $i <= 8; $i++) {
+            $cust = $allCustomers[($i - 1) % $allCustomers->count()];
+            $prod = $allProducts[($i - 1) % $allProducts->count()];
+            $qty  = 2 + $i;
+            $rate = 50000 + ($i * 30000);
+            $gstPct = $prod->gstPercent ?? 18;
 
-        // Invoice
-        $taxable = $qty * $rate;
-        $gst = $taxable * 0.28;
-        $invoice = Invoice::firstOrCreate(['invoiceNo' => 'INV-001'], [
-            'customerId' => $customer->id,
-            'saleOrderId' => $so->id,
-            'invoiceDate' => now(),
-            'dueDate' => now()->addDays(30),
-            'taxableValue' => $taxable,
-            'igstAmount' => $gst,
-            'grandTotal' => $taxable + $gst,
-            'status' => 'Unpaid',
-            'createdBy' => 1,
-        ]);
-        InvoiceItem::firstOrCreate(['invoiceId' => $invoice->id, 'productId' => $p1->id], [
-            'quantity' => $qty,
-            'rate' => $rate,
-            'gstPercent' => 28,
-            'igst' => $gst,
-            'total' => $taxable + $gst
-        ]);
+            // Inquiry
+            $inq = Inquiry::firstOrCreate(['inquiryNo' => "INQ-00{$i}"], [
+                'customerId' => $cust->id,
+                'salesPerson' => $salesPeople[($i - 1) % count($salesPeople)],
+                'status' => $i <= 6 ? 'Quoted' : 'New',
+                'createdBy' => 1,
+            ]);
+            InquiryItem::firstOrCreate(['inquiryId' => $inq->id, 'productId' => $prod->id], ['quantity' => $qty]);
 
-        // Additional sales records
-        $inq2 = Inquiry::firstOrCreate(['inquiryNo' => 'INQ-002'], [
-            'customerId' => Customer::where('name', 'Mahindra & Mahindra')->first()->id,
-            'salesPerson' => 'Rahul Sharma',
-            'status' => 'New',
-            'createdBy' => 1,
-        ]);
-        InquiryItem::firstOrCreate(['inquiryId' => $inq2->id, 'productId' => $p2->id], ['quantity' => 3]);
+            if ($i > 6) continue; // last 2 inquiries stay as "New" without further pipeline
 
-        echo "✅ Sales cycle data created (Inquiries, Quotations, SOs, Invoices)\n";
+            // Quotation
+            $lineTotal = $qty * $rate * (1 + $gstPct / 100);
+            $qt = Quotation::firstOrCreate(['quoteNo' => "QT-00{$i}"], [
+                'customerId' => $cust->id,
+                'inquiryId' => $inq->id,
+                'status' => $i <= 5 ? 'Accepted' : 'Sent',
+                'totalAmount' => $lineTotal,
+                'createdBy' => 1,
+                'validUntil' => now()->addDays(30),
+            ]);
+            QuotationItem::firstOrCreate(['quotationId' => $qt->id, 'productId' => $prod->id], [
+                'quantity' => $qty, 'rate' => $rate, 'gstPercent' => $gstPct, 'total' => $lineTotal,
+            ]);
+
+            if ($i > 5) continue; // QT-006 stays as "Sent" without SO
+
+            // Sale Order
+            $so = SaleOrder::firstOrCreate(['soNo' => "SO-00{$i}"], [
+                'customerId' => $cust->id,
+                'quotationId' => $qt->id,
+                'status' => $soStatuses[$i - 1],
+                'totalAmount' => $lineTotal,
+                'createdBy' => 1,
+            ]);
+            SaleOrderItem::firstOrCreate(['saleOrderId' => $so->id, 'productId' => $prod->id], [
+                'quantity' => $qty, 'rate' => $rate, 'gstPercent' => $gstPct, 'total' => $lineTotal,
+            ]);
+
+            // Invoice
+            $taxable = $qty * $rate;
+            $gstAmt  = $taxable * ($gstPct / 100);
+            $inv = Invoice::firstOrCreate(['invoiceNo' => "INV-00{$i}"], [
+                'customerId' => $cust->id,
+                'saleOrderId' => $so->id,
+                'invoiceDate' => now()->subDays(30 - $i * 4),
+                'dueDate' => now()->addDays($i * 5),
+                'taxableValue' => $taxable,
+                'igstAmount' => $gstAmt,
+                'grandTotal' => $taxable + $gstAmt,
+                'status' => $invStatuses[$i - 1],
+                'createdBy' => 1,
+            ]);
+            InvoiceItem::firstOrCreate(['invoiceId' => $inv->id, 'productId' => $prod->id], [
+                'quantity' => $qty, 'rate' => $rate, 'gstPercent' => $gstPct,
+                'igst' => $gstAmt, 'total' => $taxable + $gstAmt,
+            ]);
+            if ($i === 1) $firstInvoice = $inv;
+        }
+        $invoice = $firstInvoice ?? Invoice::first();
+
+        echo "✅ Sales cycle: 8 inquiries, 6 quotations, 5 SOs, 5 invoices created\n";
 
         // ══════════════════════════════════════════════════════════════════════
-        // PURCHASE CYCLE (PO -> GRN)
+        // PURCHASE CYCLE — 5 POs across all vendors with GRNs & Bills
         // ══════════════════════════════════════════════════════════════════════
-        $rmSteel = Product::where('code', 'RM-STEEL-001')->first();
-        
-        $po = PurchaseOrder::firstOrCreate(['poNo' => 'PO-001'], [
-            'vendorId' => $vendor->id,
-            'status' => 'Approved',
-            'totalAmount' => 500 * 85 * 1.18,
-            'createdBy' => 1,
-        ]);
-        PurchaseOrderItem::firstOrCreate(['purchaseOrderId' => $po->id, 'productId' => $rmSteel->id], [
-            'quantity' => 500,
-            'rate' => 85,
-            'gstPercent' => 18,
-            'total' => 500 * 85 * 1.18
-        ]);
+        $allVendors  = Vendor::whereNull('deletedAt')->get();
+        $rmProducts  = Product::where('category', 'Raw Material')->get();
+        $poStatuses  = ['Approved', 'Approved', 'Pending', 'Approved', 'Partially Received'];
+        $billStatuses = ['Unpaid', 'Paid', 'Unpaid', 'Partially Paid', 'Unpaid'];
 
-        $grn = GRN::firstOrCreate(['grnNo' => 'GRN-001'], [
-            'purchaseOrderId' => $po->id,
-            'vendorId' => $vendor->id,
-            'status' => 'Received',
-            'createdBy' => 1,
-        ]);
-        GRNItem::firstOrCreate(['grnId' => $grn->id, 'productId' => $rmSteel->id], [
-            'quantity' => 500,
-        ]);
+        for ($i = 1; $i <= 5; $i++) {
+            $vnd = $allVendors[($i - 1) % $allVendors->count()];
+            $rm  = $rmProducts[($i - 1) % $rmProducts->count()];
+            $poQty  = 200 + ($i * 100);
+            $poRate = 50 + ($i * 15);
 
-        PurchaseBill::firstOrCreate(['billNo' => 'PB-001'], [
-            'vendorId' => $vendor->id,
-            'purchaseOrderId' => $po->id,
-            'vendorInvoiceNo' => 'V-INV-001',
-            'billDate' => now(),
-            'dueDate' => now()->addDays(15),
-            'taxableValue' => 42500,
-            'cgstAmount' => 3825,
-            'sgstAmount' => 3825,
-            'igstAmount' => 0,
-            'grandTotal' => 50150,
-            'status' => 'Unpaid',
-            'createdBy' => 1,
-        ]);
+            $po = PurchaseOrder::firstOrCreate(['poNo' => "PO-00{$i}"], [
+                'vendorId' => $vnd->id,
+                'status' => $poStatuses[$i - 1],
+                'totalAmount' => $poQty * $poRate * 1.18,
+                'expectedDelivery' => now()->addDays($i * 7),
+                'createdBy' => 1,
+            ]);
+            PurchaseOrderItem::firstOrCreate(['purchaseOrderId' => $po->id, 'productId' => $rm->id], [
+                'quantity' => $poQty, 'rate' => $poRate, 'gstPercent' => 18,
+                'total' => $poQty * $poRate * 1.18,
+            ]);
 
-        echo "✅ Purchase cycle data created (POs, GRNs, Bills)\n";
+            // GRN for approved POs
+            if ($poStatuses[$i - 1] !== 'Pending') {
+                $grn = GRN::firstOrCreate(['grnNo' => "GRN-00{$i}"], [
+                    'purchaseOrderId' => $po->id,
+                    'vendorId' => $vnd->id,
+                    'status' => 'Received',
+                    'createdBy' => 1,
+                ]);
+                GRNItem::firstOrCreate(['grnId' => $grn->id, 'productId' => $rm->id], [
+                    'quantity' => $poQty,
+                ]);
+            }
+
+            // Purchase Bill
+            $taxVal = $poQty * $poRate;
+            PurchaseBill::firstOrCreate(['billNo' => "PB-00{$i}"], [
+                'vendorId' => $vnd->id,
+                'purchaseOrderId' => $po->id,
+                'vendorInvoiceNo' => "V-INV-00{$i}",
+                'billDate' => now()->subDays($i * 5),
+                'dueDate' => now()->addDays(15 + $i * 3),
+                'taxableValue' => $taxVal,
+                'cgstAmount' => $taxVal * 0.09,
+                'sgstAmount' => $taxVal * 0.09,
+                'igstAmount' => 0,
+                'grandTotal' => $taxVal * 1.18,
+                'status' => $billStatuses[$i - 1],
+                'createdBy' => 1,
+            ]);
+        }
+
+        echo "✅ Purchase cycle: 5 POs, 4 GRNs, 5 bills created\n";
 
         $receiptTable = (new SalesReceiptVoucher())->getTable();
         $receiptPayload = [
@@ -605,49 +670,265 @@ class SyntheticDataSeeder extends Seeder
 
         $bomTable = (new BOMHeader())->getTable();
         if (Schema::hasTable($bomTable)) {
-            $existingBomId = BOMHeader::where('bomNo', 'BOM-001')->value('id');
-            if (!$existingBomId) {
-                $existingBomId = BOMHeader::create([
-                    'bomNo' => 'BOM-001',
-                    'productId' => $p1->id,
-                    'version' => '1.0',
-                    'effectiveFrom' => now(),
-                    'isActive' => true,
+            // ── 5 BOMs across different products ──
+            $bomProducts = [$p1->id, $p2->id, $p1->id, $p2->id, $p1->id];
+            $bomIds = [];
+            for ($b = 1; $b <= 5; $b++) {
+                $bom = BOMHeader::firstOrCreate(['bomNo' => "BOM-00{$b}"], [
+                    'productId' => $bomProducts[$b - 1],
+                    'version' => "1.{$b}",
+                    'effectiveFrom' => now()->subMonths(6 - $b),
+                    'isActive' => $b <= 4,
                     'createdBy' => 1,
-                ])->id;
+                ]);
+                $bomIds[] = $bom->id;
+
+                // Add BOM Items (componentId not productId, no updatedAt)
+                if (Schema::hasTable('BOMItem')) {
+                    $rmProducts = Product::where('category', 'Raw Material')->get();
+                    foreach ($rmProducts->take(3) as $idx => $rm) {
+                        DB::table('BOMItem')->updateOrInsert(
+                            ['bomHeaderId' => $bom->id, 'componentId' => $rm->id],
+                            ['quantity' => 10 + $b * 5 + $idx * 3, 'unit' => 'Kg', 'createdAt' => now()]
+                        );
+                    }
+                }
             }
 
-            $routeCard = ProductionRouteCard::firstOrCreate(['routeCardNo' => 'RC-001'], [
-                'productId' => $p1->id,
-                'bomHeaderId' => $existingBomId,
-                'batchNo' => 'BATCH-01',
-                'planQty' => 100,
-                'actualQty' => 92,
-                'status' => 'In Progress',
-                'isActive' => true,
-                'createdBy' => 1,
-            ]);
+            // ── 5 Route Cards ──
+            $rcStatuses = ['Completed', 'In Progress', 'In Progress', 'Planning', 'Completed'];
+            $routeCardIds = [];
+            for ($r = 1; $r <= 5; $r++) {
+                $rc = ProductionRouteCard::firstOrCreate(['routeCardNo' => "RC-00{$r}"], [
+                    'productId' => $bomProducts[$r - 1],
+                    'bomHeaderId' => $bomIds[$r - 1],
+                    'batchNo' => "BATCH-0{$r}",
+                    'planQty' => 50 + $r * 20,
+                    'actualQty' => $rcStatuses[$r - 1] === 'Planning' ? 0 : (45 + $r * 18),
+                    'status' => $rcStatuses[$r - 1],
+                    'isActive' => true,
+                    'createdBy' => 1,
+                ]);
+                $routeCardIds[] = $rc->id;
+            }
 
-            ProductionReport::firstOrCreate([
-                'routeCardId' => $routeCard->id,
-                'productId' => $p1->id,
-                'reportDate' => now()->startOfDay(),
-            ], [
-                'productionQty' => 92,
-                'rejectionQty' => 4,
-                'remarks' => 'Seeded production report for dashboard/print',
-                'createdBy' => 1,
-            ]);
+            // ── 5 Production Reports ──
+            for ($pr = 1; $pr <= 5; $pr++) {
+                ProductionReport::firstOrCreate([
+                    'routeCardId' => $routeCardIds[$pr - 1],
+                    'productId' => $bomProducts[$pr - 1],
+                    'reportDate' => now()->subDays(30 - $pr * 5)->startOfDay(),
+                ], [
+                    'productionQty' => 40 + $pr * 15,
+                    'rejectionQty' => $pr,
+                    'remarks' => "Production report batch {$pr}",
+                    'createdBy' => 1,
+                ]);
+            }
 
-            JobOrder::firstOrCreate(['jobOrderNo' => 'JOB-001'], [
-                'contractorName' => 'Tech Contractors',
-                'processRequired' => 'CNC Machining',
-                'status' => 'Open',
-                'isActive' => true,
-                'createdBy' => 1,
-            ]);
+            // ── 5 Job Orders with Items, Challans, Bills ──
+            $contractors = ['Tech Contractors', 'Apex Engineering', 'Supreme Works', 'Bharat Fabricators', 'National Machining'];
+            $processes = ['CNC Machining', 'Heat Treatment', 'Surface Grinding', 'Powder Coating', 'Anodizing'];
+            for ($j = 1; $j <= 5; $j++) {
+                $jo = JobOrder::firstOrCreate(['jobOrderNo' => "JOB-00{$j}"], [
+                    'contractorName' => $contractors[$j - 1],
+                    'processRequired' => $processes[$j - 1],
+                    'status' => $j <= 3 ? 'Open' : 'Completed',
+                    'isActive' => true,
+                    'createdBy' => 1,
+                ]);
 
-            echo "✅ Production cycle data created (BOM, Route Card, Report, Job Order)\n";
+                // Job Order Items (no updatedAt column)
+                if (Schema::hasTable('JobOrderItem')) {
+                    DB::table('JobOrderItem')->updateOrInsert(
+                        ['jobOrderId' => $jo->id, 'productId' => $bomProducts[$j - 1]],
+                        ['quantity' => 20 + $j * 10, 'rate' => 100 + $j * 25, 'createdAt' => now()]
+                    );
+                }
+
+                // Job Challans (challanType instead of vehicleNo)
+                if (Schema::hasTable('JobChallan') && $j <= 4) {
+                    DB::table('JobChallan')->updateOrInsert(
+                        ['challanNo' => "JC-00{$j}"],
+                        ['jobOrderId' => $jo->id, 'challanDate' => now()->subDays(20 - $j * 4), 'challanType' => $j <= 2 ? 'Outward' : 'Inward', 'status' => $j <= 2 ? 'Dispatched' : 'Returned', 'createdBy' => 1, 'createdAt' => now(), 'updatedAt' => now()]
+                    );
+                }
+
+                // Job Work Bills (only has amount, not taxableValue/gstAmount/grandTotal)
+                if (Schema::hasTable('JobWorkBill') && $j <= 3) {
+                    $amt = (20 + $j * 10) * (100 + $j * 25);
+                    DB::table('JobWorkBill')->updateOrInsert(
+                        ['billNo' => "JWB-00{$j}"],
+                        ['jobOrderId' => $jo->id, 'billDate' => now()->subDays(10 - $j * 2), 'amount' => $amt * 1.18, 'status' => $j === 1 ? 'Paid' : 'Unpaid', 'createdBy' => 1, 'createdAt' => now(), 'updatedAt' => now()]
+                    );
+                }
+            }
+
+            echo "✅ Production: 5 BOMs, 5 Route Cards, 5 Reports, 5 Job Orders + challans + bills\n";
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PURCHASE PAYMENT VOUCHERS
+        // ══════════════════════════════════════════════════════════════════════
+        if (Schema::hasTable('PurchasePaymentVoucher')) {
+            $allVendors = Vendor::whereNull('deletedAt')->get();
+            $bills = PurchaseBill::whereNull('deletedAt')->get();
+            for ($pv = 1; $pv <= 4; $pv++) {
+                $bill = $bills[($pv - 1) % $bills->count()];
+                DB::table('PurchasePaymentVoucher')->updateOrInsert(
+                    ['voucherNo' => "PPV-00{$pv}"],
+                    [
+                        'vendorId' => $bill->vendorId,
+                        'purchaseBillId' => $bill->id,
+                        'paymentDate' => now()->subDays(15 - $pv * 3),
+                        'amount' => $bill->grandTotal * ($pv <= 2 ? 1 : 0.5),
+                        'paymentMode' => ['NEFT', 'RTGS', 'Cheque', 'UPI'][$pv - 1],
+                        'bankRef' => "REF-PPV-00{$pv}",
+                        'remarks' => $pv <= 2 ? 'Full payment' : 'Partial payment',
+                        'createdBy' => 1,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]
+                );
+            }
+            echo "✅ 4 purchase payment vouchers seeded\n";
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PURCHASE SCHEDULES
+        // ══════════════════════════════════════════════════════════════════════
+        if (Schema::hasTable('PurchaseSchedule')) {
+            $pos = PurchaseOrder::whereNull('deletedAt')->get();
+            for ($ps = 1; $ps <= 4; $ps++) {
+                $po = $pos[($ps - 1) % $pos->count()];
+                $poItems = DB::table('PurchaseOrderItem')->where('purchaseOrderId', $po->id)->first();
+                DB::table('PurchaseSchedule')->updateOrInsert(
+                    ['purchaseOrderId' => $po->id, 'productId' => $poItems ? $poItems->productId : $allProducts->first()->id],
+                    [
+                        'scheduledDate' => now()->addDays($ps * 7),
+                        'quantity' => 100 + $ps * 50,
+                        'status' => $ps <= 2 ? 'Scheduled' : 'Delivered',
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]
+                );
+            }
+            echo "✅ 4 purchase schedules seeded\n";
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // DISPATCH ADVICES (linked to SOs and Transporters)
+        // ══════════════════════════════════════════════════════════════════════
+        if (Schema::hasTable('DispatchAdvice')) {
+            $sos = SaleOrder::whereNull('deletedAt')->get();
+            $transporterTable = Schema::hasTable('Transporter') ? 'Transporter' : null;
+            $transporterIds = $transporterTable ? DB::table($transporterTable)->pluck('id')->values() : collect();
+            $daStatuses = ['Pending', 'Dispatched', 'Delivered', 'Delivered', 'Dispatched'];
+            for ($d = 1; $d <= 5; $d++) {
+                $so = $sos[($d - 1) % $sos->count()];
+                DispatchAdvice::firstOrCreate(['dispatchNo' => "DA-00{$d}"], [
+                    'saleOrderId' => $so->id,
+                    'transporterId' => $transporterIds->isNotEmpty() ? $transporterIds[($d - 1) % $transporterIds->count()] : null,
+                    'vehicleNo' => "MH-04-CX-" . (1000 + $d),
+                    'driverName' => ['Rajesh Kumar', 'Anil Patil', 'Suresh Yadav', 'Vijay More', 'Ramesh Singh'][$d - 1],
+                    'dispatchDate' => now()->subDays(20 - $d * 3),
+                    'status' => $daStatuses[$d - 1],
+                    'createdBy' => 1,
+                ]);
+            }
+            echo "✅ 5 dispatch advices seeded\n";
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // MORE SALES RECEIPT VOUCHERS
+        // ══════════════════════════════════════════════════════════════════════
+        $receiptTable = (new SalesReceiptVoucher())->getTable();
+        $invoices = Invoice::whereNull('deletedAt')->get();
+        for ($rv = 2; $rv <= 5; $rv++) {
+            $inv = $invoices[($rv - 1) % $invoices->count()];
+            $payload = [
+                'customerId' => $inv->customerId,
+                'invoiceId' => $inv->id,
+                'receiptDate' => now()->subDays(15 - $rv * 2),
+                'amount' => $inv->grandTotal * ($rv <= 3 ? 0.5 : 1),
+                'paymentMode' => ['Bank', 'Cheque', 'NEFT', 'UPI'][$rv - 2],
+                'createdBy' => 1,
+            ];
+            if (Schema::hasColumn($receiptTable, 'referenceNo')) {
+                $payload['referenceNo'] = "UTR-RV00{$rv}";
+            }
+            if (Schema::hasColumn($receiptTable, 'remarks')) {
+                $payload['remarks'] = $rv <= 3 ? 'Part payment' : 'Full payment';
+            }
+            SalesReceiptVoucher::firstOrCreate(['receiptNo' => "RV-00{$rv}"], $payload);
+        }
+        echo "✅ 5 total sales receipt vouchers seeded\n";
+
+        // ══════════════════════════════════════════════════════════════════════
+        // MATERIAL INDENTS & ISSUES
+        // ══════════════════════════════════════════════════════════════════════
+        if (Schema::hasTable('MaterialIndent')) {
+            $warehouseId = Schema::hasTable('Warehouse') ? DB::table('Warehouse')->orderBy('id')->value('id') : null;
+            for ($mi = 1; $mi <= 4; $mi++) {
+                DB::table('MaterialIndent')->updateOrInsert(
+                    ['indentNo' => "MI-00{$mi}"],
+                    [
+                        'department' => ['Production', 'Maintenance', 'Quality', 'Assembly'][$mi - 1],
+                        'requestedBy' => ['Shop Floor Lead', 'Maint. Supervisor', 'QC Head', 'Assembly Lead'][$mi - 1],
+                        'indentDate' => now()->subDays(20 - $mi * 4),
+                        'status' => $mi <= 2 ? 'Approved' : 'Pending',
+                        'createdBy' => 1,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]
+                );
+            }
+            echo "✅ 4 material indents seeded\n";
+        }
+        if (Schema::hasTable('MaterialIssue')) {
+            $warehouseId = $warehouseId ?? (Schema::hasTable('Warehouse') ? DB::table('Warehouse')->orderBy('id')->value('id') : 1);
+            $indentIds = Schema::hasTable('MaterialIndent') ? DB::table('MaterialIndent')->orderBy('id')->pluck('id')->values() : collect();
+            for ($mis = 1; $mis <= 3; $mis++) {
+                DB::table('MaterialIssue')->updateOrInsert(
+                    ['issueNo' => "MIS-00{$mis}"],
+                    [
+                        'materialIndentId' => $indentIds->isNotEmpty() ? $indentIds[($mis - 1) % $indentIds->count()] : null,
+                        'warehouseId' => $warehouseId,
+                        'issuedTo' => ['Production Floor', 'Tool Room', 'Assembly Line'][$mis - 1],
+                        'issueDate' => now()->subDays(15 - $mis * 4),
+                        'status' => 'Issued',
+                        'createdBy' => 1,
+                        'createdAt' => now(),
+                        'updatedAt' => now(),
+                    ]
+                );
+            }
+            echo "✅ 3 material issues seeded\n";
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // ROUTING TABLE entries
+        // ══════════════════════════════════════════════════════════════════════
+        if (Schema::hasTable('RoutingTable')) {
+            $bomHeaderIds = DB::table('BOMHeader')->orderBy('id')->pluck('id')->values();
+            $routingOps = [
+                ['operationName' => 'Cutting', 'workCenter' => 'WC-01', 'setupTime' => 15, 'cycleTime' => 5],
+                ['operationName' => 'Drilling', 'workCenter' => 'WC-02', 'setupTime' => 10, 'cycleTime' => 3],
+                ['operationName' => 'Milling', 'workCenter' => 'WC-03', 'setupTime' => 20, 'cycleTime' => 8],
+                ['operationName' => 'Grinding', 'workCenter' => 'WC-04', 'setupTime' => 12, 'cycleTime' => 6],
+                ['operationName' => 'Assembly', 'workCenter' => 'WC-05', 'setupTime' => 25, 'cycleTime' => 15],
+                ['operationName' => 'Painting', 'workCenter' => 'WC-06', 'setupTime' => 30, 'cycleTime' => 10],
+            ];
+            foreach ($routingOps as $idx => $op) {
+                $bomId = $bomHeaderIds->isNotEmpty() ? $bomHeaderIds[$idx % $bomHeaderIds->count()] : 1;
+                DB::table('RoutingTable')->updateOrInsert(
+                    ['bomHeaderId' => $bomId, 'operationNo' => $idx + 1],
+                    array_merge($op, [
+                        'createdAt' => now(),
+                    ])
+                );
+            }
+            echo "✅ 6 routing table entries seeded\n";
         }
 
         // ══════════════════════════════════════════════════════════════════════

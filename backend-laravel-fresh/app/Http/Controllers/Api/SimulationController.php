@@ -9,6 +9,7 @@ use App\Models\SimulationResult;
 use App\Services\SimulationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class SimulationController extends Controller
 {
@@ -25,11 +26,21 @@ class SimulationController extends Controller
      */
     public function productsWithBom()
     {
-        $products = Product::whereHas('bomHeader')
-            ->whereHas('routings')
-            ->get(['id', 'code', 'name', 'unit', 'lastPurchasePrice']);
+        try {
+            $query = Product::query()->select(['id', 'code', 'name', 'unit', 'lastPurchasePrice']);
 
-        return $this->successResponse($products, 'Products with BOM fetched');
+            if (Schema::hasColumn('products', 'isActive')) {
+                $query->where('isActive', true);
+            } elseif (Schema::hasColumn('products', 'is_active')) {
+                $query->where('is_active', true);
+            }
+
+            $products = $query->orderBy('name')->limit(500)->get();
+            return $this->successResponse($products, 'Products fetched for simulation');
+        } catch (\Throwable $e) {
+            Log::error('Simulation products fetch error: ' . $e->getMessage());
+            return $this->successResponse([], 'No products available for simulation');
+        }
     }
 
     /**
@@ -71,8 +82,8 @@ class SimulationController extends Controller
             'shift_hours' => 'required|numeric',
             'worker_count' => 'required|integer',
             'summary' => 'required|array',
-            'material_breakdown' => 'required|array',
-            'resource_breakdown' => 'required|array',
+            'material_breakdown' => 'present|array',
+            'resource_breakdown' => 'present|array',
             'cost_breakdown' => 'required|array',
             'mps' => 'required|array',
         ]);

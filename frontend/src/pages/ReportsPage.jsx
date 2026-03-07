@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Printer } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import GlassSelect from '../components/GlassSelect';
@@ -105,6 +105,7 @@ export default function ReportsPage() {
             <div className="page-header">
                 <h1>Reports</h1>
                 <div className="page-header-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => window.print()}><Printer size={16} /> Print</button>
                     <button className="btn btn-ghost btn-sm" onClick={exportCSV}><Download size={16} /> Export CSV</button>
                 </div>
             </div>
