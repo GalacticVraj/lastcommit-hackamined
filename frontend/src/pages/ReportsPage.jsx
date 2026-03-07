@@ -114,8 +114,8 @@ export default function ReportsPage() {
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'end' }}>
                     <div className="form-group" style={{ flex: 2, marginBottom: 0 }}>
                         <label className="form-label">Report Type</label>
-                        <GlassSelect 
-                            value={reportType} 
+                        <GlassSelect
+                            value={reportType}
                             onChange={e => setReportType(e.target.value)}
                             options={REPORT_TYPES}
                         />

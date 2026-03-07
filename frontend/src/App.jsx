@@ -20,7 +20,7 @@ import SalesmanProfilePage from './pages/SalesmanProfilePage';
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const token = useAuthStore(s => s.token) || localStorage.getItem('erp_token');
+  const token = useAuthStore(s => s.token) || sessionStorage.getItem('erp_token');
   const rehydrate = useAuthStore(s => s.rehydrate);
   const permissionsLoaded = useAuthStore(s => s.permissionsLoaded);
 

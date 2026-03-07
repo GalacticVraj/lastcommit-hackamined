@@ -9,6 +9,7 @@ import RecordEditModal from '../components/RecordEditModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ProfileLink from '../components/ProfileLink';
 import SalesDashboard, { formatLakh } from '../components/SalesDashboard';
+import useAuthStore from '../lib/auth';
 
 const statusClass = (s) => {
     const map = { New: 'badge-new', Processing: 'badge-processing', Quoted: 'badge-active', Lost: 'badge-overdue', Draft: 'badge-draft', Sent: 'badge-active', Accepted: 'badge-completed', Rejected: 'badge-rejected', Pending: 'badge-pending', Dispatched: 'badge-active', Closed: 'badge-closed', Unpaid: 'badge-pending', Partial: 'badge-partial', Paid: 'badge-paid', Overdue: 'badge-overdue', 'Due Today': 'badge-overdue', Upcoming: 'badge-active' };
@@ -220,6 +221,8 @@ export default function SalesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const urlTab = searchParams.get('tab');
     const [tab, setTab] = useState(urlTab || 'dashboard');
+    const { permissions, hasPermission } = useAuthStore();
+    const isSalesUser = permissions && !permissions.includes('*') && hasPermission('sales.view') && !hasPermission('purchase.view') && !hasPermission('production.view') && !hasPermission('finance.view');
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -414,15 +417,17 @@ export default function SalesPage() {
         return (
             <div>
                 <div className="page-header"><h1>Sales Management</h1></div>
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'nowrap', overflowX: 'auto' }}>
-                    {tabs.map(t => (
-                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-                            style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
-                            onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
-                            {TAB_LABELS[t] || t}
-                        </button>
-                    ))}
-                </div>
+                {!isSalesUser && (
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                        {tabs.map(t => (
+                            <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                                style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
+                                onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
+                                {TAB_LABELS[t] || t}
+                            </button>
+                        ))}
+                    </div>
+                )}
                 <SalesDashboard />
             </div>
         );
@@ -434,15 +439,17 @@ export default function SalesPage() {
             <div>
                 <div className="page-header">
                     <h1>Sales — Collection & Reminder</h1>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
-                        {tabs.map(t => (
-                            <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-                                style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
-                                onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
-                                {TAB_LABELS[t] || t}
-                            </button>
-                        ))}
-                    </div>
+                    {!isSalesUser && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                            {tabs.map(t => (
+                                <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                                    style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
+                                    onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
+                                    {TAB_LABELS[t] || t}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <div className="table-container">
                     <div style={{ overflowX: 'auto' }}>
@@ -518,15 +525,17 @@ export default function SalesPage() {
         <div>
             <div className="page-header">
                 <h1>Sales — {tab.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())}</h1>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
-                    {tabs.map(t => (
-                        <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-                            style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
-                            onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
-                            {TAB_LABELS[t] || t}
-                        </button>
-                    ))}
-                </div>
+                {!isSalesUser && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                        {tabs.map(t => (
+                            <button key={t} className={`btn ${t === tab ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                                style={t === tab ? { background: '#EA580C', borderColor: '#EA580C', whiteSpace: 'nowrap' } : { whiteSpace: 'nowrap' }}
+                                onClick={() => { setTab(t); setSearchParams({ tab: t }, { replace: false }); }}>
+                                {TAB_LABELS[t] || t}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="table-container">

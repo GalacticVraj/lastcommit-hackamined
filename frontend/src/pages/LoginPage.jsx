@@ -5,8 +5,8 @@ import useAuthStore from '../lib/auth';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('admin@erp.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const login = useAuthStore(s => s.login);
     const navigate = useNavigate();
@@ -36,11 +36,11 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="form-label">Email Address</label>
-                        <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@erp.com" required />
+                        <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" autoComplete="off" required />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Password</label>
-                        <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+                        <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" autoComplete="new-password" required />
                     </div>
                     <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }} disabled={loading}>
                         {loading ? <Loader2 size={20} className="spin" /> : 'Sign In'}

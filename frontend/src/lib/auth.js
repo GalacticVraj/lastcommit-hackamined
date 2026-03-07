@@ -3,25 +3,25 @@ import api from './api';
 
 const useAuthStore = create((set, get) => ({
     user: null,
-    token: localStorage.getItem('erp_token') || null,
+    token: sessionStorage.getItem('erp_token') || null,
     permissions: [],
-    isAuthenticated: !!localStorage.getItem('erp_token'),
+    isAuthenticated: !!sessionStorage.getItem('erp_token'),
     permissionsLoaded: false,
 
     login: async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
         const { token, user } = res.data.data;
 
-        localStorage.setItem('erp_token', token);
-        localStorage.setItem('erp_uid', user.id);
+        sessionStorage.setItem('erp_token', token);
+        sessionStorage.setItem('erp_uid', user.id);
 
         set({ user, token, permissions: user.permissions || ['*'], isAuthenticated: true, permissionsLoaded: true });
         return res.data;
     },
 
     logout: () => {
-        localStorage.removeItem('erp_token');
-        localStorage.removeItem('erp_uid');
+        sessionStorage.removeItem('erp_token');
+        sessionStorage.removeItem('erp_uid');
         set({ user: null, token: null, permissions: [], isAuthenticated: false, permissionsLoaded: false });
         window.location.href = '/login';
     },
@@ -31,7 +31,7 @@ const useAuthStore = create((set, get) => ({
      * but permissions[] is empty (e.g. after page refresh).
      */
     rehydrate: async () => {
-        const token = localStorage.getItem('erp_token');
+        const token = sessionStorage.getItem('erp_token');
         if (!token) return;
         try {
             const res = await api.get('/auth/me');
@@ -45,8 +45,8 @@ const useAuthStore = create((set, get) => ({
             });
         } catch {
             // Token expired or invalid — force logout
-            localStorage.removeItem('erp_token');
-            localStorage.removeItem('erp_uid');
+            sessionStorage.removeItem('erp_token');
+            sessionStorage.removeItem('erp_uid');
             set({ user: null, token: null, permissions: [], isAuthenticated: false, permissionsLoaded: true });
         }
     },
