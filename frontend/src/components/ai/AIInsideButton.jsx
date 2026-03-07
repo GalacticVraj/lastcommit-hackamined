@@ -55,6 +55,7 @@ export default function AIInsideButton() {
             )}
 
             <button
+                className="print-hide"
                 onClick={handleOpen}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}

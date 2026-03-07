@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, HardHat, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X } from 'lucide-react';
+import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, HardHat, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X, AlertTriangle } from 'lucide-react';
 import useAuthStore from '../lib/auth';
 import AIInsideButton from '../components/ai/AIInsideButton';
 
@@ -78,9 +78,31 @@ export default function AppLayout() {
 
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState(SAMPLE_NOTIFICATIONS);
-    const { user, logout, hasPermission } = useAuthStore();
+    const { user, logout, hasPermission, permissions } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
+
+    const isSalesUser = permissions && !permissions.includes('*') && hasPermission('sales.view') && !hasPermission('purchase.view') && !hasPermission('production.view') && !hasPermission('finance.view');
+
+    const displayNavGroups = isSalesUser ? [
+        {
+            label: 'Overview', items: [
+                { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+            ]
+        },
+        {
+            label: 'Sales Operations', items: [
+                { to: '/sales?tab=customers', icon: Users, label: 'Customers' },
+                { to: '/sales?tab=inquiries', icon: FileText, label: 'Inquiries' },
+                { to: '/sales?tab=quotations', icon: FileText, label: 'Quotations' },
+                { to: '/sales?tab=sale-orders', icon: ShoppingCart, label: 'Sale Orders' },
+                { to: '/sales?tab=dispatch-advices', icon: Truck, label: 'Dispatch Advices' },
+                { to: '/sales?tab=invoices', icon: FileText, label: 'Invoices' },
+                { to: '/sales?tab=collections', icon: AlertTriangle, label: 'Collections' },
+                { to: '/sales?tab=receipts', icon: DollarSign, label: 'Receipts' },
+            ]
+        }
+    ] : navGroups;
 
     const handleLogout = () => {
         logout();
@@ -127,17 +149,28 @@ export default function AppLayout() {
                     {sidebarLocalOpen && <h1>TechMicra ERP</h1>}
                 </div>
                 <nav className="sidebar-nav">
-                    {navGroups.map((group) => (
-                        <div className="nav-group" key={group.label}>
-                            {sidebarLocalOpen && <div className="nav-group-label">{group.label}</div>}
-                            {group.items.filter(item => !item.permission || hasPermission(item.permission)).map((item) => (
-                                <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                    <item.icon size={18} strokeWidth={1.5} />
-                                    {sidebarLocalOpen && <span>{item.label}</span>}
-                                </NavLink>
-                            ))}
-                        </div>
-                    ))}
+                    {displayNavGroups.map((group) => {
+                        const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
+                        if (visibleItems.length === 0) return null;
+
+                        return (
+                            <div className="nav-group" key={group.label}>
+                                {sidebarLocalOpen && <div className="nav-group-label">{group.label}</div>}
+                                {visibleItems.map((item) => {
+                                    const isQueryMatch = item.to.includes('?')
+                                        ? location.pathname === item.to.split('?')[0] && location.search.includes(item.to.split('?')[1])
+                                        : location.pathname === item.to && location.search === '';
+
+                                    return (
+                                        <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => `nav-item ${isQueryMatch || (isActive && !item.to.includes('?')) ? 'active' : ''}`}>
+                                            <item.icon size={18} strokeWidth={1.5} />
+                                            {sidebarLocalOpen && <span>{item.label}</span>}
+                                        </NavLink>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
                 </nav>
             </aside>
 
