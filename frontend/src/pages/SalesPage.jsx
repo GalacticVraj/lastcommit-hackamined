@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Eye, Edit, Trash2, ShoppingCart, FileText, DollarSign, AlertTriangle, CheckCircle, XCircle, Truck, Printer, Send, Phone, Mail } from 'lucide-react';
 import api from '../lib/api';
+import { openEmailDraftOptions } from '../lib/emailDraft';
 import toast from 'react-hot-toast';
 import PermissionGate from '../components/PermissionGate';
 import RecordViewPanel from '../components/RecordViewPanel';
@@ -100,6 +101,7 @@ const TAB_CONFIG = {
             { label: 'Mark Accepted', status: 'Accepted', confirmMessage: 'Mark this quotation as Accepted?', icon: CheckCircle, class: 'btn-success' },
         ],
         hasPrint: true,
+        hasCommunication: true,
     },
     'sale-orders': {
         endpoint: '/sales/sale-orders',
@@ -130,6 +132,7 @@ const TAB_CONFIG = {
             { label: 'Dispatch', status: 'Dispatched', confirmMessage: 'Mark this Sale Order as Dispatched?', icon: Truck, class: 'btn-primary' },
             { label: 'Close', status: 'Closed', confirmMessage: 'Close this Sale Order?', icon: CheckCircle, class: 'btn-danger' },
         ],
+        hasCommunication: true,
     },
     'dispatch-advices': {
         endpoint: '/sales/dispatch-advices',
@@ -182,6 +185,7 @@ const TAB_CONFIG = {
         hasItems: true,
         deletePermission: 'sales.invoice.delete',
         hasPrint: true,
+        hasCommunication: true,
     },
     collections: {
         endpoint: '/sales/collections',
@@ -582,6 +586,37 @@ export default function SalesPage() {
                                                 {cfg.hasPrint && (
                                                     <button className="btn btn-ghost btn-sm" title="Print" style={{ padding: '4px 8px' }}
                                                         onClick={() => window.open(`/print/${tab.replace(/s$/, '')}/${item.id}`, '_blank')}><Printer size={14} /></button>
+                                                )}
+                                                {cfg.hasCommunication && (
+                                                    <button className="btn btn-ghost btn-sm" title="Send via WhatsApp/Email" style={{ padding: '4px 8px', color: '#0ea5e9' }}
+                                                        onClick={async () => {
+                                                            const docType = cfg.label || 'Document';
+                                                            const docNo = item.invoiceNo || item.soNo || item.quoteNo || item.id;
+                                                            const customerEmail = item.customer?.email || item.saleOrder?.customer?.email || '';
+                                                            const subject = `${docType} ${docNo} from ERP System`;
+                                                            const body = `Dear Customer,\n\nPlease find attached ${docType} #${docNo}.\n\nTotal Amount: ₹${item.grandTotal || item.totalAmount || 0}\n\nRegards,\nERP Team`;
+
+                                                            const result = openEmailDraftOptions({ to: customerEmail, subject, body });
+                                                            if (!result.opened) {
+                                                                toast('Email action cancelled');
+                                                                return;
+                                                            }
+
+                                                            toast.success(`Opening ${result.channel} compose...`);
+
+                                                            try {
+                                                                await api.post('/sales/communication-logs', {
+                                                                    invoiceId: item.invoiceNo ? item.id : null,
+                                                                    channel: 'Email',
+                                                                    content: `${docType} ${docNo} draft opened via ${result.channel}${customerEmail ? ` for ${customerEmail}` : ''}`,
+                                                                    status: 'Sent'
+                                                                });
+                                                            } catch (err) {
+                                                                console.warn('Communication log failed:', err);
+                                                            }
+                                                        }}>
+                                                        <Send size={14} />
+                                                    </button>
                                                 )}
                                                 {(cfg.statusActions || []).map(action => (
                                                     item.status !== action.status && (

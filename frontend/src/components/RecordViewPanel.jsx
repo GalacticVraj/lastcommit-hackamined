@@ -30,7 +30,7 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
     return (
         <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
             {/* Modal */}
-            <div 
+            <div
                 className="modal-content"
                 onClick={e => e.stopPropagation()}
                 style={{
@@ -48,6 +48,15 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
 
                 {/* Scrollable body */}
                 <div className="modal-body" style={{ flex: 1, overflowY: 'auto', maxHeight: 'calc(90vh - 140px)' }}>
+                    {/* Visual Barcode for Barcode Records */}
+                    {(record.barcode || (record.code && record.product?.name)) && (
+                        <BarcodeDisplay
+                            value={record.barcode || record.code}
+                            label={record.product?.name || 'GENERATED BARCODE'}
+                            sublabel={record.batchNo ? `Batch: ${record.batchNo}` : null}
+                        />
+                    )}
+
                     {/* Main fields */}
                     <div style={{
                         background: 'var(--bg-elevated)', borderRadius: '12px',

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Eye, Edit, Trash2, Loader2, Printer, Check, X } from 'lucide-react';
+import { Eye, Edit, Trash2, Check, X, Printer, Send, Search, Plus, Filter, Download, ArrowLeft, ArrowRight, Barcode as BarcodeIcon } from 'lucide-react';
+import BarcodeDisplay from '../components/BarcodeDisplay';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DataTable from '../components/DataTable';
 import api from '../lib/api';
+import { openEmailDraftOptions } from '../lib/emailDraft';
 import toast from 'react-hot-toast';
 import PermissionGate from '../components/PermissionGate';
 import RecordViewPanel from '../components/RecordViewPanel';
@@ -81,8 +83,16 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                     sort_order: sortOrder
                 };
                 const res = await api.get(`${apiBase}${currentTab.endpoint}`, { params });
-                setData(res.data.data || []);
-                setTotal(res.data.pagination?.total || (res.data.data?.length || 0));
+                const fetchedData = res.data.data;
+
+                // Special handling for Profit & Loss or other reports returning objects
+                if (fetchedData && !Array.isArray(fetchedData) && fetchedData.reports) {
+                    setData(fetchedData.reports);
+                    setTotal(fetchedData.reports.length);
+                } else {
+                    setData(fetchedData || []);
+                    setTotal(res.data.pagination?.total || (fetchedData?.length || 0));
+                }
             }
         } catch { console.error('Failed to load'); }
         setLoading(false);
@@ -103,7 +113,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
     const loadDynamicOptions = useCallback(async () => {
         const fields = currentTab.formFields || [];
         const endpointsToFetch = fields.filter(f => f.optionsEndpoint && !dynamicOptions[f.optionsEndpoint]);
-        
+
         for (const field of endpointsToFetch) {
             try {
                 const res = await api.get(field.optionsEndpoint);
@@ -129,13 +139,13 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
     // Handle auto-population when a field with autoPopulateEndpoint changes
     const handleAutoPopulate = async (field, value) => {
         if (!field.autoPopulateEndpoint || !value) return;
-        
+
         try {
             // Replace {value} placeholder in endpoint with actual selected value
             const endpoint = field.autoPopulateEndpoint.replace('{value}', value);
             const res = await api.get(endpoint);
             const data = res.data.data;
-            
+
             if (data && field.autoPopulateMap) {
                 // autoPopulateMap: { 'calculated.grossSalary': 'grossSalary', 'calculated.pfDeduction': 'pfDeduction', ... }
                 const updates = {};
@@ -242,6 +252,14 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 const statusClass = val?.toLowerCase().replace(/\s+/g, '-') || 'active';
                 return <span className={`badge badge-${statusClass}`}>{val}</span>;
             }
+            if (colKey === 'barcode' || colKey === 'code' && activeTab === 'barcodes') {
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BarcodeIcon size={14} color="#6366f1" />
+                        <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#6366f1' }}>{val}</span>
+                    </div>
+                );
+            }
             if (typeof val === 'number' && val > 999) return `₹${val.toLocaleString()}`;
             return val ?? '—';
         }
@@ -265,6 +283,42 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 </button>
             )}
 
+            {currentTab.hasCommunication && (
+                <button
+                    className="btn btn-ghost btn-sm"
+                    title="Send via WhatsApp/Email"
+                    style={{ padding: '4px 8px', color: '#0ea5e9' }}
+                    onClick={async () => {
+                        const docType = item.invoiceNo ? 'Invoice' : (item.soNo ? 'Sale Order' : 'Document');
+                        const docNo = item.invoiceNo || item.soNo || item.id;
+                        const customerEmail = item.customer?.email || '';
+                        const subject = `${docType} ${docNo} from ERP System`;
+                        const body = `Dear Customer,\n\nPlease find attached ${docType} #${docNo}.\n\nTotal Amount: ₹${item.grandTotal || item.totalAmount || 0}\n\nRegards,\nERP Team`;
+
+                        const result = openEmailDraftOptions({ to: customerEmail, subject, body });
+                        if (!result.opened) {
+                            toast('Email action cancelled');
+                            return;
+                        }
+
+                        toast.success(`Opening ${result.channel} compose...`);
+
+                        try {
+                            await api.post('/sales/communication-logs', {
+                                invoiceId: item.invoiceNo ? item.id : null,
+                                channel: 'Email',
+                                content: `${docType} ${docNo} draft opened via ${result.channel}${customerEmail ? ` for ${customerEmail}` : ''}`,
+                                status: 'Sent'
+                            });
+                        } catch (err) {
+                            console.warn('Communication log failed:', err);
+                        }
+                    }}
+                >
+                    <Send size={14} />
+                </button>
+            )}
+
             <PermissionGate permission={`${moduleName}.edit`}>
                 <button className="btn btn-ghost btn-sm" title="Edit" style={{ padding: '4px 8px' }}
                     onClick={() => setEditRecord(item)}>
@@ -281,7 +335,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                 return (
                     <PermissionGate key={action.label} permission={`${moduleName}.edit`}>
                         <button className="btn btn-ghost btn-sm"
-                            title={action.label} 
+                            title={action.label}
                             style={{ padding: '4px 8px', color: iconColor }}
                             onClick={() => handleStatusAction(item, action)}>
                             {ActionIcon ? <ActionIcon size={14} /> : action.label}
@@ -359,7 +413,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
             )}
 
             {/* Dashboard stats for other modules */}
-            {activeTab === 'dashboard' && !['/finance','/hr','/logistics','/maintenance','/contractors','/warehouse','/assets','/quality','/purchase','/production','/statutory'].includes(apiBase) && stats && (
+            {activeTab === 'dashboard' && !['/finance', '/hr', '/logistics', '/maintenance', '/contractors', '/warehouse', '/assets', '/quality', '/purchase', '/production', '/statutory'].includes(apiBase) && stats && (
                 <div className="stats-grid">
                     {Object.entries(stats).map(([key, value]) => (
                         <div className="stat-card" key={key}>
@@ -444,7 +498,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                                                         if (f.autoPopulateEndpoint) handleAutoPopulate(f, newValue);
                                                     }}>
                                                     <option value="">Select {f.label}</option>
-                                                    {f.optionsEndpoint 
+                                                    {f.optionsEndpoint
                                                         ? (dynamicOptions[f.optionsEndpoint] || []).map(opt => (
                                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                         ))

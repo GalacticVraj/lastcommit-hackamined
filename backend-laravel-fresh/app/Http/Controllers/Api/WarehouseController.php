@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Warehouse;
 use App\Models\Product;
+use App\Models\Barcode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -493,5 +494,36 @@ class WarehouseController extends Controller
             ->get()
             ->map(fn($p) => ['id' => $p->id, 'label' => $p->name]);
         return $this->successResponse($rows);
+    }
+
+    public function listBarcodes(Request $request)
+    {
+        $query = Barcode::with('product');
+        return $this->paginatedResponse($query->latest()->paginate($this->perPage($request)));
+    }
+
+    public function createBarcode(Request $request)
+    {
+        $request->validate([
+            'productId' => 'required|exists:Product,id',
+            'qtyToGenerate' => 'required|numeric|min:1',
+        ]);
+
+        $barcode = Barcode::create([
+            'code' => 'BC-' . strtoupper(bin2hex(random_bytes(4))),
+            'productId' => $request->productId,
+            'batchNo' => $request->batchNo ?? 'B' . now()->format('ymd'),
+            'qty' => $request->qtyToGenerate,
+            'createdBy' => $request->user()?->id,
+        ]);
+
+        return $this->successResponse($barcode->load('product'), 'Barcode Generated', 201);
+    }
+    public function getBarcode($id)
+    {
+        $barcode = Barcode::with('product')->find($id);
+        if (!$barcode)
+            return $this->errorResponse('Barcode not found', 404);
+        return $this->successResponse($barcode);
     }
 }

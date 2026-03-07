@@ -199,42 +199,42 @@ Route::prefix('v1')->group(function () {
 
         // ── Finance ───────────────────────────────────────────────────────────
         Route::get('finance/dashboard', [FinanceController::class, 'dashboard']);
-        
+
         // 4.1. Voucher Journal - Adjustment Entry
         Route::get('finance/voucher-journals', [FinanceController::class, 'listVoucherJournals']);
         Route::post('finance/voucher-journals', [FinanceController::class, 'createVoucherJournal']);
         Route::get('finance/voucher-journals/{id}', [FinanceController::class, 'getVoucherJournal']);
         Route::put('finance/voucher-journals/{id}', [FinanceController::class, 'updateVoucherJournal']);
         Route::delete('finance/voucher-journals/{id}', [FinanceController::class, 'deleteVoucherJournal']);
-        
+
         // 4.2. Voucher Payment & Receipt - Bank/Cash transactions
         Route::get('finance/voucher-payment-receipts', [FinanceController::class, 'listVoucherPaymentReceipts']);
         Route::post('finance/voucher-payment-receipts', [FinanceController::class, 'createVoucherPaymentReceipt']);
         Route::get('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'getVoucherPaymentReceipt']);
         Route::put('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'updateVoucherPaymentReceipt']);
         Route::delete('finance/voucher-payment-receipts/{id}', [FinanceController::class, 'deleteVoucherPaymentReceipt']);
-        
+
         // 4.3. Voucher Contra - Cash Deposit/Withdrawal
         Route::get('finance/voucher-contras', [FinanceController::class, 'listVoucherContras']);
         Route::post('finance/voucher-contras', [FinanceController::class, 'createVoucherContra']);
         Route::get('finance/voucher-contras/{id}', [FinanceController::class, 'getVoucherContra']);
         Route::put('finance/voucher-contras/{id}', [FinanceController::class, 'updateVoucherContra']);
         Route::delete('finance/voucher-contras/{id}', [FinanceController::class, 'deleteVoucherContra']);
-        
+
         // 4.4. Journal Voucher (GST) - Tax Adjustments
         Route::get('finance/voucher-gsts', [FinanceController::class, 'listVoucherGSTs']);
         Route::post('finance/voucher-gsts', [FinanceController::class, 'createVoucherGST']);
         Route::get('finance/voucher-gsts/{id}', [FinanceController::class, 'getVoucherGST']);
         Route::put('finance/voucher-gsts/{id}', [FinanceController::class, 'updateVoucherGST']);
         Route::delete('finance/voucher-gsts/{id}', [FinanceController::class, 'deleteVoucherGST']);
-        
+
         // Legacy voucher endpoints (backward compatibility)
         Route::get('finance/vouchers', [FinanceController::class, 'listVouchers']);
         Route::post('finance/vouchers', [FinanceController::class, 'createVoucher']);
         Route::get('finance/vouchers/{id}', [FinanceController::class, 'getVoucher']);
         Route::put('finance/vouchers/{id}', [FinanceController::class, 'updateVoucher']);
         Route::delete('finance/vouchers/{id}', [FinanceController::class, 'deleteVoucher']);
-        
+
         // 4.5. Bank Reconciliation
         Route::get('finance/bank-reconciliations', [FinanceController::class, 'listBankReconciliations']);
         Route::post('finance/bank-reconciliations', [FinanceController::class, 'createBankReconciliation']);
@@ -242,49 +242,54 @@ Route::prefix('v1')->group(function () {
         Route::put('finance/bank-reconciliations/{id}', [FinanceController::class, 'updateBankReconciliation']);
         Route::delete('finance/bank-reconciliations/{id}', [FinanceController::class, 'deleteBankReconciliation']);
         Route::post('finance/bank-reconciliations/{id}/match', [FinanceController::class, 'matchBankReconciliation']);
-        
+
         // 4.6. Credit Card Statement
         Route::get('finance/credit-card-statements', [FinanceController::class, 'listCreditCardStatements']);
         Route::post('finance/credit-card-statements', [FinanceController::class, 'createCreditCardStatement']);
         Route::get('finance/credit-card-statements/{id}', [FinanceController::class, 'getCreditCardStatement']);
         Route::put('finance/credit-card-statements/{id}', [FinanceController::class, 'updateCreditCardStatement']);
         Route::delete('finance/credit-card-statements/{id}', [FinanceController::class, 'deleteCreditCardStatement']);
-        
+
         // Legacy endpoints (backward compatibility)
         Route::get('finance/bank-reconciliation', [FinanceController::class, 'listBankReconciliations']);
         Route::get('finance/credit-card', [FinanceController::class, 'listCreditCardStatements']);
 
+        // Reminders & Profit-Loss
+        Route::get('finance/reminders', [FinanceController::class, 'listReminders']);
+        Route::post('finance/reminders', [FinanceController::class, 'createReminder']);
+        Route::get('finance/profit-loss', [FinanceController::class, 'profitLoss']);
+
         // ── HR ────────────────────────────────────────────────────────────────
         Route::get('hr/dashboard', [HrController::class, 'dashboard']);
-        
+
         // Employees (5.1 Employee Master)
         Route::get('hr/employees', [HrController::class, 'listEmployees']);
         Route::post('hr/employees', [HrController::class, 'createEmployee']);
         Route::get('hr/employees/{id}', [HrController::class, 'getEmployee']);
         Route::put('hr/employees/{id}', [HrController::class, 'updateEmployee']);
         Route::delete('hr/employees/{id}', [HrController::class, 'deleteEmployee']);
-        
+
         // Salary Heads (5.2 Salary Head Master)
         Route::get('hr/salary-heads', [HrController::class, 'listSalaryHeads']);
         Route::post('hr/salary-heads', [HrController::class, 'createSalaryHead']);
         Route::get('hr/salary-heads/{id}', [HrController::class, 'getSalaryHead']);
         Route::put('hr/salary-heads/{id}', [HrController::class, 'updateSalaryHead']);
         Route::delete('hr/salary-heads/{id}', [HrController::class, 'deleteSalaryHead']);
-        
+
         // Salary Structures (5.3 Employee Salary Structure)
         Route::get('hr/salary-structures', [HrController::class, 'listSalaryStructures']);
         Route::post('hr/salary-structures', [HrController::class, 'createSalaryStructure']);
         Route::get('hr/salary-structures/{id}', [HrController::class, 'getSalaryStructure']);
         Route::put('hr/salary-structures/{id}', [HrController::class, 'updateSalaryStructure']);
         Route::delete('hr/salary-structures/{id}', [HrController::class, 'deleteSalaryStructure']);
-        
+
         // Salary Sheets (5.4 Employee Salary Sheet)
         Route::get('hr/salary-sheets', [HrController::class, 'listSalarySheets']);
         Route::post('hr/salary-sheets', [HrController::class, 'createSalarySheet']);
         Route::get('hr/salary-sheets/{id}', [HrController::class, 'getSalarySheet']);
         Route::put('hr/salary-sheets/{id}', [HrController::class, 'updateSalarySheet']);
         Route::delete('hr/salary-sheets/{id}', [HrController::class, 'deleteSalarySheet']);
-        
+
         // Advances (5.5 Employee Advance Memo)
         Route::get('hr/advances', [HrController::class, 'listAdvances']);
         Route::post('hr/advances', [HrController::class, 'createAdvance']);
@@ -292,7 +297,7 @@ Route::prefix('v1')->group(function () {
         Route::put('hr/advances/{id}', [HrController::class, 'updateAdvance']);
         Route::delete('hr/advances/{id}', [HrController::class, 'deleteAdvance']);
         Route::post('hr/advances/{id}/approve', [HrController::class, 'approveAdvance']);
-        
+
         // Dropdowns & Lookups (Referential Integrity)
         Route::get('hr/dropdown/employees', [HrController::class, 'getEmployeesDropdown']);
         Route::get('hr/dropdown/salary-heads', [HrController::class, 'getSalaryHeadsDropdown']);
@@ -356,6 +361,9 @@ Route::prefix('v1')->group(function () {
         Route::delete('warehouse/material-receipts/{id}', [WarehouseController::class, 'deleteMaterialReceipt']);
         Route::get('warehouse/dropdown/warehouses', [WarehouseController::class, 'getWarehousesDropdown']);
         Route::get('warehouse/dropdown/products', [WarehouseController::class, 'getProductsDropdown']);
+        Route::get('warehouse/barcodes', [WarehouseController::class, 'listBarcodes']);
+        Route::post('warehouse/barcodes', [WarehouseController::class, 'createBarcode']);
+        Route::get('warehouse/barcodes/{id}', [WarehouseController::class, 'getBarcode']);
 
         // ── Statutory / GST ───────────────────────────────────────────────────
         Route::get('statutory/dashboard', [StatutoryController::class, 'dashboard']);

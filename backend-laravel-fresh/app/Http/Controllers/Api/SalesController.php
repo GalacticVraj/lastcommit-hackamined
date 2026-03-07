@@ -585,9 +585,18 @@ class SalesController extends Controller
 
     // ─── INVOICES ─────────────────────────────────────────────────────────────
 
+    public function listCollections(Request $request)
+    {
+        $query = Invoice::with('customer')
+            ->whereIn('status', ['Unpaid', 'Partial', 'Overdue']);
+
+        $query = $this->applySorting($query, $request, 'dueDate');
+        return $this->paginatedResponse($query->paginate($request->get('per_page', 25)));
+    }
+
     public function listInvoices(Request $request)
     {
-        $query = Invoice::with('customer:id,name')->whereNull('deletedAt');
+        $query = Invoice::with('customer:id,name,email')->whereNull('deletedAt');
         if ($search = $request->get('search')) {
             $query->where('invoiceNo', 'like', "%{$search}%");
         }
@@ -667,49 +676,15 @@ class SalesController extends Controller
 
     // ─── COLLECTIONS & REMINDERS ──────────────────────────────────────────────
 
-    public function listCollections(Request $request)
-    {
-        $invoices = Invoice::with('customer:id,name,creditPeriod')
-            ->whereNull('deletedAt')
-            ->whereIn('status', ['Unpaid', 'Partial', 'Overdue'])
-            ->latest()
-            ->paginate(25);
-
-        $now = now();
-        $invoices->getCollection()->transform(function ($inv) use ($now) {
-            $dueDate = $inv->dueDate ? \Carbon\Carbon::parse($inv->dueDate) : null;
-            $daysUntilDue = $dueDate ? $now->diffInDays($dueDate, false) : null;
-
-            if ($daysUntilDue === null) {
-                $inv->reminderStatus = 'Unknown';
-            } elseif ($daysUntilDue < 0) {
-                $inv->reminderStatus = 'Overdue';
-                $inv->daysOverdue = abs($daysUntilDue);
-            } elseif ($daysUntilDue == 0) {
-                $inv->reminderStatus = 'Due Today';
-                $inv->daysOverdue = 0;
-            } else {
-                $inv->reminderStatus = 'Upcoming';
-                $inv->daysOverdue = 0;
-            }
-
-            $inv->totalPaid = SalesReceiptVoucher::where('invoiceId', $inv->id)->sum('amount');
-            $inv->outstanding = $inv->grandTotal - $inv->totalPaid;
-            $inv->communications = CommunicationLog::where('invoiceId', $inv->id)->orderBy('sentAt', 'desc')->get();
-
-            return $inv;
-        });
-
-        return $this->paginatedResponse($invoices);
-    }
-
     public function createCommunicationLog(Request $request)
     {
         $log = CommunicationLog::create([
-            'invoiceId' => $request->invoiceId,
-            'channel' => $request->channel,
-            'content' => $request->content,
-            'status' => $request->status ?? 'Sent',
+            'invoiceId' => $request->input('invoiceId'),
+            'channel' => $request->input('channel'),
+            'content' => $request->input('content'),
+            'status' => $request->input('status', 'Sent'),
+            'sentAt' => now(),
+            'createdBy' => $request->user()?->id,
         ]);
 
         return $this->successResponse($log, 'Communication log created', 201);

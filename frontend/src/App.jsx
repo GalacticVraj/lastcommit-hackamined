@@ -42,9 +42,9 @@ const purchaseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'vendors', label: 'Vendors', endpoint: '/vendors', columns: ['name', 'gstin', 'city', 'state', 'contactPerson'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'gstin', label: 'GSTIN' }, { name: 'address', label: 'Address' }, { name: 'city', label: 'City' }, { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' }, { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' }] },
-    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true, hasPrint: true, printType: 'purchase-order' },
+    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true, hasPrint: true, printType: 'purchase-order', hasCommunication: true },
     { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true, hasPrint: true, printType: 'grn' },
-    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true, hasPrint: true, printType: 'purchase-bill' },
+    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true, hasPrint: true, printType: 'purchase-bill', hasCommunication: true },
   ]
 };
 
@@ -86,6 +86,7 @@ const financeConfig = {
       columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'],
       hasPrint: true,
       printType: 'voucher-payment-receipt',
+      hasCommunication: true,
       formFields: [
         { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true },
         { name: 'date', label: 'Date', type: 'date', required: true },
@@ -128,6 +129,32 @@ const financeConfig = {
     },
     { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'], hasPrint: true, printType: 'bank-reconciliation' },
     { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'], hasPrint: true, printType: 'credit-card-statement' },
+    {
+      key: 'profit-loss',
+      label: 'Profit & Loss',
+      endpoint: '/profit-loss',
+      columns: ['period', 'salesTotal', 'cogs', 'expenses', 'netProfit'],
+      hasPrint: true,
+      printType: 'finance-profit-loss'
+    },
+    {
+      key: 'reminders',
+      label: 'Payment Reminders',
+      endpoint: '/reminders',
+      columns: ['customerName', 'invoiceRef', 'dueDate', 'amount', 'nextReminderDate', 'status'],
+      hasPrint: false,
+      formFields: [
+        { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+        { name: 'invoiceRef', label: 'Invoice Reference', required: true },
+        { name: 'dueDate', label: 'Due Date', type: 'date', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'frequency', label: 'Frequency (Days)', type: 'number', required: true },
+        { name: 'channel', label: 'Channel', type: 'select', options: ['WhatsApp', 'Email', 'Both'] },
+      ],
+      statusActions: [
+        { status: 'Sent', label: 'Send Now', confirmMessage: 'Send reminder via WhatsApp/Email immediately?', class: 'btn-primary' },
+      ]
+    },
   ]
 };
 
@@ -350,6 +377,19 @@ const warehouseConfig = {
     { key: 'dispatch-srv', label: 'Dispatch SRV', endpoint: '/dispatch-srv', columns: ['srvNo', 'date', 'partyName', 'itemName', 'qty'], hasPrint: true, printType: 'warehouse-dispatch-srv' },
     { key: 'transfers', label: 'Transfers', endpoint: '/transfers', columns: ['transferId', 'fromWarehouse', 'toWarehouse', 'itemName', 'qty', 'status'], hasPrint: true, printType: 'warehouse-stock-transfer' },
     { key: 'material-receipts', label: 'Material Receipts', endpoint: '/material-receipts', columns: ['receiptId', 'sourceDocRef', 'itemName', 'qtyReceived', 'receiptDate'], hasPrint: true, printType: 'warehouse-material-receipt' },
+    {
+      key: 'barcodes',
+      label: 'Barcodes Management',
+      endpoint: '/barcodes',
+      columns: ['code', 'product.name', 'batchNo', 'quantity'],
+      hasPrint: true,
+      printType: 'warehouse-barcode',
+      formFields: [
+        { name: 'productId', label: 'Product ID', type: 'number', required: true },
+        { name: 'batchNo', label: 'Batch No' },
+        { name: 'quantity', label: 'Quantity to Generate', type: 'number', required: true }
+      ]
+    },
   ]
 };
 

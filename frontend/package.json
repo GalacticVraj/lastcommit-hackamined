@@ -15,6 +15,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.577.0",
     "react": "^19.1.0",
+    "react-barcode": "^1.6.1",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.71.2",
     "react-hot-toast": "^2.6.0",
