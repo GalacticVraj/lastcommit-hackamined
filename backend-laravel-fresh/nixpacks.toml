@@ -1,5 +1,8 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo", "php82Extensions.sqlite3", "php82Packages.composer"]
+nixPkgs = ["php82", "php82Extensions.pdo", "php82Extensions.sqlite3", "php82Packages.composer", "nodejs"]
+
+[phases.install]
+cmds = ["composer install --ignore-platform-reqs"]
 
 [start]
 cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
