@@ -157,8 +157,8 @@ class SimulationService
                 'total_cost' => $data['cost_breakdown']['total'],
                 'material_readiness_pct' => $data['summary']['material_readiness_pct'],
                 'overload_alert' => $data['summary']['overload_alert'],
-                'mrp_breakdown' => $data['material_breakdown'],
-                'crp_breakdown' => $data['resource_breakdown'],
+                'material_breakdown' => $data['material_breakdown'],
+                'resource_breakdown' => $data['resource_breakdown'],
                 'cost_breakdown' => $data['cost_breakdown'],
                 'created_by' => auth()->id() ?? 1,
             ]);

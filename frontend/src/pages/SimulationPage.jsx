@@ -49,9 +49,13 @@ export default function SimulationPage() {
         setHistoryLoading(true);
         try {
             const res = await api.get('/simulation/history');
-            setHistory(res.data.data.data);
+            // Backend returns { success: true, data: [...items], pagination: {...} }
+            const historyData = res.data.data;
+            setHistory(Array.isArray(historyData) ? historyData : []);
         } catch (e) {
+            console.error('History Fetch Error:', e);
             toast.error('Failed to load history');
+            setHistory([]);
         }
         setHistoryLoading(false);
     };
@@ -217,7 +221,7 @@ export default function SimulationPage() {
                                             value={row.productId}
                                             onChange={(e) => updateMpsRow(idx, 'productId', e.target.value)}
                                         >
-                                            <option value="">{products.length === 0 ? 'Loading products...' : 'Select Finished Good...'}</option>
+                                            <option value="">{products.length === 0 ? 'No products with BOM found' : 'Select Finished Good...'}</option>
                                             {products.map(p => (
                                                 <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
                                             ))}
@@ -268,10 +272,10 @@ export default function SimulationPage() {
                                 {/* Stats Row */}
                                 <div className="stats-grid">
                                     {[
-                                        { label: 'Completion', value: `${result.summary.days_required} Days`, icon: Calendar },
-                                        { label: 'Material Readiness', value: `${result.summary.material_readiness_pct}%`, icon: Package },
-                                        { label: 'Forecasted Cost', value: `₹${(result.cost_breakdown.total / 100000).toFixed(1)}L`, icon: DollarSign },
-                                        { label: 'Est. End Date', value: result.summary.estimated_completion, icon: Clock },
+                                        { label: 'Completion', value: `${result?.summary?.days_required || 0} Days`, icon: Calendar },
+                                        { label: 'Material Readiness', value: `${result?.summary?.material_readiness_pct || 0}%`, icon: Package },
+                                        { label: 'Forecasted Cost', value: `₹${((result?.cost_breakdown?.total || 0) / 100000).toFixed(1)}L`, icon: DollarSign },
+                                        { label: 'Est. End Date', value: result?.summary?.estimated_completion || 'TBD', icon: Clock },
                                     ].map((s, i) => (
                                         <div key={i} className="stat-card glass">
                                             <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.4)' }}><s.icon size={16} /></div>
@@ -352,7 +356,7 @@ export default function SimulationPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {result.material_breakdown.map((mat, i) => (
+                                                {(result?.material_breakdown || []).map((mat, i) => (
                                                     <tr key={i}>
                                                         <td style={{ fontWeight: 600 }}>{mat.material_name}</td>
                                                         <td>{mat.required_qty} {mat.unit}</td>
@@ -447,7 +451,7 @@ export default function SimulationPage() {
                                         <div>
                                             <h4 style={{ fontSize: '15px', fontWeight: 600 }}>{sim.simulation_name}</h4>
                                             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                {new Date(sim.createdAt || sim.created_at).toLocaleDateString()} • {sim.days_required} Day Plan • ₹{(sim.total_cost / 100000).toFixed(1)}L
+                                                {sim.createdAt || sim.created_at ? new Date(sim.createdAt || sim.created_at).toLocaleDateString() : 'N/A'} • {sim.days_required || 0} Day Plan • ₹{((sim.total_cost || 0) / 100000).toFixed(1)}L
                                             </p>
                                         </div>
                                     </div>

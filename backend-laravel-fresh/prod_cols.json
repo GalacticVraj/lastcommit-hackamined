@@ -1,0 +1,20 @@
+[
+    "id",
+    "code",
+    "name",
+    "category",
+    "subCategory",
+    "unit",
+    "hsnCode",
+    "gstPercent",
+    "minStock",
+    "currentStock",
+    "lastPurchasePrice",
+    "lastSalePrice",
+    "isActive",
+    "createdBy",
+    "updatedBy",
+    "createdAt",
+    "updatedAt",
+    "deletedAt"
+]

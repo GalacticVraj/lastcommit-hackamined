@@ -13,62 +13,44 @@ class SimulationDemoSeeder extends Seeder
 {
     public function run()
     {
-        try {
-            DB::beginTransaction();
-            $now = Carbon::now();
+        $now = Carbon::now();
 
-            echo "RECREATING PRODUCTS TABLE FOR SAFETY...\n";
-            Schema::dropIfExists('products');
-            Schema::create('products', function (Blueprint $table) {
-                $table->id();
-                $table->string('code')->unique();
-                $table->string('name');
-                $table->string('unit')->default('Nos');
-                $table->decimal('lastPurchasePrice', 15, 2)->default(0);
-                $table->decimal('lastSalePrice', 15, 2)->default(0);
-                $table->decimal('gstPercent', 5, 2)->default(18);
-                $table->decimal('minStock', 15, 2)->default(0);
-                $table->decimal('currentStock', 15, 2)->default(0);
-                $table->boolean('isActive')->default(true);
-                $table->timestamps();
-            });
+        // 1. Ensure Tables Exist (Migration usually handles this, but we'll be safe)
+        // Note: For simulation-specific demo, we use the standard tables.
+        
+        // 2. Products
+        $products = [
+            ['code' => 'SF-001', 'name' => 'Steel Frame', 'unit' => 'Kg', 'price' => 85.00],
+            ['code' => 'RS-002', 'name' => 'Rubber Seal', 'unit' => 'Pcs', 'price' => 12.00],
+            ['code' => 'EG-003', 'name' => 'Engine Gasket', 'unit' => 'Pcs', 'price' => 340.00],
+            ['code' => 'CA-004', 'name' => 'Chassis Assembly', 'unit' => 'Set', 'price' => 1200.00],
+            ['code' => 'WH-005', 'name' => 'Wiring Harness', 'unit' => 'Pcs', 'price' => 780.00],
+            ['code' => 'EN-010', 'name' => 'Engine', 'unit' => 'Pcs', 'price' => 45000.00],
+            ['code' => 'SG-020', 'name' => 'Steel Gauge', 'unit' => 'Pcs', 'price' => 2500.00],
+        ];
 
-            // 1. Products
-            $products = [
-                ['code' => 'SF-001', 'name' => 'Steel Frame', 'unit' => 'Kg', 'price' => 85.00],
-                ['code' => 'RS-002', 'name' => 'Rubber Seal', 'unit' => 'Pcs', 'price' => 12.00],
-                ['code' => 'EG-003', 'name' => 'Engine Gasket', 'unit' => 'Pcs', 'price' => 340.00],
-                ['code' => 'CA-004', 'name' => 'Chassis Assembly', 'unit' => 'Set', 'price' => 1200.00],
-                ['code' => 'WH-005', 'name' => 'Wiring Harness', 'unit' => 'Pcs', 'price' => 780.00],
-            ];
-
-            $productIds = [];
-            foreach ($products as $p) {
-                $id = DB::table('products')->insertGetId([
-                    'code' => $p['code'],
+        $productIds = [];
+        foreach ($products as $p) {
+            DB::table('products')->updateOrInsert(
+                ['code' => $p['code']],
+                [
                     'name' => $p['name'],
                     'unit' => $p['unit'],
                     'lastPurchasePrice' => $p['price'],
                     'lastSalePrice' => $p['price'] * 1.5,
                     'gstPercent' => 18,
                     'isActive' => 1,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]);
-                $productIds[$p['code']] = $id;
-            }
-            echo "Products seeded.\n";
+                    'updated_at' => $now,
+                    'created_at' => $now
+                ]
+            );
+            $productIds[$p['code']] = DB::table('products')->where('code', $p['code'])->value('id');
+        }
+        echo "Products seeded.\n";
 
-            // 2. Warehouse
-            Schema::dropIfExists('warehouse_stocks');
-            Schema::dropIfExists('warehouses');
-            Schema::create('warehouses', function (Blueprint $table) {
-                $table->id();
-                $table->string('code')->unique();
-                $table->string('name');
-                $table->boolean('isActive')->default(true);
-                $table->timestamps();
-            });
+        // 3. Warehouse
+        $warehouseId = DB::table('warehouses')->where('code', 'WH-001')->value('id');
+        if (!$warehouseId) {
             $warehouseId = DB::table('warehouses')->insertGetId([
                 'code' => 'WH-001',
                 'name' => 'Main Warehouse',
@@ -76,99 +58,82 @@ class SimulationDemoSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
+        }
 
-            // 3. Stocks (Recreate for fresh IDs)
-            Schema::create('warehouse_stocks', function (Blueprint $table) {
-                $table->uuid('id')->primary();
-                $table->unsignedBigInteger('warehouse_id');
-                $table->unsignedBigInteger('product_id');
-                $table->decimal('quantity', 15, 4)->default(0);
-                $table->decimal('min_quantity', 15, 4)->default(0);
-                $table->decimal('max_quantity', 15, 4)->default(10000);
-                $table->string('created_by')->nullable();
-                $table->string('updated_by')->nullable();
-                $table->timestamps();
-            });
-
-            foreach (['SF-001' => 450, 'RS-002' => 80, 'EG-003' => 1200, 'CA-004' => 30, 'WH-005' => 220] as $code => $qty) {
-                DB::table('warehouse_stocks')->insert([
-                    'id' => (string)Str::uuid(),
-                    'warehouse_id' => $warehouseId,
-                    'product_id' => $productIds[$code],
-                    'quantity' => $qty,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]);
+        foreach ([
+            'SF-001' => 450, 'RS-002' => 80, 'EG-003' => 1200, 
+            'CA-004' => 30, 'WH-005' => 220, 'EN-010' => 5, 'SG-020' => 15
+        ] as $code => $qty) {
+            if (isset($productIds[$code])) {
+                DB::table('warehouse_stocks')->updateOrInsert(
+                    ['warehouse_id' => $warehouseId, 'product_id' => $productIds[$code]],
+                    [
+                        'quantity' => $qty,
+                        'updated_at' => $now,
+                        'created_at' => $now
+                    ]
+                );
             }
-            echo "Warehouse & Stocks seeded.\n";
+        }
+        echo "Warehouse & Stocks seeded.\n";
 
-            // 4. BOMs (Recreate for fresh structure)
-            Schema::dropIfExists('bom_items');
-            Schema::dropIfExists('bom_headers');
-            Schema::create('bom_headers', function (Blueprint $table) {
-                $table->id();
-                $table->string('bomNo')->unique();
-                $table->unsignedBigInteger('productId');
-                $table->string('version')->default('1.0');
-                $table->timestamp('effectiveFrom')->useCurrent();
-                $table->boolean('isActive')->default(true);
-                $table->timestamps();
-            });
-            Schema::create('bom_items', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('bom_header_id');
-                $table->unsignedBigInteger('raw_material_id');
-                $table->decimal('qty_per_unit', 15, 4);
-                $table->string('unit')->default('Pcs');
-                $table->timestamps();
-            });
+        // 4. BOMs
+        $bomConfigs = [
+            'SF-001' => ['no' => 'BOM-SF001', 'items' => [['code' => 'RS-002', 'qty' => 2], ['code' => 'CA-004', 'qty' => 1]]],
+            'EG-003' => ['no' => 'BOM-EG003', 'items' => [['code' => 'RS-002', 'qty' => 1], ['code' => 'WH-005', 'qty' => 0.5]]],
+            'EN-010' => ['no' => 'BOM-EN010', 'items' => [['code' => 'EG-003', 'qty' => 1], ['code' => 'WH-005', 'qty' => 2]]],
+            'SG-020' => ['no' => 'BOM-SG020', 'items' => [['code' => 'SF-001', 'qty' => 3]]],
+        ];
 
-            $bomConfigs = [
-                'SF-001' => ['no' => 'BOM-SF001', 'items' => [['code' => 'RS-002', 'qty' => 2], ['code' => 'CA-004', 'qty' => 1]]],
-                'EG-003' => ['no' => 'BOM-EG003', 'items' => [['code' => 'RS-002', 'qty' => 1], ['code' => 'WH-005', 'qty' => 0.5]]]
-            ];
-
-            foreach ($bomConfigs as $pCode => $config) {
-                $bhId = DB::table('bom_headers')->insertGetId([
-                    'productId' => $productIds[$pCode],
-                    'bomNo' => $config['no'],
-                    'isActive' => 1,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ]);
+        foreach ($bomConfigs as $pCode => $config) {
+            if (isset($productIds[$pCode])) {
+                DB::table('bom_headers')->updateOrInsert(
+                    ['productId' => $productIds[$pCode]],
+                    [
+                        'bomNo' => $config['no'],
+                        'isActive' => 1,
+                        'updated_at' => $now,
+                        'created_at' => $now
+                    ]
+                );
+                $bhId = DB::table('bom_headers')->where('productId', $productIds[$pCode])->value('id');
+                
+                DB::table('bom_items')->where('bom_header_id', $bhId)->delete();
                 foreach ($config['items'] as $item) {
-                    DB::table('bom_items')->insert([
-                        'bom_header_id' => $bhId,
-                        'raw_material_id' => $productIds[$item['code']],
-                        'qty_per_unit' => $item['qty'],
-                        'created_at' => $now,
-                        'updated_at' => $now
-                    ]);
+                    if (isset($productIds[$item['code']])) {
+                        DB::table('bom_items')->insert([
+                            'bom_header_id' => $bhId,
+                            'raw_material_id' => $productIds[$item['code']],
+                            'qty_per_unit' => $item['qty'],
+                            'created_at' => $now,
+                            'updated_at' => $now
+                        ]);
+                    }
                 }
             }
-            echo "BOMs seeded.\n";
+        }
+        echo "BOMs seeded.\n";
 
-            // 5. Routing (Recreate)
-            Schema::dropIfExists('routing_tables');
-            Schema::create('routing_tables', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('product_id');
-                $table->integer('sequence_no');
-                $table->string('process_name');
-                $table->decimal('man_hours_per_unit', 10, 4)->default(0);
-                $table->decimal('machine_hours_per_unit', 10, 4)->default(0);
-                $table->decimal('setupTime', 10, 2)->default(0);
-                $table->decimal('cycleTime', 10, 2)->default(0);
-                $table->timestamps();
-            });
+        // 5. Routing
+        $routings = [
+            ['code' => 'SF-001', 'seq' => 1, 'name' => 'Cutting', 'man' => 0.3, 'mach' => 0.2],
+            ['code' => 'SF-001', 'seq' => 2, 'name' => 'Assembly', 'man' => 0.2, 'mach' => 0.1],
+            ['code' => 'EG-003', 'seq' => 1, 'name' => 'Machining', 'man' => 0.5, 'mach' => 0.3],
+            ['code' => 'EG-003', 'seq' => 2, 'name' => 'Quality Check', 'man' => 0.3, 'mach' => 0.2],
+            ['code' => 'EN-010', 'seq' => 1, 'name' => 'Engine Assembly', 'man' => 4.5, 'mach' => 2.0],
+            ['code' => 'EN-010', 'seq' => 2, 'name' => 'Dyno Testing', 'man' => 1.5, 'mach' => 1.5],
+            ['code' => 'SG-020', 'seq' => 1, 'name' => 'Gauge Calibration', 'man' => 1.0, 'mach' => 0.5],
+            ['code' => 'SG-020', 'seq' => 2, 'name' => 'Precision Fitting', 'man' => 1.2, 'mach' => 0.8],
+        ];
+        
+        foreach (array_unique(array_column($routings, 'code')) as $code) {
+            if (isset($productIds[$code])) {
+                DB::table('routing_tables')->where('product_id', $productIds[$code])->delete();
+            }
+        }
 
-            $routings = [
-                ['code' => 'SF-001', 'seq' => 1, 'name' => 'Cutting', 'man' => 0.3, 'mach' => 0.2],
-                ['code' => 'SF-001', 'seq' => 2, 'name' => 'Assembly', 'man' => 0.2, 'mach' => 0.1],
-                ['code' => 'EG-003', 'seq' => 1, 'name' => 'Machining', 'man' => 0.5, 'mach' => 0.3],
-                ['code' => 'EG-003', 'seq' => 1, 'name' => 'Quality Check', 'man' => 0.3, 'mach' => 0.2],
-            ];
-            foreach ($routings as $r) {
+        foreach ($routings as $r) {
+            if (isset($productIds[$r['code']])) {
                 DB::table('routing_tables')->insert([
                     'product_id' => $productIds[$r['code']],
                     'sequence_no' => $r['seq'],
@@ -179,40 +144,15 @@ class SimulationDemoSeeder extends Seeder
                     'updated_at' => $now
                 ]);
             }
-            echo "Routings seeded.\n";
-
-            // 6. Resources & Shifts
-            Schema::dropIfExists('resource_master');
-            Schema::create('resource_master', function (Blueprint $table) {
-                $table->id();
-                $table->string('resource_type');
-                $table->decimal('cost_per_hour', 10, 2)->default(0);
-                $table->decimal('kwh_per_hour', 8, 4)->default(0);
-                $table->decimal('energy_rate', 8, 4)->default(0);
-                $table->timestamps();
-            });
-            DB::table('resource_master')->insert(['resource_type' => 'labor', 'cost_per_hour' => 70, 'created_at' => $now, 'updated_at' => $now]);
-            DB::table('resource_master')->insert(['resource_type' => 'machine', 'kwh_per_hour' => 5, 'energy_rate' => 8, 'created_at' => $now, 'updated_at' => $now]);
-
-            Schema::dropIfExists('shift_master');
-            Schema::create('shift_master', function (Blueprint $table) {
-                $table->id();
-                $table->string('shift_name');
-                $table->decimal('shift_hours', 5, 2);
-                $table->boolean('is_default')->default(false);
-                $table->timestamps();
-            });
-            DB::table('shift_master')->insert(['shift_name' => 'Day Shift', 'shift_hours' => 10, 'is_default' => 1, 'created_at' => $now, 'updated_at' => $now]);
-
-            DB::commit();
-            echo "ALL SIMULATION DATA RE-CREATED AND SEEDED SUCCESSFULLY!\n";
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            echo "\n=== SEEDING FAILED ===\n";
-            echo $e->getMessage() . "\n";
-            echo "Line: " . $e->getLine() . "\n";
-            echo "======================\n";
         }
+        echo "Routings seeded.\n";
+
+        // 6. Resources & Shifts
+        DB::table('resource_master')->updateOrInsert(['resource_type' => 'labor'], ['cost_per_hour' => 70, 'updated_at' => $now, 'created_at' => $now]);
+        DB::table('resource_master')->updateOrInsert(['resource_type' => 'machine'], ['kwh_per_hour' => 5, 'energy_rate' => 8, 'updated_at' => $now, 'created_at' => $now]);
+
+        DB::table('shift_master')->updateOrInsert(['shift_name' => 'Day Shift'], ['shift_hours' => 10, 'is_default' => 1, 'updated_at' => $now, 'created_at' => $now]);
+
+        echo "ALL SIMULATION DATA SEEDED SUCCESSFULLY!\n";
     }
 }
