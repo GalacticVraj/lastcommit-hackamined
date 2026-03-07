@@ -110,7 +110,7 @@ LOGIN FLOW:
 **Files contributed:**
 
 ```
-backend/
+backend-laravel-fresh/
 ├── app/Http/Controllers/AuthController.php
 ├── app/Http/Requests/LoginRequest.php
 ├── app/Http/Middleware/CheckPermission.php
@@ -211,7 +211,7 @@ DB::transaction(function () use ($prefix) {
 **Files contributed:**
 
 ```
-backend/app/Http/Controllers/Purchase/
+backend-laravel-fresh/app/Http/Controllers/Purchase/
 ├── MaterialIndentController.php
 ├── PurchaseOrderController.php
 ├── PurchaseScheduleController.php
@@ -221,7 +221,7 @@ backend/app/Http/Controllers/Purchase/
 ├── PurchaseBillController.php
 └── VendorPaymentController.php
 
-backend/app/Services/Purchase/
+backend-laravel-fresh/app/Services/Purchase/
 ├── PurchaseOrderService.php
 ├── GrnService.php
 ├── IqcService.php
@@ -229,7 +229,7 @@ backend/app/Services/Purchase/
 ├── BillMatchingService.php        ← PO rate vs Bill rate mismatch detection
 └── VendorPaymentService.php
 
-backend/database/migrations/
+backend-laravel-fresh/database/migrations/
 ├── create_material_indents_table.php
 ├── create_purchase_orders_table.php
 ├── create_grns_table.php
@@ -283,7 +283,7 @@ QUALITY CHECKPOINTS:
 **Files contributed:**
 
 ```
-backend/app/Services/Quality/
+backend-laravel-fresh/app/Services/Quality/
 ├── IqcService.php
 ├── PqcService.php
 ├── PdiService.php
@@ -338,7 +338,7 @@ PAYROLL CALCULATION LOGIC:
 **Files contributed:**
 
 ```
-backend/app/Services/HR/
+backend-laravel-fresh/app/Services/HR/
 ├── EmployeeService.php
 ├── SalaryStructureService.php
 ├── PayrollService.php             ← Full gross/deduction/net calculation
@@ -400,10 +400,10 @@ ARCHITECTURE:
 **Files contributed:**
 
 ```
-backend/app/Http/Controllers/Reports/
+backend-laravel-fresh/app/Http/Controllers/Reports/
 └── ReportController.php           ← Single controller, 20 methods
 
-backend/app/Services/Reports/
+backend-laravel-fresh/app/Services/Reports/
 ├── SalesReportService.php
 ├── PurchaseReportService.php
 ├── StockReportService.php
