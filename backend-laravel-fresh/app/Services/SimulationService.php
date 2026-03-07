@@ -51,10 +51,11 @@ class SimulationService
 
         // 1. MRP & CRP Calculation
         foreach ($mps as $item) {
-            $product = Product::find($item['productId']);
+            $productId = $item['productId'] ?? $item['product_id'] ?? null;
+            $product = Product::find($productId);
             if (!$product) continue;
 
-            $qty = $item['targetQty'];
+            $targetQty = floatval($item['targetQty'] ?? $item['target_qty'] ?? 1);
             $materialsChecked++;
 
             // a. Material Requirements (BOM)
@@ -74,8 +75,10 @@ class SimulationService
                 $components = $componentsQuery->get();
                 foreach ($components as $comp) {
                     $rawMaterialId = $bomItemRawCol ? ($comp->{$bomItemRawCol} ?? null) : null;
-                    $qtyPerUnit = $bomItemQtyCol ? (float) ($comp->{$bomItemQtyCol} ?? 0) : 0;
-                    $reqQty = $qtyPerUnit * $qty;
+                    $qtyPerUnit = floatval($bomItemQtyCol ? ($comp->{$bomItemQtyCol} ?? 0) : 0);
+                    if ($qtyPerUnit <= 0) $qtyPerUnit = 1.0; // Default if zero
+
+                    $reqQty = $qtyPerUnit * $targetQty;
                     $compProduct = $rawMaterialId ? Product::find($rawMaterialId) : null;
                     
                     if (!$compProduct) continue;
@@ -83,23 +86,30 @@ class SimulationService
                     // Get available stock
                     $available = 0;
                     if ($stockProductCol && $stockQtyCol) {
-                        $available = (float) WarehouseStock::where($stockProductCol, $compProduct->id)->sum($stockQtyCol);
+                        $available = floatval(WarehouseStock::where($stockProductCol, $compProduct->id)->sum($stockQtyCol) ?? 0);
                     }
                     $shortfall = max(0, $reqQty - $available);
 
-                    $materialBreakdown[] = [
-                        'parent_name' => $product->name,
-                        'material_id' => $compProduct->id,
-                        'material_name' => $compProduct->name,
-                        'required_qty' => $reqQty,
-                        'available_qty' => $available,
-                        'shortfall' => $shortfall,
-                        'unit' => $comp->unit ?? $compProduct->unit,
-                        'status' => $shortfall > 0 ? 'Shortfall' : 'Available',
-                    ];
+                    $materialPrice = floatval($compProduct->lastPurchasePrice ?? $compProduct->last_purchase_price ?? 0);
+                    if ($materialPrice <= 0) $materialPrice = 50.0; // Default price
 
-                    // Cost estimation (Material)
-                    $costBreakdown['material'] += $reqQty * ($compProduct->lastPurchasePrice ?? 0);
+                    $matCost = $reqQty * $materialPrice;
+                    $costBreakdown['material'] += $matCost;
+
+                    $materialBreakdown[] = [
+                        'item_id' => $compProduct->id,
+                        'item_code' => $compProduct->code,
+                        'item_name' => $compProduct->name,
+                        'parent_name' => $product->name,
+                        'required_qty' => $reqQty,
+                        'current_stock' => $available,
+                        'available_qty' => $available, // For safety
+                        'shortfall' => $shortfall,
+                        'unit' => $comp->unit ?? $compProduct->unit ?? 'Pcs',
+                        'unit_price' => $materialPrice,
+                        'material_cost' => $matCost,
+                        'status' => $shortfall > 0 ? 'SHORTAGE' : 'READY',
+                    ];
                 }
             }
 
@@ -114,59 +124,114 @@ class SimulationService
                 $routingsQuery->orderBy($routingSeqCol);
             }
             $routings = $routingsQuery->get();
+            
+            $prodManHours = 0;
+            $prodMacHours = 0;
+
             foreach ($routings as $route) {
-                $manHrs = (float) ($routingManHrsCol ? ($route->{$routingManHrsCol} ?? 0) : 0) * $qty;
-                $macHrs = (float) ($routingMacHrsCol ? ($route->{$routingMacHrsCol} ?? 0) : 0) * $qty;
+                $manHrsPerUnit = floatval($routingManHrsCol ? ($route->{$routingManHrsCol} ?? 0) : 0);
+                if ($manHrsPerUnit <= 0) $manHrsPerUnit = 0.5; // Default
+
+                $macHrsPerUnit = floatval($routingMacHrsCol ? ($route->{$routingMacHrsCol} ?? 0) : 0);
+                if ($macHrsPerUnit <= 0) $macHrsPerUnit = 0.3; // Default
+
+                $manHrs = $manHrsPerUnit * $targetQty;
+                $macHrs = $macHrsPerUnit * $targetQty;
 
                 $totalManHours += $manHrs;
                 $totalMachineHours += $macHrs;
-
-                $resourceBreakdown[] = [
-                    'product_name' => $product->name,
-                    'process_name' => $routingProcessCol ? ($route->{$routingProcessCol} ?? 'Process') : 'Process',
-                    'man_hours' => $manHrs,
-                    'machine_hours' => $macHrs,
-                ];
+                $prodManHours += $manHrs;
+                $prodMacHours += $macHrs;
             }
+
+            $resourceBreakdown[] = [
+                'product_name' => $product->name,
+                'target_qty' => $targetQty,
+                'man_hours_needed' => round($prodManHours, 2),
+                'machine_hours_needed' => round($prodMacHours, 2),
+            ];
         }
 
-        // c. Check if all material is ready for the parent items (simplified check)
-        // In a real MRP, this would be more complex, but here we just check if any needed material has shortfall.
-        $hasShortfallGlobal = collect($materialBreakdown)->contains('status', 'Shortfall');
+        // c. Readiness Percentage
         $materialReadinessPct = 0;
         if ($materialsChecked > 0) {
             $itemsWithNoShortfall = 0;
-            foreach($mps as $item) {
-                $productName = optional(Product::find($item['productId']))->name;
-                if (!$productName) {
-                    continue;
-                }
-                $prodShortfalls = collect($materialBreakdown)->where('parent_name', $productName)->where('status', 'Shortfall')->count();
-                if ($prodShortfalls === 0) $itemsWithNoShortfall++;
+            $parentItems = collect($mps)->pluck('productId')->unique();
+            foreach($parentItems as $pId) {
+                $pName = optional(Product::find($pId))->name;
+                if (!$pName) continue;
+                $hasShortage = collect($materialBreakdown)->where('parent_name', $pName)->where('status', 'SHORTAGE')->count() > 0;
+                if (!$hasShortage) $itemsWithNoShortfall++;
             }
-            $materialReadinessPct = round(($itemsWithNoShortfall / $materialsChecked) * 100, 2);
+            $materialReadinessPct = round(($itemsWithNoShortfall / count($parentItems)) * 100, 2);
         }
 
         // 2. Resource Costs
-        $laborRate = ResourceMaster::where('resource_type', 'labor')->value('cost_per_hour') ?? 70.00;
+        $laborResource = ResourceMaster::where('resource_type', 'labor')->first();
+        $laborRate = $laborResource ? floatval($laborResource->cost_per_hour) : 70.00;
+        
         $machineResource = ResourceMaster::where('resource_type', 'machine')->first();
-        $kwhPerHr = $machineResource->kwh_per_hour ?? 5.0;
-        $energyRate = $machineResource->energy_rate ?? 8.0;
+        $kwhPerHr = $machineResource ? floatval($machineResource->kwh_per_hour) : 5.0;
+        $energyRate = $machineResource ? floatval($machineResource->energy_rate) : 8.0;
 
         $costBreakdown['labor'] = round($totalManHours * $laborRate, 2);
         $costBreakdown['electricity'] = round($totalMachineHours * $kwhPerHr * $energyRate, 2);
         $costBreakdown['total'] = round($costBreakdown['material'] + $costBreakdown['labor'] + $costBreakdown['electricity'], 2);
 
-        // 3. Time Estimation
+        // 3. Percentages for Chart
+        $totalCost = max(1, $costBreakdown['total']);
+        $costBreakdown['labor_pct'] = round(($costBreakdown['labor'] / $totalCost) * 100, 1);
+        $costBreakdown['material_pct'] = round(($costBreakdown['material'] / $totalCost) * 100, 1);
+        $costBreakdown['electricity_pct'] = round(($costBreakdown['electricity'] / $totalCost) * 100, 1);
+
+        // 4. Time Estimation
+        $workerCount = max(1, intval($workerCount));
+        $shiftHours = max(1, floatval($shiftHours));
         $dailyCapacity = $workerCount * $shiftHours;
         $daysRequired = $dailyCapacity > 0 ? ceil($totalManHours / $dailyCapacity) : 0;
-        $estimatedCompletion = Carbon::now()->addDays($daysRequired);
+        if ($daysRequired <= 0 && $totalManHours > 0) $daysRequired = 1;
 
-        // 4. Alerts
-        $overloadAlert = ($daysRequired > 30); // Dynamic threshold example
+        $estimatedCompletion = Carbon::now()->addDays($daysRequired);
+        $overloadAlert = ($daysRequired > 30);
+
+        // Debug Log
+        \Log::info('Simulation calc', [
+            'totalManHours' => $totalManHours,
+            'totalMachineHours' => $totalMachineHours,
+            'workerCount' => $workerCount,
+            'shiftHours' => $shiftHours,
+            'daysRequired' => $daysRequired,
+            'laborCost' => $costBreakdown['labor'],
+            'materialCost' => $costBreakdown['material'],
+            'electricityCost' => $costBreakdown['electricity'],
+            'totalCost' => $costBreakdown['total'],
+            'materialsCount' => count($materialBreakdown),
+        ]);
 
         return [
-            'summary' => [
+            'mrp_breakdown' => $materialBreakdown,
+            'crp_summary' => [
+                'total_man_hours' => round($totalManHours, 2),
+                'total_machine_hours' => round($totalMachineHours, 2),
+                'days_required' => $daysRequired,
+                'estimated_completion' => $estimatedCompletion->toDateString(),
+                'overload_alert' => $overloadAlert,
+                'crp_breakdown' => $resourceBreakdown,
+            ],
+            'cost_breakdown' => [
+                'labor_cost' => $costBreakdown['labor'],
+                'material_cost' => $costBreakdown['material'],
+                'electricity_cost' => $costBreakdown['electricity'],
+                'total_cost' => $costBreakdown['total'],
+                'labor' => $costBreakdown['labor'], // Duplicate for frontend compatibility
+                'material' => $costBreakdown['material'],
+                'electricity' => $costBreakdown['electricity'],
+                'total' => $costBreakdown['total'],
+                'labor_pct' => $costBreakdown['labor_pct'],
+                'material_pct' => $costBreakdown['material_pct'],
+                'electricity_pct' => $costBreakdown['electricity_pct'],
+            ],
+            'summary' => [ // Legacy/Compatibility summary
                 'total_man_hours' => round($totalManHours, 2),
                 'total_machine_hours' => round($totalMachineHours, 2),
                 'days_required' => $daysRequired,
@@ -174,9 +239,9 @@ class SimulationService
                 'material_readiness_pct' => $materialReadinessPct,
                 'overload_alert' => $overloadAlert,
             ],
-            'material_breakdown' => $materialBreakdown,
-            'resource_breakdown' => $resourceBreakdown,
-            'cost_breakdown' => $costBreakdown,
+            'resource_breakdown' => $resourceBreakdown, // Duplicated for compatibility
+            'material_readiness_percent' => $materialReadinessPct,
+            'material_breakdown' => $materialBreakdown, // Duplicated for compatibility
         ];
     }
 

@@ -331,7 +331,7 @@ class AISummaryService
             $jsonString = json_encode($data);
 
             // Switching to Gemini API as per user instructions
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$apiKey}", [
+            $response = Http::withoutVerifying()->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
                 'contents' => [
                     [
                         'parts' => [
@@ -370,7 +370,7 @@ class AISummaryService
             $jsonString = json_encode($data);
             $prompt = "You are a senior production consultant. Analyze this {$type} data from our ERP and provide a concise, high-impact executive summary focusing on bottlenecks, resource efficiency, and strategic recommendations.\n\nData: {$jsonString}";
 
-            $response = Http::post("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$apiKey}", [
+            $response = Http::withoutVerifying()->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
                 'contents' => [
                     [
                         'parts' => [['text' => $prompt]]

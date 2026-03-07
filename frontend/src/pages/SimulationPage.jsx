@@ -80,10 +80,16 @@ export default function SimulationPage() {
                 workerCount: parseInt(workerCount)
             };
             const res = await api.post('/simulation/run', payload);
-            setResult(res.data.data);
-            setSimulationName(`Sim_${new Date().toLocaleTimeString()}`);
-            toast.success('Simulation Completed');
+            console.log('Simulation Run Response:', res.data);
+            if (res.data.success) {
+                setResult(res.data.data);
+                setSimulationName(`Sim_${new Date().toLocaleTimeString()}`);
+                toast.success('Simulation Completed');
+            } else {
+                toast.error(res.data.message || 'Calculation failed');
+            }
         } catch (e) {
+            console.error('Simulation Run Error:', e);
             toast.error(e.response?.data?.message || 'Calculation failed');
         }
         setLoading(false);
@@ -100,10 +106,12 @@ export default function SimulationPage() {
                 worker_count: workerCount,
                 mps: mps.filter(m => m.productId && m.targetQty > 0)
             };
-            await api.post('/simulation/save', payload);
+            const res = await api.post('/simulation/save', payload);
+            console.log('Simulation Save Response:', res.data);
             toast.success('Simulation saved to history');
             fetchHistory();
         } catch (e) {
+            console.error('Simulation Save Error:', e);
             toast.error('Failed to save simulation');
         }
         setLoading(false);
@@ -135,9 +143,9 @@ export default function SimulationPage() {
     };
 
     const costData = result ? [
-        { name: 'Labor', value: result.cost_breakdown.labor },
-        { name: 'Material', value: result.cost_breakdown.material },
-        { name: 'Electricity', value: result.cost_breakdown.electricity },
+        { name: 'Labor', value: result.cost_breakdown.labor_cost },
+        { name: 'Material', value: result.cost_breakdown.material_cost },
+        { name: 'Electricity', value: result.cost_breakdown.electricity_cost },
     ] : [];
 
     return (
@@ -272,10 +280,10 @@ export default function SimulationPage() {
                                 {/* Stats Row */}
                                 <div className="stats-grid">
                                     {[
-                                        { label: 'Completion', value: `${result?.summary?.days_required || 0} Days`, icon: Calendar },
-                                        { label: 'Material Readiness', value: `${result?.summary?.material_readiness_pct || 0}%`, icon: Package },
-                                        { label: 'Forecasted Cost', value: `₹${((result?.cost_breakdown?.total || 0) / 100000).toFixed(1)}L`, icon: DollarSign },
-                                        { label: 'Est. End Date', value: result?.summary?.estimated_completion || 'TBD', icon: Clock },
+                                        { label: 'Completion', value: `${result.crp_summary?.days_required || 0} Days`, icon: Calendar },
+                                        { label: 'Material Readiness', value: `${result.material_readiness_percent || 0}%`, icon: Package },
+                                        { label: 'Forecasted Cost', value: `₹${((result.cost_breakdown?.total_cost || 0) / 100000).toFixed(1)}L`, icon: DollarSign },
+                                        { label: 'Est. End Date', value: result.crp_summary?.estimated_completion || 'TBD', icon: Clock },
                                     ].map((s, i) => (
                                         <div key={i} className="stat-card glass">
                                             <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.4)' }}><s.icon size={16} /></div>
@@ -314,14 +322,14 @@ export default function SimulationPage() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
                                                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Man-Hours Needed</span>
-                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{result.summary.total_man_hours.toLocaleString()}h</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{(result.crp_summary?.total_man_hours || 0).toLocaleString()}h</span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
                                                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Daily Plant Flow</span>
-                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{(workerCount * shiftHours).toLocaleString()}h</span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{((result.crp_summary?.total_man_hours || 0) / Math.max(1, result.crp_summary?.days_required || 1)).toLocaleString()}h</span>
                                             </div>
 
-                                            {result.summary.overload_alert ? (
+                                            {result.crp_summary?.overload_alert ? (
                                                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '12px', display: 'flex', gap: '10px', marginTop: '8px' }}>
                                                     <AlertTriangle size={18} style={{ color: 'var(--danger)', flexShrink: 0 }} />
                                                     <p style={{ fontSize: '11px', color: '#991B1B', fontWeight: 500 }}>
@@ -356,14 +364,14 @@ export default function SimulationPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {(result?.material_breakdown || []).map((mat, i) => (
+                                                {(result?.mrp_breakdown || []).map((mat, i) => (
                                                     <tr key={i}>
-                                                        <td style={{ fontWeight: 600 }}>{mat.material_name}</td>
+                                                        <td style={{ fontWeight: 600 }}>{mat.item_name || mat.material_name}</td>
                                                         <td>{mat.required_qty} {mat.unit}</td>
-                                                        <td>{mat.available_qty}</td>
+                                                        <td>{mat.current_stock || mat.available_qty}</td>
                                                         <td>
-                                                            <span className={`badge ${mat.shortfall > 0 ? 'badge-rejected' : 'badge-paid'}`}>
-                                                                {mat.shortfall > 0 ? `Short: ${mat.shortfall}` : 'Ready'}
+                                                            <span className={`badge ${mat.status === 'SHORTAGE' || mat.shortfall > 0 ? 'badge-rejected' : 'badge-paid'}`}>
+                                                                {mat.status === 'SHORTAGE' || mat.shortfall > 0 ? `Short: ${mat.shortfall}` : 'Ready'}
                                                             </span>
                                                         </td>
                                                     </tr>
