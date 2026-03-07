@@ -1,0 +1,63 @@
+{
+    "bom_headers": [
+        "id",
+        "bomNo",
+        "productId",
+        "version",
+        "effectiveFrom",
+        "isActive",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+    ],
+    "bom_items": [
+        "id",
+        "bom_header_id",
+        "raw_material_id",
+        "qty_per_unit",
+        "unit",
+        "createdAt",
+        "process_stage"
+    ],
+    "routing_tables": [
+        "id",
+        "product_id",
+        "sequence_no",
+        "process_name",
+        "workCenter",
+        "setupTime",
+        "cycleTime",
+        "createdAt",
+        "man_hours_per_unit",
+        "machine_hours_per_unit"
+    ],
+    "warehouse_stocks": [
+        "id",
+        "warehouse_id",
+        "product_id",
+        "quantity",
+        "min_quantity",
+        "max_quantity",
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at"
+    ],
+    "resource_master": [
+        "id",
+        "resource_type",
+        "cost_per_hour",
+        "kwh_per_hour",
+        "energy_rate",
+        "created_at",
+        "updated_at"
+    ],
+    "shift_master": [
+        "id",
+        "shift_name",
+        "shift_hours",
+        "is_default",
+        "created_at",
+        "updated_at"
+    ]
+}

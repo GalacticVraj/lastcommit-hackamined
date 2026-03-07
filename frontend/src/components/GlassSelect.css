@@ -1,0 +1,180 @@
+/* ── Glass Select Component ── */
+.glass-select {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+}
+
+.glass-select:focus {
+    outline: none;
+}
+
+.glass-select.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Trigger Button */
+.glass-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.25) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-select-trigger:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 100%);
+    border-color: rgba(249, 115, 22, 0.4);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 0 0 3px rgba(249, 115, 22, 0.08);
+    transform: translateY(-1px);
+}
+
+.glass-select:focus .glass-select-trigger,
+.glass-select.open .glass-select-trigger {
+    border-color: #f97316;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.4) 100%);
+    box-shadow:
+        0 8px 24px rgba(249, 115, 22, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 0 0 4px rgba(249, 115, 22, 0.15);
+}
+
+.glass-select-value {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.glass-select-value.placeholder {
+    color: var(--text-muted);
+}
+
+.glass-select-arrow {
+    color: #f97316;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.glass-select-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Panel - rendered via portal at body level */
+.glass-select-dropdown {
+    position: fixed;
+    z-index: 99999;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.92) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.18),
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    animation: glassDropdownIn 0.2s ease-out;
+}
+
+@keyframes glassDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Options List */
+.glass-select-options {
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.glass-select-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.glass-select-options::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.glass-select-options::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.3);
+    border-radius: 3px;
+}
+
+.glass-select-options::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.5);
+}
+
+/* Option Item */
+.glass-select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.glass-select-option:hover,
+.glass-select-option.highlighted {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(251, 146, 60, 0.08) 100%);
+}
+
+.glass-select-option.selected {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.18) 0%, rgba(251, 146, 60, 0.12) 100%);
+    font-weight: 600;
+}
+
+.glass-select-option.selected svg {
+    color: #f97316;
+}
+
+.glass-select-option span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Glass shine effect on dropdown */
+.glass-select-dropdown::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    pointer-events: none;
+}

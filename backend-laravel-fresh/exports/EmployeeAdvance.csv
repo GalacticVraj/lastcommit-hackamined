@@ -1,0 +1,6 @@
+id,employeeId,advanceDate,amount,purpose,recoveryMonth,recoveryMonths,monthlyDeduction,recoveredAmount,balanceAmount,status,remarks,isActive,approvedBy,createdBy,createdAt,updatedAt,deletedAt
+1,1,"2026-01-15 00:00",20000,"Medical Emergency","February 2026",4,5000,10000,10000,"Partially Recovered",,1,1,1,"2026-03-06 05:33","2026-03-06 05:33",
+2,2,"2026-02-01 00:00",15000,"Home Repair","March 2026",3,5000,0,15000,Approved,,1,1,1,"2026-03-06 05:33","2026-03-06 05:33",
+3,3,"2026-02-20 00:00",10000,"Vehicle Repair","March 2026",2,5000,0,10000,Pending,,1,,1,"2026-03-06 05:33","2026-03-06 05:33",
+4,4,"2025-11-01 00:00",50000,"Education Loan","December 2025",10,5000,25000,25000,"Partially Recovered",,1,1,1,"2026-03-06 05:33","2026-03-06 05:33",
+5,5,"2026-01-05 00:00",30000,"Festival Advance","February 2026",6,5000,5000,25000,Approved,,1,1,1,"2026-03-06 05:33","2026-03-06 05:33",

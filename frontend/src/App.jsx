@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './lib/auth';
+import useSessionTimeout from './hooks/useSessionTimeout';
 import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -8,10 +10,30 @@ import SalesPage from './pages/SalesPage';
 import SimulationPage from './pages/SimulationPage';
 import ReportsPage from './pages/ReportsPage';
 import GenericModulePage from './pages/GenericModulePage';
+import TopProgressBar from './components/TopProgressBar';
+import PrintPage from './pages/PrintPage';
+
+import CustomerProfilePage from './pages/CustomerProfilePage';
+import VendorProfilePage from './pages/VendorProfilePage';
+import EmployeeProfilePage from './pages/EmployeeProfilePage';
+import SalesmanProfilePage from './pages/SalesmanProfilePage';
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const token = useAuthStore(s => s.token) || sessionStorage.getItem('erp_token');
+  const rehydrate = useAuthStore(s => s.rehydrate);
+  const permissionsLoaded = useAuthStore(s => s.permissionsLoaded);
+
+  useSessionTimeout(60);
+
+  // Rehydrate permissions from backend on page refresh
+  useEffect(() => {
+    if (token && !permissionsLoaded) {
+      rehydrate();
+    }
+  }, [token, permissionsLoaded, rehydrate]);
+
+  return (isAuthenticated && token) ? children : <Navigate to="/login" replace />;
 }
 
 // Module configurations for GenericModulePage
@@ -20,9 +42,9 @@ const purchaseConfig = {
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'vendors', label: 'Vendors', endpoint: '/vendors', columns: ['name', 'gstin', 'city', 'state', 'contactPerson'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'gstin', label: 'GSTIN' }, { name: 'address', label: 'Address' }, { name: 'city', label: 'City' }, { name: 'state', label: 'State' }, { name: 'contactPerson', label: 'Contact Person' }, { name: 'phone', label: 'Phone' }, { name: 'email', label: 'Email' }] },
-    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'] },
-    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'] },
-    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'] },
+    { key: 'pos', label: 'Purchase Orders', endpoint: '/purchase-orders', columns: ['poNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'vendorQuotationNo', label: 'Vendor Quote No' }], hasItems: true, hasPrint: true, printType: 'purchase-order', hasCommunication: true },
+    { key: 'grns', label: 'GRNs', endpoint: '/grns', columns: ['grnNo', 'vendor.name', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'challanNo', label: 'Challan No' }], hasItems: true, hasPrint: true, printType: 'grn' },
+    { key: 'bills', label: 'Bills', endpoint: '/bills', columns: ['billNo', 'vendor.name', 'totalAmount', 'status'], formFields: [{ name: 'vendorId', label: 'Vendor ID', type: 'number', required: true }, { name: 'purchaseOrderId', label: 'PO ID', type: 'number' }, { name: 'vendorInvoiceNo', label: 'Vendor Invoice No' }], hasItems: true, hasPrint: true, printType: 'purchase-bill', hasCommunication: true },
   ]
 };
 
@@ -30,11 +52,11 @@ const productionConfig = {
   title: 'Production Management', apiBase: '/production',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'products', label: 'Products', endpoint: '/products', columns: ['code', 'name', 'category', 'unit', 'currentStock', 'lastPurchasePrice'], formFields: [{ name: 'code', label: 'Code', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category' }, { name: 'unit', label: 'Unit' }, { name: 'hsnCode', label: 'HSN Code' }, { name: 'gstPercent', label: 'GST %', type: 'number' }, { name: 'currentStock', label: 'Current Stock', type: 'number' }] },
-    { key: 'bom', label: 'BOM', endpoint: '/bom', columns: ['bomNo', 'product.name', 'version'] },
-    { key: 'rcs', label: 'Route Cards', endpoint: '/route-cards', columns: ['routeCardNo', 'batchNo', 'planQty', 'status'] },
-    { key: 'reports', label: 'Reports', endpoint: '/reports', columns: ['reportDate', 'product.name', 'productionQty', 'rejectionQty'] },
-    { key: 'jobs', label: 'Job Orders', endpoint: '/job-orders', columns: ['jobOrderNo', 'contractorName', 'processRequired', 'status'] },
+    { key: 'products', label: 'Products', endpoint: '/products', columns: ['code', 'name', 'category', 'unit', 'currentStock', 'lastPurchasePrice'], formFields: [{ name: 'code', label: 'Code', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'category', label: 'Category' }, { name: 'unit', label: 'Unit' }, { name: 'hsnCode', label: 'HSN Code' }, { name: 'gstPercent', label: 'GST %', type: 'number' }, { name: 'currentStock', label: 'Current Stock', type: 'number' }], hasPrint: true, printType: 'production-product' },
+    { key: 'bom', label: 'BOM', endpoint: '/bom', columns: ['bomNo', 'product.name', 'version'], hasPrint: true, printType: 'production-bom' },
+    { key: 'rcs', label: 'Route Cards', endpoint: '/route-cards', columns: ['routeCardNo', 'batchNo', 'planQty', 'status'], hasPrint: true, printType: 'production-route-card' },
+    { key: 'reports', label: 'Reports', endpoint: '/reports', columns: ['reportDate', 'product.name', 'productionQty', 'rejectionQty'], hasPrint: true, printType: 'production-report' },
+    { key: 'jobs', label: 'Job Orders', endpoint: '/job-orders', columns: ['jobOrderNo', 'contractorName', 'processRequired', 'status'], hasPrint: true, printType: 'production-job-order' },
   ]
 };
 
@@ -42,9 +64,97 @@ const financeConfig = {
   title: 'Finance Management', apiBase: '/finance',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'vouchers', label: 'Vouchers', endpoint: '/vouchers', columns: ['voucherNo', 'voucherType', 'debitAccount', 'creditAccount', 'amount'], formFields: [{ name: 'voucherType', label: 'Type' }, { name: 'debitAccount', label: 'Debit Account', required: true }, { name: 'creditAccount', label: 'Credit Account', required: true }, { name: 'amount', label: 'Amount', type: 'number', required: true }, { name: 'narration', label: 'Narration' }] },
-    { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'] },
-    { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'] },
+    {
+      key: 'voucherJournals',
+      label: 'Voucher Journal',
+      endpoint: '/voucher-journals',
+      columns: ['journalNo', 'date', 'debitAccount', 'creditAccount', 'amount', 'narration'],
+      hasPrint: true,
+      printType: 'voucher-journal',
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'debitAccount', label: 'Debit Account', required: true },
+        { name: 'creditAccount', label: 'Credit Account', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'narration', label: 'Narration' }
+      ]
+    },
+    {
+      key: 'voucherPaymentReceipts',
+      label: 'Payment & Receipt',
+      endpoint: '/voucher-payment-receipts',
+      columns: ['voucherNo', 'voucherType', 'date', 'partyName', 'amount', 'mode'],
+      hasPrint: true,
+      printType: 'voucher-payment-receipt',
+      hasCommunication: true,
+      formFields: [
+        { name: 'voucherType', label: 'Voucher Type', type: 'select', options: ['Payment', 'Receipt'], required: true },
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'partyName', label: 'Party Name', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'mode', label: 'Mode', type: 'select', options: ['Cash', 'Bank', 'Cheque', 'Online', 'UPI', 'Card'], required: true },
+        { name: 'referenceNo', label: 'Reference No' },
+        { name: 'remarks', label: 'Remarks' }
+      ]
+    },
+    {
+      key: 'voucherContras',
+      label: 'Voucher Contra',
+      endpoint: '/voucher-contras',
+      columns: ['voucherNo', 'date', 'fromAccount', 'toAccount', 'amount'],
+      hasPrint: true,
+      printType: 'voucher-contra',
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'fromAccount', label: 'From Account (e.g., Cash)', required: true },
+        { name: 'toAccount', label: 'To Account (e.g., Bank)', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'remarks', label: 'Remarks' }
+      ]
+    },
+    {
+      key: 'voucherGSTs',
+      label: 'Journal Voucher (GST)',
+      endpoint: '/voucher-gsts',
+      columns: ['voucherNo', 'date', 'gstLedger', 'adjustmentType', 'amount'],
+      hasPrint: true,
+      printType: 'voucher-gst',
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'gstLedger', label: 'GST Ledger', type: 'select', options: ['Input', 'Output'], required: true },
+        { name: 'adjustmentType', label: 'Adjustment Type', type: 'select', options: ['Reversal', 'Adjustment', 'Correction', 'Refund'], required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'remarks', label: 'Remarks' }
+      ]
+    },
+    { key: 'recon', label: 'Bank Reconciliation', endpoint: '/bank-reconciliation', columns: ['bankAccount', 'statementDate', 'systemBalance', 'bankBalance', 'status'], hasPrint: true, printType: 'bank-reconciliation' },
+    { key: 'cc', label: 'Credit Card', endpoint: '/credit-card', columns: ['cardNo', 'statementMonth', 'merchant', 'amount'], hasPrint: true, printType: 'credit-card-statement' },
+    {
+      key: 'profit-loss',
+      label: 'Profit & Loss',
+      endpoint: '/profit-loss',
+      columns: ['period', 'salesTotal', 'cogs', 'expenses', 'netProfit'],
+      hasPrint: true,
+      printType: 'finance-profit-loss'
+    },
+    {
+      key: 'reminders',
+      label: 'Payment Reminders',
+      endpoint: '/reminders',
+      columns: ['customerName', 'invoiceRef', 'dueDate', 'amount', 'nextReminderDate', 'status'],
+      hasPrint: false,
+      formFields: [
+        { name: 'customerId', label: 'Customer ID', type: 'number', required: true },
+        { name: 'invoiceRef', label: 'Invoice Reference', required: true },
+        { name: 'dueDate', label: 'Due Date', type: 'date', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'frequency', label: 'Frequency (Days)', type: 'number', required: true },
+        { name: 'channel', label: 'Channel', type: 'select', options: ['WhatsApp', 'Email', 'Both'] },
+      ],
+      statusActions: [
+        { status: 'Sent', label: 'Send Now', confirmMessage: 'Send reminder via WhatsApp/Email immediately?', class: 'btn-primary' },
+      ]
+    },
   ]
 };
 
@@ -52,8 +162,196 @@ const hrConfig = {
   title: 'HR Management', apiBase: '/hr',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'employees', label: 'Employees', endpoint: '/employees', columns: ['empCode', 'name', 'designation', 'department', 'basicSalary'], formFields: [{ name: 'empCode', label: 'Emp Code', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'designation', label: 'Designation' }, { name: 'department', label: 'Department' }, { name: 'mobile', label: 'Mobile' }, { name: 'basicSalary', label: 'Basic Salary', type: 'number' }] },
-    { key: 'salarysheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['employee.name', 'month', 'year', 'grossSalary', 'netPay', 'status'] },
+    {
+      key: 'employees',
+      label: 'Employees',
+      endpoint: '/employees',
+      columns: ['empCode', 'name', 'designation', 'department', 'mobile', 'basicSalary', 'isActive'],
+      viewFields: [
+        { key: 'id', label: 'ID' },
+        { key: 'empCode', label: 'Emp Code' },
+        { key: 'name', label: 'Name' },
+        { key: 'designation', label: 'Designation' },
+        { key: 'department', label: 'Department' },
+        { key: 'doj', label: 'Date of Joining' },
+        { key: 'mobile', label: 'Mobile' },
+        { key: 'email', label: 'Email' },
+        { key: 'panNo', label: 'PAN No' },
+        { key: 'aadharNo', label: 'Aadhar No' },
+        { key: 'bankName', label: 'Bank Name' },
+        { key: 'bankAccount', label: 'Bank Account' },
+        { key: 'ifscCode', label: 'IFSC Code' },
+        { key: 'basicSalary', label: 'Basic Salary' },
+        { key: 'hra', label: 'HRA' },
+        { key: 'da', label: 'DA' },
+        { key: 'otherAllowances', label: 'Other Allowances' },
+        { key: 'esicApplicable', label: 'ESIC Applicable' },
+        { key: 'pfApplicable', label: 'PF Applicable' },
+        { key: 'isActive', label: 'Active' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      formFields: [
+        { name: 'empCode', label: 'Emp Code', required: true },
+        { name: 'name', label: 'Name', required: true },
+        { name: 'designation', label: 'Designation' },
+        { name: 'department', label: 'Department', type: 'select', options: ['Production', 'Quality', 'Sales', 'HR', 'Finance', 'Purchase', 'Warehouse', 'Admin'] },
+        { name: 'doj', label: 'Date of Joining', type: 'date' },
+        { name: 'mobile', label: 'Mobile' },
+        { name: 'email', label: 'Email', type: 'email' },
+        { name: 'panNo', label: 'PAN No' },
+        { name: 'aadharNo', label: 'Aadhar No' },
+        { name: 'bankName', label: 'Bank Name' },
+        { name: 'bankAccount', label: 'Bank Account' },
+        { name: 'ifscCode', label: 'IFSC Code' },
+        { name: 'basicSalary', label: 'Basic Salary', type: 'number', required: true },
+        { name: 'hra', label: 'HRA', type: 'number' },
+        { name: 'da', label: 'DA', type: 'number' },
+        { name: 'otherAllowances', label: 'Other Allowances', type: 'number' },
+      ]
+    },
+    {
+      key: 'salaryheads',
+      label: 'Salary Heads',
+      endpoint: '/salary-heads',
+      columns: ['headCode', 'headName', 'headType', 'description', 'isActive'],
+      viewFields: [
+        { key: 'id', label: 'ID' },
+        { key: 'headCode', label: 'Head Code' },
+        { key: 'headName', label: 'Head Name' },
+        { key: 'headType', label: 'Type (Earning/Deduction)' },
+        { key: 'description', label: 'Description' },
+        { key: 'isActive', label: 'Active' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      formFields: [
+        { name: 'headCode', label: 'Head Code', required: true },
+        { name: 'headName', label: 'Head Name', required: true },
+        { name: 'headType', label: 'Type', type: 'select', options: ['Earning', 'Deduction'], required: true },
+        { name: 'description', label: 'Description' },
+      ]
+    },
+    {
+      key: 'salarystructures',
+      label: 'Salary Structures',
+      endpoint: '/salary-structures',
+      columns: ['employee.name', 'effectiveDate', 'basic', 'hra', 'da', 'pfPercent', 'esicPercent', 'otherAllowances'],
+      viewFields: [
+        { key: 'id', label: 'ID' },
+        { key: 'employee.name', label: 'Employee Name' },
+        { key: 'employee.empCode', label: 'Emp Code' },
+        { key: 'effectiveDate', label: 'Effective Date' },
+        { key: 'basic', label: 'Basic' },
+        { key: 'hra', label: 'HRA' },
+        { key: 'da', label: 'DA' },
+        { key: 'pfPercent', label: 'PF %' },
+        { key: 'esicPercent', label: 'ESIC %' },
+        { key: 'otherAllowances', label: 'Other Allowances' },
+        { key: 'remarks', label: 'Remarks' },
+        { key: 'isActive', label: 'Active' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      formFields: [
+        { name: 'employeeId', label: 'Employee', type: 'select', optionsEndpoint: '/hr/dropdown/employees', optionsValue: 'id', optionsLabel: 'label', required: true },
+        { name: 'effectiveDate', label: 'Effective Date', type: 'date', required: true },
+        { name: 'basic', label: 'Basic', type: 'number', required: true },
+        { name: 'hra', label: 'HRA', type: 'number' },
+        { name: 'da', label: 'DA', type: 'number' },
+        { name: 'pfPercent', label: 'PF %', type: 'number' },
+        { name: 'esicPercent', label: 'ESIC %', type: 'number' },
+        { name: 'otherAllowances', label: 'Other Allowances', type: 'number' },
+        { name: 'remarks', label: 'Remarks' },
+      ]
+    },
+    {
+      key: 'salarysheets',
+      label: 'Salary Sheets',
+      endpoint: '/salary-sheets',
+      columns: ['employee.name', 'month', 'year', 'totalDays', 'presentDays', 'grossSalary', 'deductions', 'netPay', 'status'],
+      viewFields: [
+        { key: 'id', label: 'ID' },
+        { key: 'employee.name', label: 'Employee Name' },
+        { key: 'employee.empCode', label: 'Emp Code' },
+        { key: 'month', label: 'Month' },
+        { key: 'year', label: 'Year' },
+        { key: 'totalDays', label: 'Total Days' },
+        { key: 'presentDays', label: 'Present Days' },
+        { key: 'absentDays', label: 'Absent Days' },
+        { key: 'grossSalary', label: 'Gross Salary' },
+        { key: 'pfDeduction', label: 'PF Deduction' },
+        { key: 'esicDeduction', label: 'ESIC Deduction' },
+        { key: 'tdsDeduction', label: 'TDS Deduction' },
+        { key: 'otherDeductions', label: 'Other Deductions' },
+        { key: 'deductions', label: 'Total Deductions' },
+        { key: 'netPay', label: 'Net Pay' },
+        { key: 'status', label: 'Status' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      formFields: [
+        {
+          name: 'employeeId',
+          label: 'Employee',
+          type: 'select',
+          optionsEndpoint: '/hr/dropdown/employees-with-structures',
+          optionsValue: 'id',
+          optionsLabel: 'label',
+          required: true,
+          autoPopulateEndpoint: '/hr/employee/{value}/salary-structure',
+          autoPopulateMap: {
+            'calculated.grossSalary': 'grossSalary',
+            'calculated.pfDeduction': 'pfDeduction',
+            'calculated.esicDeduction': 'esicDeduction',
+            'calculated.netPay': 'netPay'
+          }
+        },
+        { name: 'month', label: 'Month', type: 'select', options: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], required: true },
+        { name: 'year', label: 'Year', type: 'number', required: true },
+        { name: 'totalDays', label: 'Total Days', type: 'number' },
+        { name: 'presentDays', label: 'Present Days', type: 'number' },
+        { name: 'absentDays', label: 'Absent Days', type: 'number' },
+        { name: 'grossSalary', label: 'Gross Salary', type: 'number' },
+        { name: 'pfDeduction', label: 'PF Deduction', type: 'number' },
+        { name: 'esicDeduction', label: 'ESIC Deduction', type: 'number' },
+        { name: 'tdsDeduction', label: 'TDS Deduction', type: 'number' },
+        { name: 'otherDeductions', label: 'Other Deductions', type: 'number' },
+        { name: 'netPay', label: 'Net Pay', type: 'number' },
+        { name: 'status', label: 'Status', type: 'select', options: ['Draft', 'Processed', 'Paid'] },
+      ]
+    },
+    {
+      key: 'advances',
+      label: 'Advances',
+      endpoint: '/advances',
+      columns: ['employee.name', 'advanceDate', 'amount', 'purpose', 'balanceAmount', 'status'],
+      viewFields: [
+        { key: 'id', label: 'ID' },
+        { key: 'employee.name', label: 'Employee Name' },
+        { key: 'employee.empCode', label: 'Emp Code' },
+        { key: 'advanceDate', label: 'Advance Date' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'purpose', label: 'Purpose' },
+        { key: 'recoveryMonth', label: 'Recovery Month' },
+        { key: 'recoveryMonths', label: 'Recovery Months' },
+        { key: 'monthlyDeduction', label: 'Monthly Deduction' },
+        { key: 'recoveredAmount', label: 'Recovered Amount' },
+        { key: 'balanceAmount', label: 'Balance Amount' },
+        { key: 'status', label: 'Status' },
+        { key: 'remarks', label: 'Remarks' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      formFields: [
+        { name: 'employeeId', label: 'Employee', type: 'select', optionsEndpoint: '/hr/dropdown/employees', optionsValue: 'id', optionsLabel: 'label', required: true },
+        { name: 'advanceDate', label: 'Advance Date', type: 'date', required: true },
+        { name: 'amount', label: 'Amount', type: 'number', required: true },
+        { name: 'purpose', label: 'Purpose', required: true },
+        { name: 'recoveryMonth', label: 'Recovery Start Month', required: true },
+        { name: 'recoveryMonths', label: 'No. of Recovery Months', type: 'number', required: true },
+        { name: 'remarks', label: 'Remarks' },
+      ],
+      statusActions: [
+        { status: 'Approved', label: 'Approve', confirmMessage: 'Approve this advance request?', class: 'btn-primary' },
+        { status: 'Cancelled', label: 'Cancel', confirmMessage: 'Cancel this advance request?', class: 'btn-danger' },
+      ]
+    },
   ]
 };
 
@@ -61,10 +359,11 @@ const qualityConfig = {
   title: 'Quality Management', apiBase: '/quality',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'] },
-    { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'] },
-    { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'] },
-    { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'] },
+    { key: 'iqc', label: 'IQC', endpoint: '/iqc', columns: ['grnId', 'totalQty', 'acceptedQty', 'rejectedQty', 'status'], hasPrint: true, printType: 'quality-iqc' },
+    { key: 'mts', label: 'MTS', endpoint: '/mts', columns: ['mtaRef', 'item', 'qtyChecked', 'status'], hasPrint: true, printType: 'quality-mts' },
+    { key: 'pqc', label: 'PQC', endpoint: '/pqc', columns: ['routeCardRef', 'stageName', 'operatorName', 'result'], hasPrint: true, printType: 'quality-pqc' },
+    { key: 'pdi', label: 'PDI', endpoint: '/pdi', columns: ['soRef', 'boxNo', 'overallResult'], hasPrint: true, printType: 'quality-pdi' },
+    { key: 'qrd', label: 'QRD', endpoint: '/qrd', columns: ['rejectionId', 'itemName', 'quantity', 'action'], hasPrint: true, printType: 'quality-qrd' },
   ]
 };
 
@@ -74,6 +373,23 @@ const warehouseConfig = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'warehouses', label: 'Warehouses', endpoint: '/warehouses', columns: ['name', 'address', 'managerName'], formFields: [{ name: 'name', label: 'Name', required: true }, { name: 'address', label: 'Address' }, { name: 'managerName', label: 'Manager Name' }] },
     { key: 'stocks', label: 'Stocks', endpoint: '/stocks', columns: ['warehouse.name', 'product.name', 'quantity', 'value'] },
+    { key: 'openings', label: 'Openings', endpoint: '/openings', columns: ['warehouseName', 'itemName', 'openingQty', 'date'] },
+    { key: 'dispatch-srv', label: 'Dispatch SRV', endpoint: '/dispatch-srv', columns: ['srvNo', 'date', 'partyName', 'itemName', 'qty'], hasPrint: true, printType: 'warehouse-dispatch-srv' },
+    { key: 'transfers', label: 'Transfers', endpoint: '/transfers', columns: ['transferId', 'fromWarehouse', 'toWarehouse', 'itemName', 'qty', 'status'], hasPrint: true, printType: 'warehouse-stock-transfer' },
+    { key: 'material-receipts', label: 'Material Receipts', endpoint: '/material-receipts', columns: ['receiptId', 'sourceDocRef', 'itemName', 'qtyReceived', 'receiptDate'], hasPrint: true, printType: 'warehouse-material-receipt' },
+    {
+      key: 'barcodes',
+      label: 'Barcodes Management',
+      endpoint: '/barcodes',
+      columns: ['code', 'product.name', 'batchNo', 'quantity'],
+      hasPrint: true,
+      printType: 'warehouse-barcode',
+      formFields: [
+        { name: 'productId', label: 'Product ID', type: 'number', required: true },
+        { name: 'batchNo', label: 'Batch No' },
+        { name: 'quantity', label: 'Quantity to Generate', type: 'number', required: true }
+      ]
+    },
   ]
 };
 
@@ -87,29 +403,38 @@ const logisticsConfig = {
   ]
 };
 
-const contractorsConfig = {
-  title: 'Contractors HR', apiBase: '/contractors',
-  tabs: [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'workers', label: 'Workers', endpoint: '/workers', columns: ['workerId', 'workerName', 'contractorFirm', 'skillLevel'], formFields: [{ name: 'workerId', label: 'Worker ID', required: true }, { name: 'workerName', label: 'Name', required: true }, { name: 'contractorFirm', label: 'Contractor Firm' }, { name: 'skillLevel', label: 'Skill Level' }] },
-    { key: 'sheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['worker.workerName', 'month', 'year', 'daysWorked', 'netPayable'] },
-  ]
-};
-
 const maintenanceConfig = {
   title: 'Maintenance', apiBase: '/maintenance',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'tools', label: 'Tools', endpoint: '/tools', columns: ['assetCode', 'toolName', 'location', 'maintenanceInterval'], formFields: [{ name: 'assetCode', label: 'Asset Code', required: true }, { name: 'toolName', label: 'Tool Name', required: true }, { name: 'location', label: 'Location' }, { name: 'maintenanceInterval', label: 'Maintenance Interval (days)', type: 'number' }] },
     { key: 'charts', label: 'Maintenance Charts', endpoint: '/maintenance-charts', columns: ['tool.toolName', 'scheduledDate', 'status'] },
-    { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'] },
+    { key: 'calibration', label: 'Calibration', endpoint: '/calibration', columns: ['tool.toolName', 'calibrationDate', 'result'], hasPrint: true, printType: 'maintenance-calibration' },
+    { key: 'rectification', label: 'Rectification', endpoint: '/rectification', columns: ['jobId', 'toolName', 'issue', 'cost', 'technician'], hasPrint: true, printType: 'maintenance-rectification' },
   ]
 };
 
 const assetsConfig = {
   title: 'Asset Management', apiBase: '/assets',
   tabs: [
+    { key: 'dashboard', label: 'Dashboard' },
     { key: 'assets', label: 'Assets', endpoint: '/', columns: ['assetTag', 'name', 'assetGroup', 'purchaseValue', 'currentValue', 'depreciationRate'], formFields: [{ name: 'assetTag', label: 'Asset Tag', required: true }, { name: 'name', label: 'Name', required: true }, { name: 'assetGroup', label: 'Group' }, { name: 'purchaseValue', label: 'Purchase Value', type: 'number' }, { name: 'depreciationRate', label: 'Depreciation Rate %', type: 'number' }] },
+    { key: 'addition-memos', label: 'Additions', endpoint: '/addition-memos', columns: ['assetTag', 'assetName', 'installationDate', 'depreciationRate'], hasPrint: true, printType: 'asset-addition-memo' },
+    { key: 'allocations', label: 'Allocations', endpoint: '/allocations', columns: ['assetTag', 'assetName', 'dateAssigned', 'status'], hasPrint: true, printType: 'asset-allocation' },
+    { key: 'sale-memos', label: 'Sales', endpoint: '/sale-memos', columns: ['assetTag', 'assetName', 'saleDate', 'saleValue'], hasPrint: true, printType: 'asset-sale-memo' },
+    { key: 'depreciation-vouchers', label: 'Depreciation', endpoint: '/depreciation-vouchers', columns: ['assetTag', 'assetName', 'year', 'depreciationAmount'], hasPrint: true, printType: 'asset-depreciation-voucher' },
+  ]
+};
+
+const contractorsConfig = {
+  title: 'Contractors Management', apiBase: '/contractors',
+  tabs: [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'workers', label: 'Workers', endpoint: '/workers', columns: ['workerId', 'workerName', 'contractorFirmName', 'skillLevel', 'isActive'], formFields: [{ name: 'workerName', label: 'Worker Name', required: true }, { name: 'vendorId', label: 'Contractor/Vendor ID', type: 'number' }, { name: 'skillLevel', label: 'Skill Level', type: 'select', options: ['Unskilled', 'Semi-Skilled', 'Skilled', 'Highly Skilled'] }, { name: 'aadharNo', label: 'Aadhar No' }] },
+    { key: 'salary-heads', label: 'Salary Heads', endpoint: '/salary-heads', columns: ['role', 'dailyRate', 'overtimeRate'], formFields: [{ name: 'role', label: 'Role', required: true }, { name: 'dailyRate', label: 'Daily Rate', type: 'number' }, { name: 'overtimeRate', label: 'OT Rate', type: 'number' }] },
+    { key: 'salary-sheets', label: 'Salary Sheets', endpoint: '/salary-sheets', columns: ['month', 'year', 'totalPayable', 'status'], hasPrint: true, printType: 'contractor-salary-sheet' },
+    { key: 'advances', label: 'Advances', endpoint: '/advances', columns: ['workerName', 'amount', 'purpose', 'status'], hasPrint: true, printType: 'contractor-advance-memo' },
+    { key: 'voucher-payments', label: 'Voucher Pay', endpoint: '/voucher-payments', columns: ['voucherNo', 'paymentDate', 'netAmountPaid'], hasPrint: true, printType: 'contractor-voucher-payment' },
   ]
 };
 
@@ -117,20 +442,45 @@ const statutoryConfig = {
   title: 'Statutory / GST', apiBase: '/statutory',
   tabs: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'gst', label: 'GST Master', endpoint: '/gst-master', columns: ['hsnCode', 'description', 'igstPercent', 'cgstPercent', 'sgstPercent'], formFields: [{ name: 'hsnCode', label: 'HSN Code', required: true }, { name: 'description', label: 'Description' }, { name: 'igstPercent', label: 'IGST %', type: 'number' }, { name: 'cgstPercent', label: 'CGST %', type: 'number' }, { name: 'sgstPercent', label: 'SGST %', type: 'number' }] },
-    { key: 'gstr1', label: 'GSTR-1', endpoint: '/gstr1', columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount'] },
-    { key: 'tds', label: 'TDS', endpoint: '/tds', columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount'] },
-    { key: 'challans', label: 'Challans', endpoint: '/challans', columns: ['challanNo', 'taxType', 'amount', 'bankName'] },
-    { key: 'cheques', label: 'Cheque Books', endpoint: '/cheque-books', columns: ['bankAccount', 'startLeafNo', 'endLeafNo'] },
+    {
+      key: 'gst',
+      label: 'GST Master',
+      endpoint: '/gst-master',
+      columns: ['hsnCode', 'description', 'igstPercent', 'cgstPercent', 'sgstPercent'],
+      hasPrint: true,
+      printType: 'statutory-gst-master',
+      formFields: [
+        { name: 'hsnCode', label: 'HSN Code', required: true },
+        { name: 'description', label: 'Description', required: true },
+        { name: 'igstPercent', label: 'IGST %', type: 'number', required: true },
+        { name: 'cgstPercent', label: 'CGST %', type: 'number', required: true },
+        { name: 'sgstPercent', label: 'SGST %', type: 'number', required: true },
+      ]
+    },
+    { key: 'gstr1', label: 'GSTR-1 Upload', endpoint: '/gstr1', columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount', 'state'], hasPrint: true, printType: 'statutory-gstr1' },
+    { key: 'gst2a', label: 'GST2A Reconcile', endpoint: '/gst2a', columns: ['month', 'vendorGSTIN', 'totalInputTaxCredit', 'matchedAmount', 'mismatchAmount'], hasPrint: true, printType: 'statutory-gst2a' },
+    { key: 'challans', label: 'GST Challans', endpoint: '/challans', columns: ['challanNo', 'cpin', 'date', 'bank', 'taxType', 'amount'], hasPrint: true, printType: 'statutory-challan' },
+    { key: 'tds', label: 'TDS Trace', endpoint: '/tds', columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount', 'certificateNo'], hasPrint: true, printType: 'statutory-tds' },
+    { key: 'tcs', label: 'TCS Details', endpoint: '/tcs', columns: ['customerName', 'saleValue', 'tcsRate', 'tcsAmount'], hasPrint: true, printType: 'statutory-tcs' },
+    { key: 'gstr-register', label: 'GSTR Registers', endpoint: '/gstr-register', columns: ['month', 'transactionType', 'totalTaxLiability'], hasPrint: true, printType: 'statutory-gstr-register' },
+    { key: 'cheques', label: 'Cheque Book Mgmt', endpoint: '/cheque-books', columns: ['bankAccount', 'startLeafNo', 'endLeafNo', 'leafNo', 'status', 'issuedTo', 'date'], hasPrint: true, printType: 'statutory-cheque-book' },
+    { key: 'balance-sheet', label: 'Balance Sheet', endpoint: '/balance-sheet', columns: ['asOnDate', 'assetsTotal', 'liabilitiesTotal', 'capitalAccount', 'currentAssets'], hasPrint: true, printType: 'statutory-balance-sheet' },
   ]
 };
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #334155' } }} />
+      <TopProgressBar />
+      <Toaster position="top-right" toastOptions={{
+        duration: 3000,
+        style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #334155' },
+        success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } },
+        error: { iconTheme: { primary: '#DC2626', secondary: '#fff' } },
+      }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/print/:type/:id" element={<ProtectedRoute><PrintPage /></ProtectedRoute>} />
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route index element={<DashboardPage />} />
           <Route path="sales" element={<SalesPage />} />
@@ -143,10 +493,16 @@ export default function App() {
           <Route path="warehouse" element={<GenericModulePage {...warehouseConfig} />} />
           <Route path="statutory" element={<GenericModulePage {...statutoryConfig} />} />
           <Route path="logistics" element={<GenericModulePage {...logisticsConfig} />} />
-          <Route path="contractors" element={<GenericModulePage {...contractorsConfig} />} />
           <Route path="maintenance" element={<GenericModulePage {...maintenanceConfig} />} />
+          <Route path="contractors" element={<GenericModulePage {...contractorsConfig} />} />
           <Route path="assets" element={<GenericModulePage {...assetsConfig} />} />
           <Route path="reports" element={<ReportsPage />} />
+
+          {/* Profiles */}
+          <Route path="profile/customer/:id" element={<CustomerProfilePage />} />
+          <Route path="profile/vendor/:id" element={<VendorProfilePage />} />
+          <Route path="profile/employee/:id" element={<EmployeeProfilePage />} />
+          <Route path="profile/salesman/:id" element={<SalesmanProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

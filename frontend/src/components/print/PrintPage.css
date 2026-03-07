@@ -1,0 +1,276 @@
+/* Complete A4 Print Styles for Official Documents */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+@media print {
+    @page {
+        size: A4;
+        margin: 8mm;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: white;
+        color: black;
+        font-family: 'Roboto', 'Segoe UI', sans-serif !important;
+        background-color: transparent;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Hide UI */
+    .sidebar,
+    .top-header,
+    .btn,
+    .modal-overlay,
+    #toast-container,
+    .screen-only {
+        display: none !important;
+    }
+
+    .print-container {
+        width: auto !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 8mm !important;
+        border: 1px solid #111 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+}
+
+.print-container {
+    background: white;
+    width: 100%;
+    max-width: 210mm;
+    min-height: auto;
+    margin: 0 auto;
+    padding: 10mm;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    color: #111;
+    font-size: 11px;
+    line-height: 1.45;
+    border: 1px solid #111;
+    /* Outer document border */
+}
+
+/* Screen testing view */
+@media screen {
+    .print-container {
+        margin: 20px auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        background: #f0f2f5;
+    }
+}
+
+/* Header */
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #111;
+    padding-bottom: 10px;
+}
+
+.print-logo-container {
+    width: 200px;
+}
+
+.print-logo {
+    max-width: 100%;
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.print-company-info {
+    text-align: right;
+}
+
+.print-company-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+}
+
+.print-company-details {
+    font-size: 11px;
+    color: #333;
+}
+
+.print-doc-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: #eceff3;
+    padding: 6px;
+    border-bottom: 2px solid #111;
+    margin: 0;
+}
+
+/* Grid Layouts */
+.print-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid #111;
+}
+
+.print-grid-2>div {
+    padding: 10px;
+}
+
+.print-grid-2>div:first-child {
+    border-right: 1px solid #111;
+}
+
+.print-box-title {
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+/* Main Table */
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+.print-table th,
+.print-table td {
+    border: 1px solid #111;
+    padding: 6px 8px;
+    border-top: none;
+    /* Flow seamlessly from previous border */
+}
+
+.print-table th {
+    background: #eceff3;
+    font-weight: 700;
+    text-align: left;
+}
+
+.print-table tfoot th,
+.print-table tfoot td {
+    background: #f6f7f9;
+    font-weight: 700;
+}
+
+.print-table th:first-child,
+.print-table td:first-child {
+    border-left: none;
+}
+
+.print-table th:last-child,
+.print-table td:last-child {
+    border-right: none;
+}
+
+.right {
+    text-align: right;
+}
+
+.center {
+    text-align: center;
+}
+
+.print-table tbody tr.empty-row td {
+    color: transparent;
+    border-bottom: none;
+    /* Make empty rows look like a single big cell */
+}
+
+.print-table tbody tr:last-child td {
+    border-bottom: 2px solid #111;
+}
+
+/* Footer / Summaries */
+.print-footer-grid {
+    display: grid;
+    grid-template-columns: 60% 40%;
+}
+
+.print-amount-words {
+    padding: 10px;
+    border-right: 1px solid #111;
+    border-bottom: 2px solid #111;
+}
+
+.print-totals {
+    border-bottom: 2px solid #111;
+}
+
+.print-totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.print-totals-row:last-child {
+    border-bottom: none;
+}
+
+.print-totals-row.grand {
+    font-weight: 700;
+    font-size: 14px;
+    background: #eceff3;
+    border-top: 1px solid #111;
+}
+
+/* Declarations and Signatures */
+.print-declaration-grid {
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+
+.print-terms {
+    padding: 10px;
+    border-right: 1px solid #111;
+}
+
+.print-terms h4 {
+    margin: 0 0 5px 0;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.print-terms ul {
+    margin: 0;
+    padding-left: 15px;
+    font-size: 10px;
+}
+
+.print-sign-box {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    min-height: 100px;
+}
+
+.print-sign-box strong {
+    font-size: 12px;
+}
+
+.print-sign-line {
+    border-top: 1px solid #111;
+    width: 80%;
+    margin-top: auto;
+    padding-top: 5px;
+    font-weight: 700;
+    font-size: 10px;
+}
