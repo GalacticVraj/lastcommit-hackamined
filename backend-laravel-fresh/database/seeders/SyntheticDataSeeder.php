@@ -521,7 +521,7 @@ class SyntheticDataSeeder extends Seeder
         $invConfigs = [
             ['status' => 'Unpaid',         'invDaysAgo' => 10,  'dueDaysFromNow' => 20],   // recent, not yet due
             ['status' => 'Paid',           'invDaysAgo' => 60,  'dueDaysFromNow' => -30],  // old, paid on time
-            ['status' => 'Partially Paid', 'invDaysAgo' => 45,  'dueDaysFromNow' => -5],   // overdue partial
+            ['status' => 'Partial',         'invDaysAgo' => 45,  'dueDaysFromNow' => -5],   // overdue partial
             ['status' => 'Overdue',        'invDaysAgo' => 50,  'dueDaysFromNow' => -20],  // clearly overdue
             ['status' => 'Unpaid',         'invDaysAgo' => 40,  'dueDaysFromNow' => -10],  // unpaid, past due (overdue)
             ['status' => 'Paid',           'invDaysAgo' => 90,  'dueDaysFromNow' => -60],  // old, paid
@@ -614,7 +614,7 @@ class SyntheticDataSeeder extends Seeder
                 ]);
             }
             // Partial receipt for Partially Paid invoices
-            if ($cfg['status'] === 'Partially Paid') {
+            if ($cfg['status'] === 'Partial') {
                 SalesReceiptVoucher::firstOrCreate(['receiptNo' => "RV-PART-00{$i}"], [
                     'customerId' => $cust->id,
                     'invoiceId' => $inv->id,
@@ -637,7 +637,7 @@ class SyntheticDataSeeder extends Seeder
         $allVendors  = Vendor::whereNull('deletedAt')->get();
         $rmProducts  = Product::where('category', 'Raw Material')->get();
         $poStatuses  = ['Approved', 'Approved', 'Pending', 'Approved', 'Partially Received'];
-        $billStatuses = ['Unpaid', 'Paid', 'Unpaid', 'Partially Paid', 'Unpaid'];
+        $billStatuses = ['Unpaid', 'Paid', 'Unpaid', 'Partial', 'Unpaid'];
 
         for ($i = 1; $i <= 5; $i++) {
             $vnd = $allVendors[($i - 1) % $allVendors->count()];

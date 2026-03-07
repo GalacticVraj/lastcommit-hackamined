@@ -497,6 +497,18 @@ class SalesController extends Controller
                 ]);
             }
 
+            // Update quotation status to Converted
+            if ($request->quotationId) {
+                $quotation = Quotation::find($request->quotationId);
+                if ($quotation) {
+                    $quotation->update(['status' => 'Converted']);
+                    // Also mark the linked inquiry as Won
+                    if ($quotation->inquiryId) {
+                        Inquiry::where('id', $quotation->inquiryId)->update(['status' => 'Won']);
+                    }
+                }
+            }
+
             return $order->load(['items', 'customer']);
         });
 
@@ -651,6 +663,11 @@ class SalesController extends Controller
             'createdBy' => $request->user()->id,
         ]);
 
+        // Update sale order status to Invoiced
+        if ($request->saleOrderId) {
+            SaleOrder::where('id', $request->saleOrderId)->update(['status' => 'Invoiced']);
+        }
+
         foreach ($processedItems as $item) {
             $invoice->items()->create([
                 'productId' => $item['productId'],
@@ -684,7 +701,6 @@ class SalesController extends Controller
             'content' => $request->input('content'),
             'status' => $request->input('status', 'Sent'),
             'sentAt' => now(),
-            'createdBy' => $request->user()?->id,
         ]);
 
         return $this->successResponse($log, 'Communication log created', 201);
@@ -706,10 +722,20 @@ class SalesController extends Controller
         $receiptNo = AutoNumber::generate('RV', 'RV');
 
         $receipt = DB::transaction(function () use ($request, $receiptNo) {
-            $receipt = SalesReceiptVoucher::create(array_merge(
-                $request->only(['customerId', 'amount', 'paymentMode', 'referenceNo', 'remarks', 'invoiceId']),
-                ['receiptNo' => $receiptNo, 'createdBy' => $request->user()->id]
-            ));
+            $receiptData = $request->only(['customerId', 'amount', 'paymentMode', 'remarks', 'invoiceId']);
+            // Map referenceNo to chequeNo or bankRef based on payment mode
+            if ($request->referenceNo) {
+                $mode = strtolower($request->paymentMode ?? '');
+                if ($mode === 'cheque') {
+                    $receiptData['chequeNo'] = $request->referenceNo;
+                } else {
+                    $receiptData['bankRef'] = $request->referenceNo;
+                }
+            }
+            $receiptData['receiptNo'] = $receiptNo;
+            $receiptData['createdBy'] = $request->user()->id;
+
+            $receipt = SalesReceiptVoucher::create($receiptData);
 
             if ($request->invoiceId) {
                 $invoice = Invoice::find($request->invoiceId);

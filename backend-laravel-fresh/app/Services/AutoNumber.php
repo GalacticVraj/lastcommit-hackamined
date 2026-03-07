@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Auto Number Generator — port of Node.js autoNumber.js
+ * Auto Number Generator — uses AutoCounter table for running serials.
  */
 class AutoNumber
 {
@@ -15,19 +15,16 @@ class AutoNumber
      */
     public static function generate(string $prefix, string $docType): string
     {
-        // Use DocSequence table from Prisma schema
-        $seq = DB::table('DocSequence')->where('docType', $docType)->first();
+        $counter = DB::table('AutoCounter')->where('prefix', $docType)->first();
 
-        if ($seq) {
-            $nextVal = $seq->lastNo + 1;
-            DB::table('DocSequence')->where('id', $seq->id)->update(['lastNo' => $nextVal]);
+        if ($counter) {
+            $nextVal = $counter->currentValue + 1;
+            DB::table('AutoCounter')->where('id', $counter->id)->update(['currentValue' => $nextVal]);
         } else {
             $nextVal = 1;
-            DB::table('DocSequence')->insert([
-                'docType' => $docType,
-                'prefix' => $prefix,
-                'year' => (int) date('Y'),
-                'lastNo' => 1
+            DB::table('AutoCounter')->insert([
+                'prefix' => $docType,
+                'currentValue' => 1,
             ]);
         }
 
