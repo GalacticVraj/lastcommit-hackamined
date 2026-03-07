@@ -51,7 +51,10 @@ class DashboardController extends Controller
         $totalRevenue     = Invoice::whereNull('deletedAt')->sum('grandTotal');
         $totalInvoices    = Invoice::whereNull('deletedAt')->count();
         $totalCustomers   = Customer::whereNull('deletedAt')->count();
-        $overdueInvoices  = Invoice::where('status', 'Overdue')->whereNull('deletedAt')->count();
+        $overdueInvoices  = Invoice::whereIn('status', ['Unpaid', 'Partial', 'Overdue'])
+            ->where('dueDate', '<', now())
+            ->whereNull('deletedAt')
+            ->count();
         $totalInquiries   = Inquiry::whereNull('deletedAt')->count();
         $totalQuotations  = Quotation::whereNull('deletedAt')->count();
         $totalSaleOrders  = SaleOrder::whereNull('deletedAt')->count();
@@ -112,7 +115,7 @@ class DashboardController extends Controller
         $totalContractorSheets = $safeCount('ContractorSalarySheet');
 
         // ── Statutory stats ──
-        $totalGSTMaster = $safeCount('GstMaster');
+        $totalGSTMaster = $safeCount('gst_masters') ?: $safeCount('GstMaster');
 
         return $this->successResponse([
             'stats' => [
@@ -187,6 +190,8 @@ class DashboardController extends Controller
                 ['name' => 'Maintenance', 'count' => $totalTools + $scheduledMaint],
                 ['name' => 'Assets', 'count' => $totalAssets + $totalDepreciation],
                 ['name' => 'Contractors', 'count' => $totalContractWorkers + $totalContractorSheets],
+                ['name' => 'Logistics', 'count' => $totalTransporters + $totalDispatches],
+                ['name' => 'Statutory', 'count' => $totalGSTMaster],
             ],
             'modules' => [
                 'sales' => ['label' => 'Sales', 'route' => '/sales'],

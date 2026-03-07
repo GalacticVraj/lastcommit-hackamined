@@ -15,9 +15,6 @@ class SimulationDemoSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        // 1. Ensure Tables Exist (Migration usually handles this, but we'll be safe)
-        // Note: For simulation-specific demo, we use the standard tables.
-        
         // 2. Products
         $products = [
             ['code' => 'SF-001', 'name' => 'Steel Frame', 'unit' => 'Kg', 'price' => 85.00],
@@ -40,39 +37,40 @@ class SimulationDemoSeeder extends Seeder
                     'lastSalePrice' => $p['price'] * 1.5,
                     'gstPercent' => 18,
                     'isActive' => 1,
-                    'updated_at' => $now,
-                    'created_at' => $now
+                    'updatedAt' => $now,
+                    'createdAt' => $now
                 ]
             );
             $productIds[$p['code']] = DB::table('products')->where('code', $p['code'])->value('id');
         }
         echo "Products seeded.\n";
 
-        // 3. Warehouse
-        $warehouseId = DB::table('warehouses')->where('code', 'WH-001')->value('id');
+        // 3. Warehouse (uses 'name' column, not 'code')
+        $warehouseId = DB::table('warehouses')->where('name', 'Main Warehouse')->value('id');
         if (!$warehouseId) {
             $warehouseId = DB::table('warehouses')->insertGetId([
-                'code' => 'WH-001',
                 'name' => 'Main Warehouse',
                 'isActive' => 1,
-                'created_at' => $now,
-                'updated_at' => $now
+                'createdAt' => $now,
+                'updatedAt' => $now
             ]);
         }
 
-        foreach ([
-            'SF-001' => 450, 'RS-002' => 80, 'EG-003' => 1200, 
-            'CA-004' => 30, 'WH-005' => 220, 'EN-010' => 5, 'SG-020' => 15
-        ] as $code => $qty) {
-            if (isset($productIds[$code])) {
-                DB::table('warehouse_stocks')->updateOrInsert(
-                    ['warehouse_id' => $warehouseId, 'product_id' => $productIds[$code]],
-                    [
-                        'quantity' => $qty,
-                        'updated_at' => $now,
-                        'created_at' => $now
-                    ]
-                );
+        if (Schema::hasTable('warehouse_stocks')) {
+            foreach ([
+                'SF-001' => 450, 'RS-002' => 80, 'EG-003' => 1200,
+                'CA-004' => 30, 'WH-005' => 220, 'EN-010' => 5, 'SG-020' => 15
+            ] as $code => $qty) {
+                if (isset($productIds[$code])) {
+                    DB::table('warehouse_stocks')->updateOrInsert(
+                        ['warehouse_id' => $warehouseId, 'product_id' => $productIds[$code]],
+                        [
+                            'quantity' => $qty,
+                            'updated_at' => $now,
+                            'created_at' => $now
+                        ]
+                    );
+                }
             }
         }
         echo "Warehouse & Stocks seeded.\n";
@@ -92,12 +90,12 @@ class SimulationDemoSeeder extends Seeder
                     [
                         'bomNo' => $config['no'],
                         'isActive' => 1,
-                        'updated_at' => $now,
-                        'created_at' => $now
+                        'updatedAt' => $now,
+                        'createdAt' => $now
                     ]
                 );
                 $bhId = DB::table('bom_headers')->where('productId', $productIds[$pCode])->value('id');
-                
+
                 DB::table('bom_items')->where('bom_header_id', $bhId)->delete();
                 foreach ($config['items'] as $item) {
                     if (isset($productIds[$item['code']])) {
@@ -105,8 +103,7 @@ class SimulationDemoSeeder extends Seeder
                             'bom_header_id' => $bhId,
                             'raw_material_id' => $productIds[$item['code']],
                             'qty_per_unit' => $item['qty'],
-                            'created_at' => $now,
-                            'updated_at' => $now
+                            'createdAt' => $now
                         ]);
                     }
                 }
@@ -125,7 +122,7 @@ class SimulationDemoSeeder extends Seeder
             ['code' => 'SG-020', 'seq' => 1, 'name' => 'Gauge Calibration', 'man' => 1.0, 'mach' => 0.5],
             ['code' => 'SG-020', 'seq' => 2, 'name' => 'Precision Fitting', 'man' => 1.2, 'mach' => 0.8],
         ];
-        
+
         foreach (array_unique(array_column($routings, 'code')) as $code) {
             if (isset($productIds[$code])) {
                 DB::table('routing_tables')->where('product_id', $productIds[$code])->delete();
@@ -140,8 +137,7 @@ class SimulationDemoSeeder extends Seeder
                     'process_name' => $r['name'],
                     'man_hours_per_unit' => $r['man'],
                     'machine_hours_per_unit' => $r['mach'],
-                    'created_at' => $now,
-                    'updated_at' => $now
+                    'createdAt' => $now
                 ]);
             }
         }

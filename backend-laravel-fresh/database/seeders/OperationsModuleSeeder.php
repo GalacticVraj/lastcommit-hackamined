@@ -649,7 +649,8 @@ class OperationsModuleSeeder extends Seeder
     private function seedStatutory(Carbon $now): void
     {
         // GST Master
-        if (Schema::hasTable('GstMaster')) {
+        $gstTable = $this->tableName(['GstMaster', 'gst_masters']);
+        if ($gstTable) {
             $gstRates = [
                 ['hsnCode' => '7208', 'description' => 'Steel Flat Products', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
                 ['hsnCode' => '7213', 'description' => 'Steel Bars and Rods', 'igstPercent' => 18, 'cgstPercent' => 9, 'sgstPercent' => 9],
@@ -661,9 +662,9 @@ class OperationsModuleSeeder extends Seeder
                 ['hsnCode' => '8708', 'description' => 'Motor Vehicle Parts', 'igstPercent' => 28, 'cgstPercent' => 14, 'sgstPercent' => 14],
             ];
             foreach ($gstRates as $row) {
-                DB::table('GstMaster')->updateOrInsert(
+                DB::table($gstTable)->updateOrInsert(
                     ['hsnCode' => $row['hsnCode']],
-                    array_merge($row, ['isActive' => true, 'createdBy' => 1, 'createdAt' => $now, 'updatedAt' => $now])
+                    array_merge($row, ['created_at' => $now, 'updated_at' => $now])
                 );
             }
             echo "✅ Statutory: 8 GST Master entries seeded\n";

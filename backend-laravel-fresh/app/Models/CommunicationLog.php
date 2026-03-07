@@ -9,5 +9,11 @@ class CommunicationLog extends Model
     
     protected $table = 'CommunicationLog';
     protected $guarded = [];
-    public $timestamps = false;  // Only has sentAt, no created/updated
+    const CREATED_AT = null;
+    const UPDATED_AT = null;
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoiceId', 'id');
+    }
 }

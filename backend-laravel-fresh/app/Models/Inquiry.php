@@ -21,4 +21,9 @@ class Inquiry extends Model
     {
         return $this->belongsTo(Customer::class, 'customerId', 'id');
     }
+
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class, 'inquiryId', 'id');
+    }
 }

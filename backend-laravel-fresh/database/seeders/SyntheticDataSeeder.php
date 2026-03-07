@@ -40,7 +40,6 @@ use App\Models\DispatchAdvice;
 use App\Services\AutoNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 class SyntheticDataSeeder extends Seeder
 {
@@ -516,7 +515,19 @@ class SyntheticDataSeeder extends Seeder
         $allProducts  = Product::whereNull('deletedAt')->get();
         $salesPeople  = ['Rahul Sharma', 'Deepak Verma', 'Neha Agarwal', 'Vivek Saxena', 'Sanjay Kulkarni'];
         $soStatuses   = ['Pending', 'Confirmed', 'In Production', 'Dispatched', 'Pending', 'Confirmed', 'Dispatched', 'Pending'];
-        $invStatuses  = ['Unpaid', 'Paid', 'Partially Paid', 'Overdue', 'Unpaid', 'Paid', 'Unpaid', 'Overdue'];
+
+        // Realistic invoice configurations:
+        // status, invoiceDate offset (days ago), dueDate offset (days from now, negative = past)
+        $invConfigs = [
+            ['status' => 'Unpaid',         'invDaysAgo' => 10,  'dueDaysFromNow' => 20],   // recent, not yet due
+            ['status' => 'Paid',           'invDaysAgo' => 60,  'dueDaysFromNow' => -30],  // old, paid on time
+            ['status' => 'Partially Paid', 'invDaysAgo' => 45,  'dueDaysFromNow' => -5],   // overdue partial
+            ['status' => 'Overdue',        'invDaysAgo' => 50,  'dueDaysFromNow' => -20],  // clearly overdue
+            ['status' => 'Unpaid',         'invDaysAgo' => 40,  'dueDaysFromNow' => -10],  // unpaid, past due (overdue)
+            ['status' => 'Paid',           'invDaysAgo' => 90,  'dueDaysFromNow' => -60],  // old, paid
+            ['status' => 'Unpaid',         'invDaysAgo' => 5,   'dueDaysFromNow' => 25],   // very recent, not due
+            ['status' => 'Overdue',        'invDaysAgo' => 55,  'dueDaysFromNow' => -15],  // overdue
+        ];
 
         $firstInvoice = null;
         for ($i = 1; $i <= 8; $i++) {
@@ -525,6 +536,7 @@ class SyntheticDataSeeder extends Seeder
             $qty  = 2 + $i;
             $rate = 50000 + ($i * 30000);
             $gstPct = $prod->gstPercent ?? 18;
+            $cfg = $invConfigs[$i - 1];
 
             // Inquiry
             $inq = Inquiry::firstOrCreate(['inquiryNo' => "INQ-00{$i}"], [
@@ -565,29 +577,59 @@ class SyntheticDataSeeder extends Seeder
                 'quantity' => $qty, 'rate' => $rate, 'gstPercent' => $gstPct, 'total' => $lineTotal,
             ]);
 
-            // Invoice
+            // Invoice — with realistic dates
             $taxable = $qty * $rate;
             $gstAmt  = $taxable * ($gstPct / 100);
+            $invoiceDate = now()->subDays($cfg['invDaysAgo']);
+            $dueDate = $cfg['dueDaysFromNow'] >= 0
+                ? now()->addDays($cfg['dueDaysFromNow'])
+                : now()->subDays(abs($cfg['dueDaysFromNow']));
+
             $inv = Invoice::firstOrCreate(['invoiceNo' => "INV-00{$i}"], [
                 'customerId' => $cust->id,
                 'saleOrderId' => $so->id,
-                'invoiceDate' => now()->subDays(30 - $i * 4),
-                'dueDate' => now()->addDays($i * 5),
+                'invoiceDate' => $invoiceDate,
+                'dueDate' => $dueDate,
                 'taxableValue' => $taxable,
                 'igstAmount' => $gstAmt,
                 'grandTotal' => $taxable + $gstAmt,
-                'status' => $invStatuses[$i - 1],
+                'status' => $cfg['status'],
                 'createdBy' => 1,
+                'createdAt' => $invoiceDate,
             ]);
             InvoiceItem::firstOrCreate(['invoiceId' => $inv->id, 'productId' => $prod->id], [
                 'quantity' => $qty, 'rate' => $rate, 'gstPercent' => $gstPct,
                 'igst' => $gstAmt, 'total' => $taxable + $gstAmt,
             ]);
+
+            // Receipt vouchers for Paid invoices
+            if ($cfg['status'] === 'Paid') {
+                SalesReceiptVoucher::firstOrCreate(['receiptNo' => "RV-PAID-00{$i}"], [
+                    'customerId' => $cust->id,
+                    'invoiceId' => $inv->id,
+                    'receiptDate' => $dueDate->copy()->subDays(5),
+                    'amount' => $taxable + $gstAmt,
+                    'paymentMode' => 'Bank',
+                    'createdBy' => 1,
+                ]);
+            }
+            // Partial receipt for Partially Paid invoices
+            if ($cfg['status'] === 'Partially Paid') {
+                SalesReceiptVoucher::firstOrCreate(['receiptNo' => "RV-PART-00{$i}"], [
+                    'customerId' => $cust->id,
+                    'invoiceId' => $inv->id,
+                    'receiptDate' => $invoiceDate->copy()->addDays(10),
+                    'amount' => round(($taxable + $gstAmt) * 0.4, 2),
+                    'paymentMode' => 'Bank',
+                    'createdBy' => 1,
+                ]);
+            }
+
             if ($i === 1) $firstInvoice = $inv;
         }
         $invoice = $firstInvoice ?? Invoice::first();
 
-        echo "✅ Sales cycle: 8 inquiries, 6 quotations, 5 SOs, 5 invoices created\n";
+        echo "✅ Sales cycle: 8 inquiries, 6 quotations, 5 SOs, 5 invoices + receipts created\n";
 
         // ══════════════════════════════════════════════════════════════════════
         // PURCHASE CYCLE — 5 POs across all vendors with GRNs & Bills
