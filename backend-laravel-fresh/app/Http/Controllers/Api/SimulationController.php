@@ -8,6 +8,7 @@ use App\Models\BOMHeader;
 use App\Models\SimulationResult;
 use App\Services\SimulationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -33,6 +34,16 @@ class SimulationController extends Controller
                 $query->where('isActive', true);
             } elseif (Schema::hasColumn('products', 'is_active')) {
                 $query->where('is_active', true);
+            }
+
+            // Only return products that have at least one BOM header entry
+            // so the dropdown shows only products the simulation engine can compute for.
+            if (Schema::hasTable('bom_headers')) {
+                $bomProductCol = Schema::hasColumn('bom_headers', 'productId') ? 'productId' : 'product_id';
+                $productsWithBom = DB::table('bom_headers')->pluck($bomProductCol)->unique()->toArray();
+                if (!empty($productsWithBom)) {
+                    $query->whereIn('id', $productsWithBom);
+                }
             }
 
             $products = $query->orderBy('name')->limit(500)->get();

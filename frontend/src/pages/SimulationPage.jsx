@@ -75,7 +75,10 @@ export default function SimulationPage() {
         setLoading(true);
         try {
             const payload = {
-                mps: validMps,
+                mps: validMps.map(m => ({
+                    productId: parseInt(m.productId, 10),
+                    targetQty: parseInt(m.targetQty, 10)
+                })),
                 shiftHours: parseFloat(shiftHours),
                 workerCount: parseInt(workerCount)
             };

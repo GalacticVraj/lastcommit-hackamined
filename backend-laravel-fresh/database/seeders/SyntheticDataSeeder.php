@@ -712,29 +712,98 @@ class SyntheticDataSeeder extends Seeder
 
         $bomTable = (new BOMHeader())->getTable();
         if (Schema::hasTable($bomTable)) {
-            // ── 5 BOMs across different products ──
-            $bomProducts = [$p1->id, $p2->id, $p1->id, $p2->id, $p1->id];
+            // ── BOMs for the 3 Finished Good products ──
+            $allFgProducts = Product::where('category', 'Finished Good')->get();
+            $rmProducts    = Product::where('category', 'Raw Material')->get();
             $bomIds = [];
-            for ($b = 1; $b <= 5; $b++) {
-                $bom = BOMHeader::firstOrCreate(['bomNo' => "BOM-00{$b}"], [
-                    'productId' => $bomProducts[$b - 1],
-                    'version' => "1.{$b}",
-                    'effectiveFrom' => now()->subMonths(6 - $b),
-                    'isActive' => $b <= 4,
-                    'createdBy' => 1,
-                ]);
-                $bomIds[] = $bom->id;
 
-                // Add BOM Items (componentId not productId, no updatedAt)
-                if (Schema::hasTable('BOMItem')) {
-                    $rmProducts = Product::where('category', 'Raw Material')->get();
-                    foreach ($rmProducts->take(3) as $idx => $rm) {
-                        DB::table('BOMItem')->updateOrInsert(
-                            ['bomHeaderId' => $bom->id, 'componentId' => $rm->id],
-                            ['quantity' => 10 + $b * 5 + $idx * 3, 'unit' => 'Kg', 'createdAt' => now()]
-                        );
+            // Determine BOM columns (handle both old camelCase & new snake_case)
+            $bomNoCol      = Schema::hasColumn('bom_headers', 'bomNo')      ? 'bomNo'      : 'bom_no';
+            $bomProdCol    = Schema::hasColumn('bom_headers', 'productId')   ? 'productId'  : 'product_id';
+            $bomActiveCol  = Schema::hasColumn('bom_headers', 'isActive')    ? 'isActive'   : 'is_active';
+            $bomCreatedAt  = Schema::hasColumn('bom_headers', 'createdAt')   ? 'createdAt'  : 'created_at';
+            $bomUpdatedAt  = Schema::hasColumn('bom_headers', 'updatedAt')   ? 'updatedAt'  : 'updated_at';
+
+            foreach ($allFgProducts as $idx => $fg) {
+                $b = $idx + 1;
+                $bomNoValue = "BOM-FG-{$fg->code}";
+
+                DB::table('bom_headers')->updateOrInsert(
+                    [$bomProdCol => $fg->id],
+                    [
+                        $bomNoCol     => $bomNoValue,
+                        $bomActiveCol => 1,
+                        $bomCreatedAt => now(),
+                        $bomUpdatedAt => now(),
+                    ]
+                );
+                $bomId = DB::table('bom_headers')->where($bomProdCol, $fg->id)->value('id');
+                $bomIds[$fg->id] = $bomId;
+
+                // ── BOM Items — use correct snake_case table & columns ──
+                if (Schema::hasTable('bom_items') && $bomId) {
+                    // Determine correct column names in bom_items
+                    $itemBomCol = Schema::hasColumn('bom_items', 'bom_header_id') ? 'bom_header_id' : 'bomHeaderId';
+                    $itemRmCol  = Schema::hasColumn('bom_items', 'raw_material_id') ? 'raw_material_id' : 'componentId';
+                    $itemQtyCol = Schema::hasColumn('bom_items', 'qty_per_unit') ? 'qty_per_unit' : 'quantity';
+                    $itemCreAt  = Schema::hasColumn('bom_items', 'createdAt') ? 'createdAt' : 'created_at';
+
+                    DB::table('bom_items')->where($itemBomCol, $bomId)->delete();
+
+                    foreach ($rmProducts->take(3) as $rmIdx => $rm) {
+                        $payload = [
+                            $itemBomCol => $bomId,
+                            $itemRmCol  => $rm->id,
+                            $itemQtyCol => 5 + ($b * 3) + ($rmIdx * 2),
+                            'unit'      => $rm->unit ?? 'Kg',
+                            $itemCreAt  => now(),
+                        ];
+                        DB::table('bom_items')->insert($payload);
                     }
                 }
+
+                // ── Routing Tables — add routing for each Finished Good ──
+                if (Schema::hasTable('routing_tables') && $bomId) {
+                    $rtProdCol   = Schema::hasColumn('routing_tables', 'product_id')  ? 'product_id'  : 'bomHeaderId';
+                    $rtSeqCol    = Schema::hasColumn('routing_tables', 'sequence_no') ? 'sequence_no' : 'operationNo';
+                    $rtProcCol   = Schema::hasColumn('routing_tables', 'process_name') ? 'process_name' : 'operationName';
+                    $rtManCol    = Schema::hasColumn('routing_tables', 'man_hours_per_unit') ? 'man_hours_per_unit' : null;
+                    $rtMachCol   = Schema::hasColumn('routing_tables', 'machine_hours_per_unit') ? 'machine_hours_per_unit' : null;
+                    $rtCreAt     = Schema::hasColumn('routing_tables', 'createdAt') ? 'createdAt' : 'created_at';
+
+                    DB::table('routing_tables')->where($rtProdCol, $fg->id)->delete();
+
+                    $routingSteps = [
+                        ['seq' => 1, 'name' => 'Material Preparation', 'man' => 0.5, 'mach' => 0.3],
+                        ['seq' => 2, 'name' => 'Assembly & Fabrication', 'man' => 1.0, 'mach' => 0.6],
+                        ['seq' => 3, 'name' => 'Quality Inspection',    'man' => 0.3, 'mach' => 0.1],
+                    ];
+
+                    foreach ($routingSteps as $step) {
+                        $rPayload = [
+                            $rtProdCol   => $fg->id,
+                            $rtSeqCol    => $step['seq'],
+                            $rtProcCol   => $step['name'],
+                            $rtCreAt     => now(),
+                        ];
+                        if ($rtManCol)  $rPayload[$rtManCol]  = $step['man'];
+                        if ($rtMachCol) $rPayload[$rtMachCol] = $step['mach'];
+                        DB::table('routing_tables')->insert($rPayload);
+                    }
+                }
+            }
+
+            // ── Keep the legacy 5 BOMs (for Production Route Cards) ──
+            $legacyBomProducts = [$p1->id, $p2->id, $p1->id, $p2->id, $p1->id];
+            for ($b = 1; $b <= 5; $b++) {
+                $bom = BOMHeader::firstOrCreate(['bomNo' => "BOM-00{$b}"], [
+                    'productId'    => $legacyBomProducts[$b - 1],
+                    'version'      => "1.{$b}",
+                    'effectiveFrom' => now()->subMonths(6 - $b),
+                    'isActive'     => $b <= 4,
+                    'createdBy'    => 1,
+                ]);
+                $bomIds['legacy_' . $b] = $bom->id;
             }
 
             // ── 5 Route Cards ──
@@ -742,14 +811,14 @@ class SyntheticDataSeeder extends Seeder
             $routeCardIds = [];
             for ($r = 1; $r <= 5; $r++) {
                 $rc = ProductionRouteCard::firstOrCreate(['routeCardNo' => "RC-00{$r}"], [
-                    'productId' => $bomProducts[$r - 1],
-                    'bomHeaderId' => $bomIds[$r - 1],
-                    'batchNo' => "BATCH-0{$r}",
-                    'planQty' => 50 + $r * 20,
-                    'actualQty' => $rcStatuses[$r - 1] === 'Planning' ? 0 : (45 + $r * 18),
-                    'status' => $rcStatuses[$r - 1],
-                    'isActive' => true,
-                    'createdBy' => 1,
+                    'productId'   => $legacyBomProducts[$r - 1],
+                    'bomHeaderId' => $bomIds['legacy_' . $r],
+                    'batchNo'     => "BATCH-0{$r}",
+                    'planQty'     => 50 + $r * 20,
+                    'actualQty'   => $rcStatuses[$r - 1] === 'Planning' ? 0 : (45 + $r * 18),
+                    'status'      => $rcStatuses[$r - 1],
+                    'isActive'    => true,
+                    'createdBy'   => 1,
                 ]);
                 $routeCardIds[] = $rc->id;
             }
@@ -758,13 +827,13 @@ class SyntheticDataSeeder extends Seeder
             for ($pr = 1; $pr <= 5; $pr++) {
                 ProductionReport::firstOrCreate([
                     'routeCardId' => $routeCardIds[$pr - 1],
-                    'productId' => $bomProducts[$pr - 1],
-                    'reportDate' => now()->subDays(30 - $pr * 5)->startOfDay(),
+                    'productId'   => $legacyBomProducts[$pr - 1],
+                    'reportDate'  => now()->subDays(30 - $pr * 5)->startOfDay(),
                 ], [
                     'productionQty' => 40 + $pr * 15,
-                    'rejectionQty' => $pr,
-                    'remarks' => "Production report batch {$pr}",
-                    'createdBy' => 1,
+                    'rejectionQty'  => $pr,
+                    'remarks'       => "Production report batch {$pr}",
+                    'createdBy'     => 1,
                 ]);
             }
 
@@ -783,7 +852,7 @@ class SyntheticDataSeeder extends Seeder
                 // Job Order Items (no updatedAt column)
                 if (Schema::hasTable('JobOrderItem')) {
                     DB::table('JobOrderItem')->updateOrInsert(
-                        ['jobOrderId' => $jo->id, 'productId' => $bomProducts[$j - 1]],
+                        ['jobOrderId' => $jo->id, 'productId' => $legacyBomProducts[$j - 1]],
                         ['quantity' => 20 + $j * 10, 'rate' => 100 + $j * 25, 'createdAt' => now()]
                     );
                 }

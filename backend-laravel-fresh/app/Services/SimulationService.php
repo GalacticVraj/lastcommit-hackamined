@@ -51,7 +51,8 @@ class SimulationService
 
         // 1. MRP & CRP Calculation
         foreach ($mps as $item) {
-            $productId = $item['productId'] ?? $item['product_id'] ?? null;
+            $productId = (int) ($item['productId'] ?? $item['product_id'] ?? 0);
+            if ($productId <= 0) continue;
             $product = Product::find($productId);
             if (!$product) continue;
 
