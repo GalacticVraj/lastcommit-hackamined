@@ -160,6 +160,7 @@ Route::prefix('v1')->group(function () {
         Route::get('purchase/vendors', [PurchaseController::class, 'listVendors']);
         Route::post('purchase/vendors', [PurchaseController::class, 'storeVendor']);
         Route::get('purchase/vendors/{id}', [PurchaseController::class, 'getVendor']);
+        Route::get('purchase/vendors/{id}/profile', [PurchaseController::class, 'getVendorProfile']);
         Route::put('purchase/vendors/{id}', [PurchaseController::class, 'updateVendor']);
         Route::delete('purchase/vendors/{id}', [PurchaseController::class, 'deleteVendor']);
         Route::get('purchase/purchase-orders', [PurchaseController::class, 'listPurchaseOrders']);
@@ -169,9 +170,14 @@ Route::prefix('v1')->group(function () {
         Route::get('purchase/grns', [PurchaseController::class, 'listGrns']);
         Route::post('purchase/grns', [PurchaseController::class, 'createGrn']);
         Route::get('purchase/grns/{id}', [PurchaseController::class, 'getGrn']);
+        Route::put('purchase/grns/{id}', [PurchaseController::class, 'updateGrn']);
+        Route::delete('purchase/grns/{id}', [PurchaseController::class, 'deleteGrn']);
+        
         Route::get('purchase/bills', [PurchaseController::class, 'listBills']);
         Route::post('purchase/bills', [PurchaseController::class, 'createBill']);
         Route::get('purchase/bills/{id}', [PurchaseController::class, 'getBill']);
+        Route::put('purchase/bills/{id}', [PurchaseController::class, 'updateBill']);
+        Route::delete('purchase/bills/{id}', [PurchaseController::class, 'deleteBill']);
 
         // ── Production ────────────────────────────────────────────────────────
         Route::get('production/dashboard', [ProductionController::class, 'dashboard']);
@@ -181,13 +187,28 @@ Route::prefix('v1')->group(function () {
         Route::put('production/products/{id}', [ProductionController::class, 'updateProduct']);
         Route::delete('production/products/{id}', [ProductionController::class, 'deleteProduct']);
         Route::get('production/bom', [ProductionController::class, 'listBom']);
+        Route::post('production/bom', [ProductionController::class, 'createBom']);
         Route::get('production/bom/{id}', [ProductionController::class, 'getBom']);
+        Route::put('production/bom/{id}', [ProductionController::class, 'updateBom']);
+        Route::delete('production/bom/{id}', [ProductionController::class, 'deleteBom']);
+        
         Route::get('production/route-cards', [ProductionController::class, 'listRouteCards']);
+        Route::post('production/route-cards', [ProductionController::class, 'createRouteCard']);
         Route::get('production/route-cards/{id}', [ProductionController::class, 'getRouteCard']);
+        Route::put('production/route-cards/{id}', [ProductionController::class, 'updateRouteCard']);
+        Route::delete('production/route-cards/{id}', [ProductionController::class, 'deleteRouteCard']);
+        
         Route::get('production/reports', [ProductionController::class, 'listReports']);
+        Route::post('production/reports', [ProductionController::class, 'createReport']);
         Route::get('production/reports/{id}', [ProductionController::class, 'getReport']);
+        Route::put('production/reports/{id}', [ProductionController::class, 'updateReport']);
+        Route::delete('production/reports/{id}', [ProductionController::class, 'deleteReport']);
+        
         Route::get('production/job-orders', [ProductionController::class, 'listJobOrders']);
+        Route::post('production/job-orders', [ProductionController::class, 'createJobOrder']);
         Route::get('production/job-orders/{id}', [ProductionController::class, 'getJobOrder']);
+        Route::put('production/job-orders/{id}', [ProductionController::class, 'updateJobOrder']);
+        Route::delete('production/job-orders/{id}', [ProductionController::class, 'deleteJobOrder']);
 
         // ── Simulation ────────────────────────────────────────────────────────
         Route::get('simulation/products-with-bom', [SimulationController::class, 'productsWithBom']);

@@ -40,4 +40,16 @@ class Controller extends BaseController
             ],
         ]);
     }
+
+    protected function applySorting($query, \Illuminate\Http\Request $request, $defaultColumn = 'createdAt', $defaultOrder = 'desc')
+    {
+        $sortBy = $request->get('sort_by', $defaultColumn);
+        $sortOrder = $request->get('sort_order', $defaultOrder);
+
+        // Validate sort order
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
+
+        // Check if column exists to avoid SQL errors
+        return $query->orderBy($sortBy, $sortOrder);
+    }
 }

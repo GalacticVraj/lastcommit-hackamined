@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Eye, Edit, Trash2, Check, X, Printer, Send, Search, Plus, Filter, Download, ArrowLeft, ArrowRight, Barcode as BarcodeIcon } from 'lucide-react';
+import { Eye, Edit, Trash2, Check, X, Printer, Send, Search, Plus, Filter, Download, ArrowLeft, ArrowRight, Barcode as BarcodeIcon, Loader2 } from 'lucide-react';
 import BarcodeDisplay from '../components/BarcodeDisplay';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DataTable from '../components/DataTable';

@@ -380,9 +380,25 @@ export default function SalesPage() {
 
     const handleSendReminder = async (invoiceId) => {
         if (!commForm.content) { toast.error('Please enter message content'); return; }
+        const item = data.find(r => r.id === invoiceId);
+        const customerEmail = item?.customer?.email || '';
+        
         try {
-            await api.post('/sales/communication-logs', { invoiceId, channel: commForm.channel, content: commForm.content });
-            toast.success('Reminder sent');
+            await api.post('/sales/communication-logs', { 
+                invoiceId, 
+                channel: commForm.channel, 
+                content: commForm.content 
+            });
+            
+            if (commForm.channel === 'Email') {
+                const subject = `Payment Reminder: Invoice #${item?.invoiceNo}`;
+                const body = commForm.content;
+                window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                toast.success('Reminder logged and opening mail client...');
+            } else {
+                toast.success('Reminder logged successfully');
+            }
+            
             setCommForm({ invoiceId: null, channel: 'Email', content: '' });
             loadData();
         } catch { toast.error('Failed to send reminder'); }

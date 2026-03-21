@@ -1,4 +1,88 @@
-import { X, Edit } from 'lucide-react';
+import { X, Edit, Check } from 'lucide-react';
+
+const PIPELINES = {
+    'Inquiry': ['New', 'Processing', 'Quoted'],
+    'Quotation': ['Draft', 'Sent', 'Accepted'],
+    'Sale Order': ['Pending', 'Dispatched', 'Closed'],
+    'Dispatch Advice': ['Pending', 'Dispatched', 'Delivered'],
+    'Invoice': ['Unpaid', 'Partial', 'Paid'],
+    'Purchase Order': ['Pending', 'Received', 'Billed', 'Closed'],
+    'GRN': ['Pending', 'Inspected', 'Accepted'],
+    'Bill': ['Unpaid', 'Partial', 'Paid'],
+    'Route Card': ['Pending', 'WIP', 'Completed'],
+    'Job Order': ['Pending', 'Dispatched', 'Received', 'Closed']
+};
+
+const PipelineBar = ({ entityType, currentStatus }) => {
+    if (!currentStatus || !entityType) return null;
+    const match = Object.keys(PIPELINES).find(k => (entityType || '').includes(k));
+    if (!match) return null;
+    
+    const steps = PIPELINES[match];
+    const isError = ['Lost', 'Rejected', 'Overdue', 'Cancelled'].includes(currentStatus);
+    
+    let currentIndex = steps.indexOf(currentStatus);
+    if (isError) {
+        currentIndex = steps.length - 1; 
+    } else if (currentIndex === -1) {
+        return null;
+    }
+
+    return (
+        <div style={{ marginBottom: '24px', padding: '20px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lifecycle Progress</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '12px', left: '10%', right: '10%', height: '3px', background: 'var(--border)', zIndex: 0, borderRadius: '2px' }} />
+                
+                <div style={{ 
+                    position: 'absolute', top: '12px', left: '10%', 
+                    width: isError ? '80%' : `${Math.max(0, (currentIndex / (steps.length - 1)) * 80)}%`, 
+                    height: '3px', 
+                    background: isError ? 'var(--red)' : 'var(--primary)', 
+                    zIndex: 0, 
+                    borderRadius: '2px',
+                    transition: 'width 0.4s ease-out'
+                }} />
+
+                {steps.map((step, idx) => {
+                    const isActive = idx <= currentIndex;
+                    const isCurrent = idx === currentIndex;
+                    const isDisplayError = isError && isCurrent;
+                    
+                    let circleBg = 'var(--bg-elevated)';
+                    let circleBorder = 'var(--border)';
+                    let color = 'var(--text-muted)';
+                    
+                    if (isDisplayError) {
+                        circleBg = 'var(--red)';
+                        circleBorder = 'var(--red)';
+                        color = 'var(--white)';
+                    } else if (isActive) {
+                        circleBg = 'var(--primary)';
+                        circleBorder = 'var(--primary)';
+                        color = 'var(--white)';
+                    }
+
+                    return (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, width: '20%' }}>
+                            <div style={{ 
+                                width: '26px', height: '26px', borderRadius: '50%', background: circleBg, 
+                                border: `2px solid ${circleBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.3s ease', boxShadow: !!isCurrent ? (isDisplayError ? '0 0 0 4px rgba(220, 38, 38, 0.15)' : '0 0 0 4px rgba(234, 88, 12, 0.15)') : 'none'
+                             }}>
+                                {isActive && !isDisplayError && <Check size={14} color="#fff" />}
+                                {isDisplayError && <X size={14} color="#fff" />}
+                            </div>
+                            <span style={{ marginTop: '8px', fontSize: '11px', fontWeight: !!isCurrent ? 600 : 400, color: isActive ? 'var(--text-primary)' : 'var(--text-muted)', textAlign: 'center' }}>
+                                {isDisplayError ? currentStatus : step}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
 
 /**
  * RecordViewPanel — right-side slide-over panel for read-only record details.
@@ -48,6 +132,9 @@ export default function RecordViewPanel({ open, onClose, onEdit, title, record, 
 
                 {/* Scrollable body */}
                 <div className="modal-body" style={{ flex: 1, overflowY: 'auto', maxHeight: 'calc(90vh - 140px)' }}>
+                    {/* Pipeline Progress Bar */}
+                    <PipelineBar entityType={title} currentStatus={record.status} />
+
                     {/* Visual Barcode for Barcode Records */}
                     {(record.barcode || (record.code && record.product?.name)) && (
                         <BarcodeDisplay
