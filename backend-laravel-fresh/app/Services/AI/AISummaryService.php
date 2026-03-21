@@ -426,10 +426,10 @@ class AISummaryService
         $fallback = "I'm having trouble connecting to my knowledge base. Please try again soon.";
         
         try {
-            $apiKey = config('services.groq.api_key');
+            $apiKey = config('services.groq.api_key') ?: env('GROQ_API_KEY');
             $model = config('services.groq.model', 'llama-3.3-70b-versatile');
             
-            if (empty($apiKey)) return "AI Configuration Missing: Please set GROQ_API_KEY.";
+            if (empty($apiKey)) return "AI Configuration Missing (Service): Please set GROQ_API_KEY in .env.";
 
             // Fetch live context for the AI
             $employeeCount = DB::table('Employee')->where('isActive', true)->whereNull('deletedAt')->count();
