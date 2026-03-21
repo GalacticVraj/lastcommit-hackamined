@@ -463,14 +463,117 @@ const statutoryConfig = {
         { name: 'sgstPercent', label: 'SGST %', type: 'number', required: true },
       ]
     },
-    { key: 'gstr1', label: 'GSTR-1 Upload', endpoint: '/gstr1', columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount', 'state'], hasPrint: true, printType: 'statutory-gstr1' },
-    { key: 'gst2a', label: 'GST2A Reconcile', endpoint: '/gst2a', columns: ['month', 'vendorGSTIN', 'totalInputTaxCredit', 'matchedAmount', 'mismatchAmount'], hasPrint: true, printType: 'statutory-gst2a' },
-    { key: 'challans', label: 'GST Challans', endpoint: '/challans', columns: ['challanNo', 'cpin', 'date', 'bank', 'taxType', 'amount'], hasPrint: true, printType: 'statutory-challan' },
-    { key: 'tds', label: 'TDS Trace', endpoint: '/tds', columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount', 'certificateNo'], hasPrint: true, printType: 'statutory-tds' },
-    { key: 'tcs', label: 'TCS Details', endpoint: '/tcs', columns: ['customerName', 'saleValue', 'tcsRate', 'tcsAmount'], hasPrint: true, printType: 'statutory-tcs' },
-    { key: 'gstr-register', label: 'GSTR Registers', endpoint: '/gstr-register', columns: ['month', 'transactionType', 'totalTaxLiability'], hasPrint: true, printType: 'statutory-gstr-register' },
-    { key: 'cheques', label: 'Cheque Book Mgmt', endpoint: '/cheque-books', columns: ['bankAccount', 'startLeafNo', 'endLeafNo', 'leafNo', 'status', 'issuedTo', 'date'], hasPrint: true, printType: 'statutory-cheque-book' },
-    { key: 'balance-sheet', label: 'Balance Sheet', endpoint: '/balance-sheet', columns: ['asOnDate', 'assetsTotal', 'liabilitiesTotal', 'capitalAccount', 'currentAssets'], hasPrint: true, printType: 'statutory-balance-sheet' },
+    {
+      key: 'gstr1',
+      label: 'GSTR-1 Upload',
+      endpoint: '/gstr1',
+      columns: ['month', 'invoiceNo', 'customerGSTIN', 'taxableValue', 'taxAmount', 'state'],
+      hasPrint: true,
+      printType: 'statutory-gstr1',
+      formFields: [
+        { name: 'invoiceNo', label: 'Invoice No', required: true },
+        { name: 'customerId', label: 'Customer', type: 'select', optionsEndpoint: '/sales/dropdown/customers', optionsValue: 'id', optionsLabel: 'name', required: true },
+        { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },
+        { name: 'grandTotal', label: 'Total Value', type: 'number', required: true },
+        { name: 'igstAmount', label: 'IGST', type: 'number' },
+        { name: 'cgstAmount', label: 'CGST', type: 'number' },
+        { name: 'sgstAmount', label: 'SGST', type: 'number' },
+      ]
+    },
+    {
+      key: 'gst2a',
+      label: 'GST2A Reconcile',
+      endpoint: '/gst2a',
+      columns: ['month', 'vendorGSTIN', 'totalInputTaxCredit', 'matchedAmount', 'mismatchAmount'],
+      hasPrint: true,
+      printType: 'statutory-gst2a',
+      formFields: [
+        { name: 'billNo', label: 'Bill No', required: true },
+        { name: 'vendorId', label: 'Vendor', type: 'select', optionsEndpoint: '/purchase/vendors', optionsValue: 'id', optionsLabel: 'name', required: true },
+        { name: 'billDate', label: 'Bill Date', type: 'date', required: true },
+        { name: 'grandTotal', label: 'Total Value', type: 'number', required: true },
+        { name: 'igstAmount', label: 'IGST', type: 'number' },
+        { name: 'cgstAmount', label: 'CGST', type: 'number' },
+        { name: 'sgstAmount', label: 'SGST', type: 'number' },
+      ]
+    },
+    {
+      key: 'challans',
+      label: 'GST Challans',
+      endpoint: '/challans',
+      columns: ['challanNo', 'cpin', 'date', 'bank', 'taxType', 'amount'],
+      hasPrint: true,
+      printType: 'statutory-challan',
+      formFields: [
+        { name: 'date', label: 'Date', type: 'date', required: true },
+        { name: 'gstLedger', label: 'Tax Ledger', type: 'select', options: ['Input', 'Output'], required: true },
+        { name: 'amount', label: 'Amount Paid', type: 'number', required: true },
+      ]
+    },
+    {
+      key: 'tds',
+      label: 'TDS Trace',
+      endpoint: '/tds',
+      columns: ['section', 'deducteeName', 'paymentAmount', 'tdsRate', 'tdsAmount', 'certificateNo'],
+      hasPrint: true,
+      printType: 'statutory-tds',
+      formFields: [
+        { name: 'partyName', label: 'Deductee Name', required: true },
+        { name: 'amount', label: 'Payment Amount', type: 'number', required: true },
+        { name: 'date', label: 'Date', type: 'date', required: true },
+      ]
+    },
+    {
+      key: 'tcs',
+      label: 'TCS Details',
+      endpoint: '/tcs',
+      columns: ['customerName', 'saleValue', 'tcsRate', 'tcsAmount'],
+      hasPrint: true,
+      printType: 'statutory-tcs',
+      formFields: [
+        { name: 'invoiceNo', label: 'Reference No', required: true },
+        { name: 'customerId', label: 'Customer', type: 'select', optionsEndpoint: '/sales/dropdown/customers', optionsValue: 'id', optionsLabel: 'name', required: true },
+        { name: 'invoiceDate', label: 'Date', type: 'date', required: true },
+        { name: 'grandTotal', label: 'Sale Value', type: 'number', required: true },
+      ]
+    },
+    {
+      key: 'gstr-register',
+      label: 'GSTR Registers',
+      endpoint: '/gstr-register',
+      columns: ['month', 'transactionType', 'totalTaxLiability'],
+      hasPrint: true,
+      printType: 'statutory-gstr-register',
+      formFields: [
+        { name: 'month', label: 'Registration Month (e.g. 2026-03)', required: true },
+        { name: 'notes', label: 'Memo/Notes' },
+      ]
+    },
+    {
+      key: 'cheques',
+      label: 'Cheque Book Mgmt',
+      endpoint: '/cheque-books',
+      columns: ['bankAccount', 'startLeafNo', 'endLeafNo', 'leafNo', 'status', 'issuedTo', 'date'],
+      hasPrint: true,
+      printType: 'statutory-cheque-book',
+      formFields: [
+        { name: 'partyName', label: 'Issued To', required: true },
+        { name: 'referenceNo', label: 'Start Leaf No', required: true },
+        { name: 'date', label: 'Issue Date', type: 'date', required: true },
+      ]
+    },
+    {
+      key: 'balance-sheet',
+      label: 'Balance Sheet',
+      endpoint: '/balance-sheet',
+      columns: ['asOnDate', 'assetsTotal', 'liabilitiesTotal', 'capitalAccount', 'currentAssets'],
+      hasPrint: true,
+      printType: 'statutory-balance-sheet',
+      formFields: [
+        { name: 'asOnDate', label: 'As On Date', type: 'date', required: true },
+        { name: 'notes', label: 'Memo/Notes' },
+      ]
+    },
   ]
 };
 

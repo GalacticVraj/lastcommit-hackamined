@@ -594,4 +594,228 @@ class StatutoryController extends Controller
         $asOnDate = $r->get('asOnDate', now()->toDateString());
         return $this->successResponse($this->buildBalanceSheetData($asOnDate));
     }
+
+    public function deleteGstr1($id)
+    {
+        $invoiceTable = (new Invoice())->getTable();
+        $record = DB::table($invoiceTable)->where('id', $id)->first();
+        if (!$record) {
+            return $this->errorResponse('Not found', 404);
+        }
+        DB::table($invoiceTable)->where('id', $id)->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteGst2a($id)
+    {
+        $purchaseBillTable = (new PurchaseBill())->getTable();
+        $record = DB::table($purchaseBillTable)->where('id', $id)->first();
+        if (!$record) {
+            return $this->errorResponse('Not found', 404);
+        }
+        DB::table($purchaseBillTable)->where('id', $id)->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteTds($id)
+    {
+        $row = VoucherPaymentReceipt::find($id);
+        if (!$row) {
+            return $this->errorResponse('Not found', 404);
+        }
+        $row->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteTcs($id)
+    {
+        $invoiceTable = (new Invoice())->getTable();
+        $record = DB::table($invoiceTable)->where('id', $id)->first();
+        if (!$record) {
+            return $this->errorResponse('Not found', 404);
+        }
+        DB::table($invoiceTable)->where('id', $id)->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteChallan($id)
+    {
+        $row = VoucherGST::find($id);
+        if (!$row) {
+            return $this->errorResponse('Not found', 404);
+        }
+        $row->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteGstrRegister($id)
+    {
+        // Aggregated view, no physical deletion.
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteChequeBook($id)
+    {
+        $row = VoucherPaymentReceipt::where('mode', 'Cheque')->find($id);
+        if (!$row) {
+            return $this->errorResponse('Not found', 404);
+        }
+        $row->delete();
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function deleteBalanceSheet($id)
+    {
+        // Aggregated view, no physical deletion.
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function createGstr1(Request $r)
+    {
+        $invoiceTable = (new Invoice())->getTable();
+        $payload = [
+            'invoiceNo' => $r->invoiceNo,
+            'customerId' => $r->customerId,
+            'invoiceDate' => $r->invoiceDate,
+            'dueDate' => $r->invoiceDate ?? now(),
+            'grandTotal' => $r->grandTotal,
+            'igstAmount' => $r->igstAmount ?? 0,
+            'cgstAmount' => $r->cgstAmount ?? 0,
+            'sgstAmount' => $r->sgstAmount ?? 0,
+        ];
+        if (Schema::hasColumn($invoiceTable, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($invoiceTable, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($invoiceTable)->insertGetId($payload);
+        return $this->getGstr1($id);
+    }
+
+    public function createGst2a(Request $r)
+    {
+        $purchaseBillTable = (new PurchaseBill())->getTable();
+        $payload = [
+            'billNo' => $r->billNo,
+            'vendorId' => $r->vendorId,
+            'billDate' => $r->billDate,
+            'grandTotal' => $r->grandTotal,
+            'igstAmount' => $r->igstAmount ?? 0,
+            'cgstAmount' => $r->cgstAmount ?? 0,
+            'sgstAmount' => $r->sgstAmount ?? 0,
+        ];
+        if (Schema::hasColumn($purchaseBillTable, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($purchaseBillTable, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($purchaseBillTable)->insertGetId($payload);
+        return $this->getGst2a($id);
+    }
+
+    public function createTds(Request $r)
+    {
+        $table = (new VoucherPaymentReceipt())->getTable();
+        $payload = [
+            'voucherNo' => uniqid('VPR-'),
+            'voucherType' => 'Receipt',
+            'partyName' => $r->partyName,
+            'amount' => $r->amount,
+            'date' => $r->date,
+            'mode' => $r->mode ?? 'Bank',
+        ];
+        if (Schema::hasColumn($table, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($table, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($table)->insertGetId($payload);
+        return $this->getTds($id);
+    }
+
+    public function createTcs(Request $r)
+    {
+        $invoiceTable = (new Invoice())->getTable();
+        $payload = [
+            'invoiceNo' => $r->invoiceNo,
+            'customerId' => $r->customerId,
+            'invoiceDate' => $r->invoiceDate,
+            'dueDate' => $r->invoiceDate ?? now(),
+            'grandTotal' => $r->grandTotal,
+        ];
+        if (Schema::hasColumn($invoiceTable, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($invoiceTable, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($invoiceTable)->insertGetId($payload);
+        return $this->getTcs($id);
+    }
+
+    public function createChallan(Request $r)
+    {
+        $table = (new VoucherGST())->getTable();
+        $payload = [
+            'voucherNo' => uniqid('VGST-'),
+            'date' => $r->date,
+            'gstLedger' => $r->gstLedger,
+            'amount' => $r->amount,
+            'adjustmentType' => 'Adjustment',
+        ];
+        if (Schema::hasColumn($table, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($table, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($table)->insertGetId($payload);
+        return $this->getChallan($id);
+    }
+
+    public function createGstrRegister(Request $r)
+    {
+        return $this->successResponse([
+            'id' => md5($r->month ?? now()->format('Y-m')),
+            'month' => $r->month,
+            'transactionType' => 'B2B',
+            'totalTaxLiability' => 0
+        ]);
+    }
+
+    public function createChequeBook(Request $r)
+    {
+        $table = (new VoucherPaymentReceipt())->getTable();
+        $payload = [
+            'voucherNo' => uniqid('VCHQ-'),
+            'voucherType' => 'Payment',
+            'partyName' => $r->partyName,
+            'amount' => 0,
+            'date' => $r->date,
+            'referenceNo' => $r->referenceNo,
+            'mode' => 'Cheque',
+        ];
+        if (Schema::hasColumn($table, 'createdAt')) {
+            $payload['createdAt'] = now();
+            $payload['updatedAt'] = now();
+        } elseif (Schema::hasColumn($table, 'created_at')) {
+            $payload['created_at'] = now();
+            $payload['updated_at'] = now();
+        }
+        $id = DB::table($table)->insertGetId($payload);
+        return $this->getChequeBook($id);
+    }
+
+    public function createBalanceSheet(Request $r)
+    {
+        return $this->getBalanceSheet($r, 1);
+    }
 }

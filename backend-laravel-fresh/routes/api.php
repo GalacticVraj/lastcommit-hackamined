@@ -401,21 +401,37 @@ Route::prefix('v1')->group(function () {
         Route::put('statutory/gst-master/{id}', [StatutoryController::class, 'updateGstMaster']);
         Route::delete('statutory/gst-master/{id}', [StatutoryController::class, 'deleteGstMaster']);
         Route::get('statutory/gstr1', [StatutoryController::class, 'listGstr1']);
+        Route::post('statutory/gstr1', [StatutoryController::class, 'createGstr1']);
         Route::get('statutory/gstr1/{id}', [StatutoryController::class, 'getGstr1']);
+        Route::delete('statutory/gstr1/{id}', [StatutoryController::class, 'deleteGstr1']);
         Route::get('statutory/gst2a', [StatutoryController::class, 'listGst2a']);
+        Route::post('statutory/gst2a', [StatutoryController::class, 'createGst2a']);
         Route::get('statutory/gst2a/{id}', [StatutoryController::class, 'getGst2a']);
+        Route::delete('statutory/gst2a/{id}', [StatutoryController::class, 'deleteGst2a']);
         Route::get('statutory/tds', [StatutoryController::class, 'listTds']);
+        Route::post('statutory/tds', [StatutoryController::class, 'createTds']);
         Route::get('statutory/tds/{id}', [StatutoryController::class, 'getTds']);
+        Route::delete('statutory/tds/{id}', [StatutoryController::class, 'deleteTds']);
         Route::get('statutory/tcs', [StatutoryController::class, 'listTcs']);
+        Route::post('statutory/tcs', [StatutoryController::class, 'createTcs']);
         Route::get('statutory/tcs/{id}', [StatutoryController::class, 'getTcs']);
+        Route::delete('statutory/tcs/{id}', [StatutoryController::class, 'deleteTcs']);
         Route::get('statutory/challans', [StatutoryController::class, 'listChallans']);
+        Route::post('statutory/challans', [StatutoryController::class, 'createChallan']);
         Route::get('statutory/challans/{id}', [StatutoryController::class, 'getChallan']);
+        Route::delete('statutory/challans/{id}', [StatutoryController::class, 'deleteChallan']);
         Route::get('statutory/gstr-register', [StatutoryController::class, 'listGstrRegister']);
+        Route::post('statutory/gstr-register', [StatutoryController::class, 'createGstrRegister']);
         Route::get('statutory/gstr-register/{id}', [StatutoryController::class, 'getGstrRegister']);
+        Route::delete('statutory/gstr-register/{id}', [StatutoryController::class, 'deleteGstrRegister']);
         Route::get('statutory/cheque-books', [StatutoryController::class, 'listChequeBooks']);
+        Route::post('statutory/cheque-books', [StatutoryController::class, 'createChequeBook']);
         Route::get('statutory/cheque-books/{id}', [StatutoryController::class, 'getChequeBook']);
+        Route::delete('statutory/cheque-books/{id}', [StatutoryController::class, 'deleteChequeBook']);
         Route::get('statutory/balance-sheet', [StatutoryController::class, 'listBalanceSheet']);
+        Route::post('statutory/balance-sheet', [StatutoryController::class, 'createBalanceSheet']);
         Route::get('statutory/balance-sheet/{id}', [StatutoryController::class, 'getBalanceSheet']);
+        Route::delete('statutory/balance-sheet/{id}', [StatutoryController::class, 'deleteBalanceSheet']);
 
         // ── Logistics ─────────────────────────────────────────────────────────
         Route::get('logistics/dashboard', [LogisticsController::class, 'dashboard']);
