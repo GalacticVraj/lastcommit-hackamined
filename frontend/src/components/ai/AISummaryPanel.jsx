@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, RefreshCw, AlertCircle, AlertTriangle, Sparkles, TrendingUp, TrendingDown, Users, CheckCircle, ChevronRight } from 'lucide-react';
+import { X, RefreshCw, AlertCircle, AlertTriangle, TrendingUp, TrendingDown, Users, CheckCircle, ChevronRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 import api from '../../lib/api';
 import useUIStore from '../../lib/uiStore';
@@ -106,36 +106,6 @@ export default function AISummaryPanel() {
         return null;
     };
 
-    const [chatMessages, setChatMessages] = useState([]);
-    const [userInput, setUserInput] = useState('');
-    const [chatLoading, setChatLoading] = useState(false);
-
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!userInput.trim() || chatLoading) return;
-
-        const newUserMsg = { role: 'user', content: userInput };
-        setChatMessages(prev => [...prev, newUserMsg]);
-        setUserInput('');
-        setChatLoading(true);
-
-        try {
-            const res = await api.post('/ai/chat', {
-                message: userInput,
-                history: chatMessages.slice(-6)
-            });
-            if (res.data?.success) {
-                setChatMessages(prev => [...prev, { role: 'assistant', content: res.data.data.reply }]);
-            } else {
-                setChatMessages(prev => [...prev, { role: 'assistant', content: res.data?.message || "I'm having trouble responding. Please try again." }]);
-            }
-        } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || "I'm having trouble responding. Please try again.";
-            setChatMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
-        } finally {
-            setChatLoading(false);
-        }
-    };
 
     return (
         <div style={{
@@ -193,8 +163,7 @@ export default function AISummaryPanel() {
                 {[
                     { id: 'insights', label: 'Insights' },
                     { id: 'sales', label: 'Sales Outlook' },
-                    { id: 'workforce', label: 'Workforce' },
-                    { id: 'chat', label: 'Ask AI' }
+                    { id: 'workforce', label: 'Workforce' }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -381,57 +350,7 @@ export default function AISummaryPanel() {
                     </div>
                 )}
 
-                {/* CHAT TAB */}
-                {activeTab === 'chat' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {chatMessages.length === 0 && (
-                                <div style={{ textAlign: 'center', marginTop: '40px', color: '#9C9488' }}>
-                                    <Sparkles size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                                    <p style={{ fontSize: '14px' }}>How can I help you with your ERP today?</p>
-                                    <p style={{ fontSize: '11px', marginTop: '4px' }}>Try asking about sales trends or stock optimization.</p>
-                                </div>
-                            )}
-                            {chatMessages.map((msg, i) => (
-                                <div key={i} style={{
-                                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                                    padding: '10px 14px',
-                                    borderRadius: '12px',
-                                    maxWidth: '85%',
-                                    fontSize: '13px',
-                                    lineHeight: 1.5,
-                                    background: msg.role === 'user' ? '#E8720C' : '#F4F2EE',
-                                    color: msg.role === 'user' ? '#FFF' : '#3D3A35',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                }}>
-                                    {msg.role === 'assistant' && <div style={{ fontSize: '9px', fontWeight: 700, color: '#E8720C', marginBottom: '4px', letterSpacing: '0.05em' }}>STRATEGIC AI</div>}
-                                    {msg.content}
-                                </div>
-                            ))}
-                            {chatLoading && (
-                                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#F4F2EE', display: 'flex', gap: '4px' }}>
-                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%' }}></div>
-                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%', animationDelay: '200ms' }}></div>
-                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%', animationDelay: '400ms' }}></div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px', padding: '12px', border: '1px solid #E2DDD6', borderRadius: '12px', background: '#FFF' }}>
-                            <input
-                                type="text"
-                                value={userInput}
-                                onChange={(e) => setUserInput(e.target.value)}
-                                placeholder="Type your question..."
-                                style={{ flex: 1, border: 'none', background: 'none', fontSize: '13px', outline: 'none' }}
-                                disabled={chatLoading}
-                            />
-                            <button type="submit" disabled={chatLoading || !userInput.trim()} style={{ background: '#E8720C', border: 'none', padding: '6px 12px', borderRadius: '8px', color: '#FFF', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: (chatLoading || !userInput.trim()) ? 0.5 : 1 }}>
-                                SEND
-                            </button>
-                        </form>
-                    </div>
-                )}
+
             </div>
 
             <style>{`
