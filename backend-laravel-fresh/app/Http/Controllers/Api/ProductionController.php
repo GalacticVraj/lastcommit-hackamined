@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\BOMHeader;
+use App\Models\BOMItem;
 use App\Models\ProductionRouteCard;
 use App\Models\ProductionReport;
 use App\Models\JobOrder;
+use App\Models\JobOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -306,5 +308,200 @@ class ProductionController extends Controller
     public function listJobOrders(Request $request)
     {
         return $this->successResponse(JobOrder::orderByDesc('id')->get());
+    }
+
+    // ==========================================
+    // BOM Header & Items CRUD
+    // ==========================================
+    public function createBom(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $bom = BOMHeader::create([
+                'bomNo' => $request->bomNo ?? 'BOM-' . time(),
+                'productId' => $request->productId,
+                'version' => $request->version ?? '1.0',
+                'effectiveFrom' => $request->effectiveFrom ?? now(),
+                'createdBy' => $request->user()?->id
+            ]);
+
+            if ($request->has('items') && is_array($request->items)) {
+                foreach ($request->items as $item) {
+                    BOMItem::create([
+                        'bom_header_id' => $bom->id,
+                        'raw_material_id' => $item['raw_material_id'] ?? $item['componentId'] ?? $item['productId'],
+                        'qty_per_unit' => $item['qty_per_unit'] ?? $item['quantity'],
+                        'unit' => $item['unit'] ?? 'Nos',
+                    ]);
+                }
+            }
+            DB::commit();
+            return $this->successResponse($bom, 'BOM created successfully', 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    public function updateBom(Request $request, $id)
+    {
+        $bom = BOMHeader::findOrFail($id);
+        $bom->update($request->only(['version', 'effectiveFrom', 'isActive']));
+        return $this->successResponse($bom, 'BOM updated');
+    }
+
+    public function deleteBom($id)
+    {
+        BOMHeader::where('id', $id)->delete();
+        BOMItem::where('bomHeaderId', $id)->delete();
+        return $this->successResponse(null, 'BOM deleted');
+    }
+
+    // ==========================================
+    // Production Route Card CRUD
+    // ==========================================
+    public function createRouteCard(Request $request)
+    {
+        $payload = $request->only(['productId', 'bomHeaderId', 'batchNo', 'planQty', 'status']);
+        $payload['routeCardNo'] = $request->routeCardNo ?? 'RC-' . time();
+        $payload['createdBy'] = $request->user()?->id;
+
+        $rc = ProductionRouteCard::create($payload);
+        return $this->successResponse($rc, 'Route Card created', 201);
+    }
+
+    public function updateRouteCard(Request $request, $id)
+    {
+        $rc = ProductionRouteCard::findOrFail($id);
+        $rc->update($request->only(['planQty', 'status', 'batchNo', 'isActive']));
+        return $this->successResponse($rc, 'Route Card updated');
+    }
+
+    public function deleteRouteCard($id)
+    {
+        ProductionRouteCard::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Route Card deleted');
+    }
+
+    // ==========================================
+    // Production Report (Stock Sync Engine)
+    // ==========================================
+    public function createReport(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $report = ProductionReport::create([
+                'routeCardId' => $request->routeCardId,
+                'productId' => $request->productId,
+                'reportDate' => $request->reportDate ?? now(),
+                'productionQty' => $request->productionQty,
+                'rejectionQty' => $request->rejectionQty ?? 0,
+                'remarks' => $request->remarks,
+                'createdBy' => $request->user()?->id
+            ]);
+
+            // Phase 2 Stock Sync: Auto-Add Finished Goods Stock
+            Product::where('id', $request->productId)->increment('currentStock', $request->productionQty);
+
+            // Phase 2 Stock Sync: Auto-Deduct Raw Materials via BOM
+            if ($request->routeCardId) {
+                $rc = ProductionRouteCard::find($request->routeCardId);
+                if ($rc && $rc->bomHeaderId) {
+                    $bomItems = BOMItem::where('bom_header_id', $rc->bomHeaderId)->get();
+                    foreach ($bomItems as $item) {
+                        $deductQty = $request->productionQty * ($item->qty_per_unit ?? $item->quantity ?? 0);
+                        Product::where('id', $item->raw_material_id ?? $item->componentId)->decrement('currentStock', $deductQty);
+                    }
+                    
+                    // Update Pipeline Progress Status
+                    $rc->increment('actualQty', $request->productionQty);
+                    if ($rc->actualQty >= $rc->planQty) {
+                        $rc->update(['status' => 'Completed']);
+                    } else {
+                        $rc->update(['status' => 'WIP']);
+                    }
+                }
+            }
+
+            DB::commit();
+            return $this->successResponse($report, 'Production report created and inventory stocks synced.', 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    public function updateReport(Request $request, $id)
+    {
+        $report = ProductionReport::findOrFail($id);
+        $report->update($request->only(['remarks'])); // Usually qty shouldn't be mutable without stock reversal
+        return $this->successResponse($report, 'Production report updated');
+    }
+
+    public function deleteReport($id)
+    {
+        // Ideally should reverse stock here too. Keeping it simple for now or mark as deleted.
+        $report = ProductionReport::findOrFail($id);
+        // Reverse Stock Logic:
+        Product::where('id', $report->productId)->decrement('currentStock', $report->productionQty);
+        if ($report->routeCardId) {
+            $rc = ProductionRouteCard::find($report->routeCardId);
+            if ($rc && $rc->bomHeaderId) {
+                $bomItems = BOMItem::where('bomHeaderId', $rc->bomHeaderId)->get();
+                foreach ($bomItems as $item) {
+                    $addQty = $report->productionQty * $item->quantity;
+                    Product::where('id', $item->componentId)->increment('currentStock', $addQty);
+                }
+                $rc->decrement('actualQty', $report->productionQty);
+            }
+        }
+        $report->delete();
+        return $this->successResponse(null, 'Production report deleted & stock reversed');
+    }
+
+    // ==========================================
+    // Job Order CRUD
+    // ==========================================
+    public function createJobOrder(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $jo = JobOrder::create([
+                'jobOrderNo' => $request->jobOrderNo ?? 'JOB-' . time(),
+                'contractorName' => $request->contractorName,
+                'processRequired' => $request->processRequired,
+                'status' => $request->status ?? 'Pending',
+                'createdBy' => $request->user()?->id
+            ]);
+
+            if ($request->has('items') && is_array($request->items)) {
+                foreach ($request->items as $item) {
+                    JobOrderItem::create([
+                        'jobOrderId' => $jo->id,
+                        'productId' => $item['productId'],
+                        'quantity' => $item['quantity'],
+                        'rate' => $item['rate'] ?? 0,
+                    ]);
+                }
+            }
+            DB::commit();
+            return $this->successResponse($jo, 'Job Order created', 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    public function updateJobOrder(Request $request, $id)
+    {
+        $jo = JobOrder::findOrFail($id);
+        $jo->update($request->only(['status', 'processRequired', 'isActive']));
+        return $this->successResponse($jo, 'Job Order updated');
+    }
+
+    public function deleteJobOrder($id)
+    {
+        JobOrder::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Job Order deleted');
     }
 }

@@ -11,13 +11,6 @@ use Illuminate\Http\Request;
 class HrController extends Controller
 {
     // ─── HELPER METHODS ───────────────────────────────────────────────────────
-    private function applySorting($query, Request $request, $defaultColumn = 'createdAt', $defaultOrder = 'desc')
-    {
-        $sortBy = $request->get('sort_by', $defaultColumn);
-        $sortOrder = $request->get('sort_order', $defaultOrder);
-        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
-        return $query->orderBy($sortBy, $sortOrder);
-    }
 
     public function dashboard()
     {

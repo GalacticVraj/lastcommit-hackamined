@@ -458,7 +458,7 @@ class SalesController extends Controller
     {
         $query = SaleOrder::with('customer:id,name')->whereNull('deletedAt');
         if ($search = $request->get('search')) {
-            $query->where('soNo', 'like', "%{$search}%");
+            $query->where('quoteNo', 'like', "%{$search}%");
         }
         return $this->paginatedResponse($query->latest()->paginate(25));
     }
@@ -470,13 +470,16 @@ class SalesController extends Controller
         $order = DB::transaction(function () use ($request, $soNo) {
             $totalAmount = 0;
             $items = collect($request->items ?? [])->map(function ($item) use (&$totalAmount) {
+                if (!isset($item['quantity']) || !isset($item['rate'])) {
+                    throw new \Exception("Item quantity or rate missing in " . json_encode($item));
+                }
                 $lineTotal = $item['quantity'] * $item['rate'] * (1 + ($item['gstPercent'] ?? 18) / 100);
                 $totalAmount += $lineTotal;
                 return array_merge($item, ['total' => round($lineTotal, 2)]);
             });
 
             $order = SaleOrder::create([
-                'soNo' => $soNo,
+                'quoteNo' => $soNo,
                 'customerId' => $request->customerId,
                 'quotationId' => $request->quotationId,
                 'customerPoNo' => $request->customerPoNo,
@@ -488,13 +491,19 @@ class SalesController extends Controller
             ]);
 
             foreach ($items as $item) {
+                $itemArray = (array)$item;
                 $order->items()->create([
-                    'productId' => $item['productId'],
-                    'quantity' => $item['quantity'],
-                    'rate' => $item['rate'],
-                    'gstPercent' => $item['gstPercent'] ?? 18,
-                    'total' => $item['total'],
+                    'productId' => $itemArray['productId'],
+                    'quantity' => $itemArray['quantity'],
+                    'rate' => $itemArray['rate'],
+                    'gstPercent' => $itemArray['gstPercent'] ?? 18,
+                    'total' => $itemArray['total'],
                 ]);
+
+                // Phase 2 Stock Sync: Reserve Stock (Blocked Stock)
+                if (!empty($itemArray['productId'])) {
+                    Product::where('id', $itemArray['productId'])->increment('blockedStock', $itemArray['quantity']);
+                }
             }
 
             // Update quotation status to Converted
@@ -570,6 +579,18 @@ class SalesController extends Controller
 
             // Update sale order status to Dispatched
             SaleOrder::where('id', $request->saleOrderId)->update(['status' => 'Dispatched']);
+
+            // Phase 2 Stock Sync: Deduct Physical Stock and Clear Blocked Stock
+            $soItems = \App\Models\SaleOrderItem::where('purchaseOrderId', $request->saleOrderId)->get();
+            foreach ($soItems as $item) {
+                if ($item->productId) {
+                    Product::where('id', $item->productId)->decrement('currentStock', $item->quantity);
+                    // Prevent blockedStock from going below 0 in cases of manual overrides
+                    Product::where('id', $item->productId)
+                        ->where('blockedStock', '>=', $item->quantity)
+                        ->decrement('blockedStock', $item->quantity);
+                }
+            }
 
             return $dispatch->load(['saleOrder.customer', 'transporter']);
         });

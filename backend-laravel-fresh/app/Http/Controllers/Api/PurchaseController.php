@@ -228,6 +228,48 @@ class PurchaseController extends Controller
         return $this->successResponse(null, 'Vendor deleted');
     }
 
+    public function getVendorProfile($id)
+    {
+        $vendor = Vendor::findOrFail($id);
+        
+        $purchaseOrders = PurchaseOrder::where('vendorId', $id)
+            ->whereNull('deletedAt')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+            
+        $bills = PurchaseBill::where('vendorId', $id)
+            ->whereNull('deletedAt')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+            
+        $payments = \App\Models\VoucherPaymentReceipt::where('partyName', $vendor->name)
+            ->where('voucherType', 'Payment')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        $totalPurchases = PurchaseBill::where('vendorId', $id)->sum('grandTotal');
+        $outstanding = PurchaseBill::where('vendorId', $id)
+            ->whereIn('status', ['Unpaid', 'Partial'])
+            ->sum('grandTotal'); 
+            
+        $totalOrders = PurchaseOrder::where('vendorId', $id)->count();
+
+        return $this->successResponse([
+            'vendor' => $vendor,
+            'metrics' => [
+                'totalPurchases' => (float)$totalPurchases,
+                'outstanding' => (float)$outstanding,
+                'totalOrders' => $totalOrders,
+            ],
+            'purchaseOrders' => $purchaseOrders,
+            'bills' => $bills,
+            'payments' => $payments,
+        ]);
+    }
+
     public function listPurchaseOrders(Request $request)
     {
         $query = PurchaseOrder::with('vendor:id,name')->whereNull('deletedAt');
@@ -362,6 +404,12 @@ class PurchaseController extends Controller
                     'rejectedQty' => $item['rejectedQty'] ?? 0,
                 ]);
                 GRNItem::create($itemPayload);
+
+                // Phase 2 Stock Sync: Auto-Add Stock on Receive
+                $accepted = $item['acceptedQty'] ?? ($item['quantity'] ?? 0);
+                if ($accepted > 0 && !empty($item['productId'])) {
+                    Product::where('id', $item['productId'])->increment('currentStock', $accepted);
+                }
             }
         }
 
@@ -463,5 +511,42 @@ class PurchaseController extends Controller
                 'vendor' => $vendor ? ['id' => $vendor->id, 'name' => $vendor->name, 'address' => $vendor->address, 'city' => $vendor->city, 'state' => $vendor->state, 'phone' => $vendor->phone, 'gstin' => $vendor->gstin] : null,
             ]
         ));
+    }
+
+    public function updateGrn(Request $request, $id)
+    {
+        $grn = GRN::findOrFail($id);
+        $grn->update($request->only(['status', 'remarks']));
+        return $this->successResponse($grn, 'GRN updated');
+    }
+
+    public function deleteGrn($id)
+    {
+        $grn = GRN::findOrFail($id);
+        
+        // Reverse Stock Sync
+        $items = GRNItem::where('grnId', $id)->get();
+        foreach ($items as $item) {
+            $accepted = $item->acceptedQty ?? $item->quantity ?? 0;
+            if ($accepted > 0 && $item->productId) {
+                Product::where('id', $item->productId)->decrement('currentStock', $accepted);
+            }
+        }
+        
+        $grn->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'GRN deleted and stock reversed');
+    }
+
+    public function updateBill(Request $request, $id)
+    {
+        $bill = PurchaseBill::findOrFail($id);
+        $bill->update($request->only(['dueDate', 'status', 'remarks']));
+        return $this->successResponse($bill, 'Bill updated');
+    }
+
+    public function deleteBill($id)
+    {
+        PurchaseBill::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Bill deleted');
     }
 }
