@@ -116,24 +116,29 @@ Route::prefix('v1')->group(function () {
         Route::post('sales/inquiries', [SalesController::class, 'createInquiry']);
         Route::get('sales/inquiries/{id}', [SalesController::class, 'getInquiry']);
         Route::put('sales/inquiries/{id}', [SalesController::class, 'updateInquiry']);
+        Route::delete('sales/inquiries/{id}', [SalesController::class, 'deleteInquiry']);
 
         Route::get('sales/quotations', [SalesController::class, 'listQuotations']);
         Route::post('sales/quotations', [SalesController::class, 'createQuotation']);
         Route::get('sales/quotations/{id}', [SalesController::class, 'getQuotation']);
         Route::put('sales/quotations/{id}', [SalesController::class, 'updateQuotation']);
+        Route::delete('sales/quotations/{id}', [SalesController::class, 'deleteQuotation']);
 
         Route::get('sales/sale-orders', [SalesController::class, 'listSaleOrders']);
         Route::post('sales/sale-orders', [SalesController::class, 'createSaleOrder']);
         Route::get('sales/sale-orders/{id}', [SalesController::class, 'getSaleOrder']);
         Route::put('sales/sale-orders/{id}', [SalesController::class, 'updateSaleOrder']);
+        Route::delete('sales/sale-orders/{id}', [SalesController::class, 'deleteSaleOrder']);
 
         Route::get('sales/invoices', [SalesController::class, 'listInvoices']);
         Route::post('sales/invoices', [SalesController::class, 'createInvoice']);
         Route::get('sales/invoices/{id}', [SalesController::class, 'getInvoice']);
+        Route::delete('sales/invoices/{id}', [SalesController::class, 'deleteInvoice']);
 
         Route::get('sales/receipts', [SalesController::class, 'listReceipts']);
         Route::post('sales/receipts', [SalesController::class, 'createReceipt']);
         Route::get('sales/receipts/{id}', [SalesController::class, 'getReceipt']);
+        Route::delete('sales/receipts/{id}', [SalesController::class, 'deleteReceipt']);
 
         Route::get('sales/salesmen/{id}/profile', [SalesController::class, 'getSalesmanProfile']);
 
@@ -151,6 +156,7 @@ Route::prefix('v1')->group(function () {
         Route::post('sales/dispatch-advices', [SalesController::class, 'createDispatchAdvice']);
         Route::get('sales/dispatch-advices/{id}', [SalesController::class, 'getDispatchAdvice']);
         Route::put('sales/dispatch-advices/{id}', [SalesController::class, 'updateDispatchAdvice']);
+        Route::delete('sales/dispatch-advices/{id}', [SalesController::class, 'deleteDispatchAdvice']);
 
         // Collections & Reminders
         Route::get('sales/collections', [SalesController::class, 'listCollections']);

@@ -372,6 +372,12 @@ class SalesController extends Controller
         return $this->successResponse($inquiry, 'Inquiry updated');
     }
 
+    public function deleteInquiry(Request $request, $id)
+    {
+        Inquiry::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Inquiry deleted');
+    }
+
     // ─── QUOTATIONS ───────────────────────────────────────────────────────────
 
     public function listQuotations(Request $request)
@@ -450,6 +456,12 @@ class SalesController extends Controller
         $quotation->update($updateData);
 
         return $this->successResponse($quotation, 'Quotation updated');
+    }
+
+    public function deleteQuotation(Request $request, $id)
+    {
+        Quotation::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Quotation deleted');
     }
 
     // ─── SALE ORDERS ──────────────────────────────────────────────────────────
@@ -551,6 +563,12 @@ class SalesController extends Controller
         return $this->successResponse($order, 'Sale Order updated');
     }
 
+    public function deleteSaleOrder(Request $request, $id)
+    {
+        SaleOrder::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Sale Order deleted');
+    }
+
     // ─── DISPATCH ADVICES ─────────────────────────────────────────────────────
 
     public function listDispatchAdvices(Request $request)
@@ -614,6 +632,12 @@ class SalesController extends Controller
             ['updatedBy' => $request->user()->id]
         ));
         return $this->successResponse($dispatch, 'Dispatch Advice updated');
+    }
+
+    public function deleteDispatchAdvice(Request $request, $id)
+    {
+        DispatchAdvice::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Dispatch Advice deleted');
     }
 
     // ─── INVOICES ─────────────────────────────────────────────────────────────
@@ -712,6 +736,12 @@ class SalesController extends Controller
         return $this->successResponse($invoice);
     }
 
+    public function deleteInvoice(Request $request, $id)
+    {
+        Invoice::where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Invoice deleted');
+    }
+
     // ─── COLLECTIONS & REMINDERS ──────────────────────────────────────────────
 
     public function createCommunicationLog(Request $request)
@@ -790,6 +820,12 @@ class SalesController extends Controller
                 'invoice' => $invoice ? ['id' => $invoice->id, 'invoiceNo' => $invoice->invoiceNo, 'invoiceDate' => $invoice->invoiceDate, 'grandTotal' => $invoice->grandTotal] : null,
             ]
         ));
+    }
+
+    public function deleteReceipt(Request $request, $id)
+    {
+        SalesReceiptVoucher::where('id', $id)->delete();
+        return $this->successResponse(null, 'Receipt deleted');
     }
 
     // ─── STOCK CHECK ──────────────────────────────────────────────────────────
