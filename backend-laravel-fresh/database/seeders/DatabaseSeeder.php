@@ -107,5 +107,6 @@ class DatabaseSeeder extends Seeder
         $this->call(SyntheticDataSeeder::class);
         $this->call(OperationsModuleSeeder::class);
         $this->call(SimulationDemoSeeder::class);
+        $this->call(SalesFeaturesSeeder::class);
     }
 }

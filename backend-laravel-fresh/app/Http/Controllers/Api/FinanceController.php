@@ -673,16 +673,6 @@ class FinanceController extends Controller
         ]);
     }
 
-    private function applySorting($query, Request $request, $defaultColumn = 'createdAt')
-    {
-        $sortBy = $request->get('sort_by', $defaultColumn);
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        // Validate sort order
-        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'desc';
-
-        return $query->orderBy($sortBy, $sortOrder);
-    }
 
     private function generateVoucherNo($prefix)
     {
