@@ -7,6 +7,7 @@ use App\Services\AI\AISummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class AISummaryController extends Controller
@@ -23,7 +24,7 @@ class AISummaryController extends Controller
         $userId = $request->user() ? $request->user()->id : 1;
         $cacheKey = "ai_insights_{$userId}";
 
-        $result = Cache::remember($cacheKey, 900, function () use ($userId) {
+        $result = Cache::remember($cacheKey, 60, function () use ($userId) {
             $insightsData = $this->aiService->collectInsights();
             $aiGenerated = $this->aiService->generateAIInsights($insightsData);
             
@@ -147,18 +148,26 @@ class AISummaryController extends Controller
 
     public function chat(Request $request)
     {
-        $request->validate([
-            'message' => 'required|string',
-            'history' => 'nullable|array',
-        ]);
+        try {
+            $request->validate([
+                'message' => 'required|string',
+                'history' => 'nullable|array',
+            ]);
 
-        $reply = $this->aiService->chat($request->input('message'), $request->input('history', []));
+            $reply = $this->aiService->chat($request->input('message'), $request->input('history', []));
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'reply' => $reply
-            ]
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'reply' => $reply
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error("AI Chat Controller Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing your request: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -252,7 +252,15 @@ class AISummaryService
 
         $activeEmployees = 10; 
         try {
-            $activeEmployees = DB::table('Employee')->where('isActive', true)->count() ?: 10;
+            $activeEmployees = DB::table('Employee')
+                ->where('isActive', true)
+                ->whereNull('deletedAt')
+                ->count();
+            if ($activeEmployees === 0) {
+                // Check if they have ANY employees (maybe none are active)
+                $count = DB::table('Employee')->whereNull('deletedAt')->count();
+                $activeEmployees = $count ?: 1; // At least show 1 to avoid division by zero
+            }
         } catch (\Exception $e) {}
 
         $monthly_requirements = [];
@@ -415,30 +423,42 @@ class AISummaryService
             $apiKey = config('services.groq.api_key');
             $model = config('services.groq.model', 'llama-3.3-70b-versatile');
             
-            if (empty($apiKey)) return $fallback;
+            if (empty($apiKey)) return "AI Configuration Missing: Please set GROQ_API_KEY.";
+
+            // Fetch live context for the AI
+            $employeeCount = DB::table('Employee')->where('isActive', true)->whereNull('deletedAt')->count();
+            $saleOrderCount = DB::table('SaleOrder')->where('status', 'Pending')->count();
+            $lowStockCount = DB::table('Product')->whereRaw('currentStock < minStock')->count();
+            
+            $systemContext = "You are a professional ERP business consultant for TechMicra ERP. 
+            Current System Stats:
+            - Active Employees: {$employeeCount}
+            - Pending Sale Orders: {$saleOrderCount}
+            - Products with Low Stock: {$lowStockCount}
+            
+            Answer user questions accurately using these stats if relevant. Keep answers concise and actionable.";
 
             $messages = [
-                [
-                    'role' => 'system',
-                    'content' => 'You are a professional ERP business consultant. Answer user questions about business workflows, ERP data management, and strategic optimization. Keep answers concise and actionable.'
-                ]
+                ['role' => 'system', 'content' => $systemContext]
             ];
 
             if (is_array($history)) {
                 foreach ($history as $h) {
-                    $messages[] = $h;
+                    if (isset($h['role']) && isset($h['content'])) {
+                        $messages[] = [
+                            'role' => $h['role'],
+                            'content' => $h['content']
+                        ];
+                    }
                 }
             }
 
-            $messages[] = [
-                'role' => 'user',
-                'content' => $message
-            ];
+            $messages[] = ['role' => 'user', 'content' => $message];
 
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
                 'Content-Type' => 'application/json',
-            ])->withoutVerifying()->post("https://api.groq.com/openai/v1/chat/completions", [
+            ])->timeout(30)->withoutVerifying()->post("https://api.groq.com/openai/v1/chat/completions", [
                 'model' => $model,
                 'messages' => $messages,
                 'temperature' => 0.7,
@@ -447,9 +467,12 @@ class AISummaryService
             if ($response->successful()) {
                 return $response->json('choices.0.message.content') ?? $fallback;
             }
-            return $fallback;
+            
+            Log::error("Groq Chat API Error: " . $response->status() . " " . $response->body());
+            return "The AI service is currently unavailable (Error {$response->status()}). Please try again in $10 seconds.";
         } catch (\Exception $e) {
-            return $fallback;
+            Log::error("Groq Chat Exception: " . $e->getMessage());
+            return "I encountered an error while thinking: " . $e->getMessage();
         }
     }
 }

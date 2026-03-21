@@ -126,9 +126,12 @@ export default function AISummaryPanel() {
             });
             if (res.data?.success) {
                 setChatMessages(prev => [...prev, { role: 'assistant', content: res.data.data.reply }]);
+            } else {
+                setChatMessages(prev => [...prev, { role: 'assistant', content: res.data?.message || "I'm having trouble responding. Please try again." }]);
             }
         } catch (error) {
-            setChatMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble responding. Please try again." }]);
+            const errorMsg = error.response?.data?.message || error.message || "I'm having trouble responding. Please try again.";
+            setChatMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
         } finally {
             setChatLoading(false);
         }
