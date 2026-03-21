@@ -11,7 +11,6 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import ProfileLink from '../components/ProfileLink';
 import SalesDashboard, { formatLakh } from '../components/SalesDashboard';
 import useAuthStore from '../lib/auth';
-import ModuleAIAssistant from '../components/ModuleAIAssistant';
 
 const statusClass = (s) => {
     const map = { New: 'badge-new', Processing: 'badge-processing', Quoted: 'badge-active', Lost: 'badge-overdue', Draft: 'badge-draft', Sent: 'badge-active', Accepted: 'badge-completed', Rejected: 'badge-rejected', Pending: 'badge-pending', Dispatched: 'badge-active', Closed: 'badge-closed', Unpaid: 'badge-pending', Partial: 'badge-partial', Paid: 'badge-paid', Overdue: 'badge-overdue', 'Due Today': 'badge-overdue', Upcoming: 'badge-active' };
@@ -741,7 +740,6 @@ export default function SalesPage() {
                     </div>
                 </div>
             )}
-            <ModuleAIAssistant moduleName="Sales" currentTab={tab} data={data} />
         </div>
     );
 }

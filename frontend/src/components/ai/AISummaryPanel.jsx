@@ -106,6 +106,34 @@ export default function AISummaryPanel() {
         return null;
     };
 
+    const [chatMessages, setChatMessages] = useState([]);
+    const [userInput, setUserInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!userInput.trim() || chatLoading) return;
+
+        const newUserMsg = { role: 'user', content: userInput };
+        setChatMessages(prev => [...prev, newUserMsg]);
+        setUserInput('');
+        setChatLoading(true);
+
+        try {
+            const res = await api.post('/ai/chat', {
+                message: userInput,
+                history: chatMessages.slice(-6)
+            });
+            if (res.data?.success) {
+                setChatMessages(prev => [...prev, { role: 'assistant', content: res.data.data.reply }]);
+            }
+        } catch (error) {
+            setChatMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble responding. Please try again." }]);
+        } finally {
+            setChatLoading(false);
+        }
+    };
+
     return (
         <div style={{
             position: 'fixed',
@@ -133,8 +161,8 @@ export default function AISummaryPanel() {
                 alignItems: 'center'
             }}>
                 <div>
-                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#E8720C', margin: 0 }}>AI Insights</h2>
-                    <p style={{ fontSize: '11px', color: '#9C9488', margin: '4px 0 0 0', letterSpacing: '0.05em' }}>REAL-TIME ERP INTELLIGENCE</p>
+                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#E8720C', margin: 0 }}>AI Intelligence</h2>
+                    <p style={{ fontSize: '11px', color: '#9C9488', margin: '4px 0 0 0', letterSpacing: '0.05em' }}>ERP STRATEGIC PARTNER</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -162,7 +190,8 @@ export default function AISummaryPanel() {
                 {[
                     { id: 'insights', label: 'Insights' },
                     { id: 'sales', label: 'Sales Outlook' },
-                    { id: 'workforce', label: 'Workforce' }
+                    { id: 'workforce', label: 'Workforce' },
+                    { id: 'chat', label: 'Ask AI' }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -189,7 +218,9 @@ export default function AISummaryPanel() {
                 flex: 1,
                 overflowY: 'auto',
                 padding: '24px',
-                background: '#FAFAF8'
+                background: '#FAFAF8',
+                display: 'flex',
+                flexDirection: 'column'
             }}>
                 {loading && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -341,65 +372,77 @@ export default function AISummaryPanel() {
                                     <RechartsTooltip content={<CustomChartTooltip />} />
                                     <Bar dataKey="workers_needed" name="Required" fill="#E8720C" radius={[4, 4, 0, 0]} barSize={30} />
                                     <Bar dataKey="current_capacity" name="Current" fill="#F5924A" radius={[4, 4, 0, 0]} barSize={30} />
-
-
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
+                    </div>
+                )}
 
-                        {Math.max(...workforceData.monthly_requirements.map(d => d.gap)) > 0 ? (
-                            <div style={{
-                                background: '#FDF6E3', padding: '16px', borderRadius: '10px', border: '1px solid #F5C4A0', borderLeft: '3px solid #C9860A', display: 'flex', gap: '12px', alignItems: 'flex-start'
-                            }}>
-                                <Users size={20} color="#C9860A" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <div>
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 600, color: '#1C1A17' }}>Recommendation</h4>
-                                    <p style={{ margin: 0, fontSize: '13px', color: '#3D3A35', lineHeight: 1.6 }}>
-                                        {workforceData.recommendation}
-                                    </p>
+                {/* CHAT TAB */}
+                {activeTab === 'chat' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {chatMessages.length === 0 && (
+                                <div style={{ textAlign: 'center', marginTop: '40px', color: '#9C9488' }}>
+                                    <Sparkles size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                                    <p style={{ fontSize: '14px' }}>How can I help you with your ERP today?</p>
+                                    <p style={{ fontSize: '11px', marginTop: '4px' }}>Try asking about sales trends or stock optimization.</p>
                                 </div>
-                            </div>
-                        ) : (
-                            <div style={{
-                                background: '#F0F7F2', padding: '16px', borderRadius: '10px', border: '1px solid #B8D4C0', borderLeft: '3px solid #4A7C59', display: 'flex', gap: '12px', alignItems: 'flex-start'
-                            }}>
-                                <CheckCircle size={20} color="#4A7C59" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <div>
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 600, color: '#1C1A17' }}>Staffing Optimization</h4>
-                                    <p style={{ margin: 0, fontSize: '13px', color: '#4A7C59', lineHeight: 1.6 }}>
-                                        Current headcount aligns with project requirements across all periods. No additional recruitment is projected at this time.
-                                    </p>
+                            )}
+                            {chatMessages.map((msg, i) => (
+                                <div key={i} style={{
+                                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                    padding: '10px 14px',
+                                    borderRadius: '12px',
+                                    maxWidth: '85%',
+                                    fontSize: '13px',
+                                    lineHeight: 1.5,
+                                    background: msg.role === 'user' ? '#E8720C' : '#F4F2EE',
+                                    color: msg.role === 'user' ? '#FFF' : '#3D3A35',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                }}>
+                                    {msg.role === 'assistant' && <div style={{ fontSize: '9px', fontWeight: 700, color: '#E8720C', marginBottom: '4px', letterSpacing: '0.05em' }}>STRATEGIC AI</div>}
+                                    {msg.content}
                                 </div>
-                            </div>
-                        )}
+                            ))}
+                            {chatLoading && (
+                                <div style={{ alignSelf: 'flex-start', padding: '10px 14px', borderRadius: '12px', background: '#F4F2EE', display: 'flex', gap: '4px' }}>
+                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%' }}></div>
+                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%', animationDelay: '200ms' }}></div>
+                                    <div className="dot-pulse" style={{ width: '4px', height: '4px', background: '#E8720C', borderRadius: '50%', animationDelay: '400ms' }}></div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px', padding: '12px', border: '1px solid #E2DDD6', borderRadius: '12px', background: '#FFF' }}>
+                            <input
+                                type="text"
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                placeholder="Type your question..."
+                                style={{ flex: 1, border: 'none', background: 'none', fontSize: '13px', outline: 'none' }}
+                                disabled={chatLoading}
+                            />
+                            <button type="submit" disabled={chatLoading || !userInput.trim()} style={{ background: '#E8720C', border: 'none', padding: '6px 12px', borderRadius: '8px', color: '#FFF', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: (chatLoading || !userInput.trim()) ? 0.5 : 1 }}>
+                                SEND
+                            </button>
+                        </form>
                     </div>
                 )}
             </div>
-
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2DDD6; border-radius: 2px; }
-                .skeleton-card {
-                    height: 80px;
-                    background: #F4F2EE;
-                    border-radius: 10px;
-                    animation: skeletonPulse 1.5s infinite linear;
-                }
-                @keyframes skeletonPulse {
-                    0% { background-color: #F4F2EE; }
-                    50% { background-color: #EFEFEB; }
-                    100% { background-color: #F4F2EE; }
-                }
-                .animate-spin {
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
+                .skeleton-card { height: 80px; background: #F4F2EE; border-radius: 10px; animation: skeletonPulse 1.5s infinite linear; }
+                @keyframes skeletonPulse { 0% { background-color: #F4F2EE; } 50% { background-color: #EFEFEB; } 100% { background-color: #F4F2EE; } }
+                .animate-spin { animation: spin 1s linear infinite; }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .dot-pulse { animation: dotPulse 1.2s infinite ease-in-out; }
+                @keyframes dotPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
             `}</style>
         </div>
     );
 }
+

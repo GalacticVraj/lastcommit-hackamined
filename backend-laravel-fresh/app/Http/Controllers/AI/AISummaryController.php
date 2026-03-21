@@ -144,4 +144,21 @@ class AISummaryController extends Controller
             ]
         ]);
     }
+
+    public function chat(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string',
+            'history' => 'nullable|array',
+        ]);
+
+        $reply = $this->aiService->chat($request->input('message'), $request->input('history', []));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'reply' => $reply
+            ]
+        ]);
+    }
 }

@@ -525,5 +525,6 @@ Route::prefix('v1')->group(function () {
         Route::patch('ai/mark-seen', [\App\Http\Controllers\AI\AISummaryController::class, 'markSeen']);
         Route::post('ai/refresh', [\App\Http\Controllers\AI\AISummaryController::class, 'refreshInsights']);
         Route::post('ai/summarize', [\App\Http\Controllers\AI\AISummaryController::class, 'summarize']);
+        Route::post('ai/chat', [\App\Http\Controllers\AI\AISummaryController::class, 'chat']);
     });
 });

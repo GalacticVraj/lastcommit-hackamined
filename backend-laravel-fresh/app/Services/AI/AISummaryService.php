@@ -404,6 +404,51 @@ class AISummaryService
             }
             return $fallback;
         } catch (\Exception $e) {
+        }
+    }
+
+    public function chat($message, $history = [])
+    {
+        $fallback = "I'm having trouble connecting to my knowledge base. Please try again soon.";
+        
+        try {
+            $apiKey = config('services.groq.api_key');
+            $model = config('services.groq.model', 'llama-3.3-70b-versatile');
+            
+            if (empty($apiKey)) return $fallback;
+
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a professional ERP business consultant. Answer user questions about business workflows, ERP data management, and strategic optimization. Keep answers concise and actionable.'
+                ]
+            ];
+
+            if (is_array($history)) {
+                foreach ($history as $h) {
+                    $messages[] = $h;
+                }
+            }
+
+            $messages[] = [
+                'role' => 'user',
+                'content' => $message
+            ];
+
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$apiKey}",
+                'Content-Type' => 'application/json',
+            ])->withoutVerifying()->post("https://api.groq.com/openai/v1/chat/completions", [
+                'model' => $model,
+                'messages' => $messages,
+                'temperature' => 0.7,
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('choices.0.message.content') ?? $fallback;
+            }
+            return $fallback;
+        } catch (\Exception $e) {
             return $fallback;
         }
     }
