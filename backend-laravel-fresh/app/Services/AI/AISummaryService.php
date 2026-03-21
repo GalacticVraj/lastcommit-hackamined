@@ -321,28 +321,36 @@ class AISummaryService
         ];
 
         try {
-            $apiKey = config('services.gemini.api_key');
+            $apiKey = config('services.groq.api_key');
+            $model = config('services.groq.model', 'llama-3.3-70b-versatile');
 
             if (empty($apiKey)) {
-                Log::warning('Gemini API key not configured. Add GEMINI_API_KEY to .env file.');
+                Log::warning('Groq API key not configured. Add GROQ_API_KEY to .env file.');
                 return $fallback;
             }
 
             $jsonString = json_encode($data);
 
-            // Switching to Gemini API as per user instructions
-            $response = Http::withoutVerifying()->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
-                'contents' => [
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$apiKey}",
+                'Content-Type' => 'application/json',
+            ])->withoutVerifying()->post("https://api.groq.com/openai/v1/chat/completions", [
+                'model' => $model,
+                'messages' => [
                     [
-                        'parts' => [
-                            ['text' => "You are an ERP business consultant. Analyze this business data and provide 3-5 specific, actionable insights in plain business language. Referece actual numbers. Return your response ONLY as a JSON array of strings.\n\nData: $jsonString"]
-                        ]
+                        'role' => 'system',
+                        'content' => 'You are an expert ERP business consultant and data analyst for TechMicra ERP. Your goal is to help businesses optimize their workflow, solve management doubts, and provide strategic insights. Always reference actual numbers from the data provided. Your output must be a valid JSON array of strings.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Analyze this business data and provide 3-5 specific, actionable insights in plain business language. Focus on identifying bottlenecks, financial risks, and growth opportunities. Return your response ONLY as a JSON array of strings.\n\nData: $jsonString"
                     ]
-                ]
+                ],
+                'temperature' => 0.2,
             ]);
 
             if ($response->successful()) {
-                $candidate = $response->json('candidates.0.content.parts.0.text');
+                $candidate = $response->json('choices.0.message.content');
                 if ($candidate) {
                     $cleaned = str_replace(['```json', '```'], '', $candidate);
                     $decoded = json_decode(trim($cleaned), true);
@@ -352,9 +360,10 @@ class AISummaryService
                 }
             }
             
+            Log::error("Groq API Error Response: " . $response->body());
             return $fallback;
         } catch (\Exception $e) {
-            Log::error("Gemini API Error: " . $e->getMessage());
+            Log::error("Groq API Exception: " . $e->getMessage());
             return $fallback;
         }
     }
@@ -364,22 +373,34 @@ class AISummaryService
         $fallback = "Analysis service is currently preparing reports. Please try again in a few minutes.";
         
         try {
-            $apiKey = config('services.gemini.api_key');
+            $apiKey = config('services.groq.api_key');
+            $model = config('services.groq.model', 'llama-3.3-70b-versatile');
+            
             if (empty($apiKey)) return $fallback;
 
             $jsonString = json_encode($data);
-            $prompt = "You are a senior production consultant. Analyze this {$type} data from our ERP and provide a concise, high-impact executive summary focusing on bottlenecks, resource efficiency, and strategic recommendations.\n\nData: {$jsonString}";
+            $prompt = "You are a senior ERP consultant. Analyze this {$type} data and provide a concise (max 3-4 sentences), high-impact executive summary focusing on bottlenecks, resource efficiency, and strategic recommendations for the management team.\n\nData: {$jsonString}";
 
-            $response = Http::withoutVerifying()->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}", [
-                'contents' => [
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$apiKey}",
+                'Content-Type' => 'application/json',
+            ])->withoutVerifying()->post("https://api.groq.com/openai/v1/chat/completions", [
+                'model' => $model,
+                'messages' => [
                     [
-                        'parts' => [['text' => $prompt]]
+                        'role' => 'system',
+                        'content' => 'You are an expert ERP consultant providing executive summaries.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt
                     ]
-                ]
+                ],
+                'temperature' => 0.2,
             ]);
 
             if ($response->successful()) {
-                return $response->json('candidates.0.content.parts.0.text') ?? $fallback;
+                return $response->json('choices.0.message.content') ?? $fallback;
             }
             return $fallback;
         } catch (\Exception $e) {

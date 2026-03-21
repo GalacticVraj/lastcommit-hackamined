@@ -573,3 +573,13 @@ Released under the [MIT License](LICENSE) — free for commercial and personal u
 <img src="https://img.shields.io/badge/Electricity-Costing-FF3B5C?style=for-the-badge"/>
 
 </div>
+
+## ? AI-Powered Insights
+
+TechMicra ERP is supercharged with **Groq AI** to provide:
+- **Executive Summaries**: High-impact summaries of module data.
+- **Smart Assistant**: On-demand AI help for understanding workflows and data.
+- **Sales Projections**: Forecast revenue and growth based on historical trends.
+- **Workforce Planning**: Estimate hiring needs based on production schedules.
+
+*Powered by Groq Llama 3.*

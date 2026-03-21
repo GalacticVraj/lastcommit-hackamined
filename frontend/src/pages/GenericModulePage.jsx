@@ -23,6 +23,7 @@ import QualityDashboard from '../components/QualityDashboard';
 import PurchaseDashboard from '../components/PurchaseDashboard';
 import ProductionDashboard from '../components/ProductionDashboard';
 import StatutoryDashboard from '../components/StatutoryDashboard';
+import ModuleAIAssistant from '../components/ModuleAIAssistant';
 
 const COLORS = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'];
 
@@ -575,6 +576,7 @@ export default function GenericModulePage({ title, apiBase, statCards = [], tabs
                     </div>
                 </div>
             )}
+            <ModuleAIAssistant moduleName={title} currentTab={activeTab} data={data} />
         </div>
     );
 }

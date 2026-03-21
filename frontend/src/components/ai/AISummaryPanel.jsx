@@ -264,7 +264,7 @@ export default function AISummaryPanel() {
                             }}>
                                 <span style={{ position: 'absolute', top: '14px', left: '16px', fontSize: '9px', color: '#C9860A', letterSpacing: '0.15em', fontWeight: 700 }}>AI INSIGHT</span>
                                 <div style={{ fontSize: '13px', color: '#3D3A35', lineHeight: 1.6, marginTop: '12px' }}>{insight}</div>
-                                <div style={{ fontSize: '9px', color: '#9C9488', marginTop: '8px', textAlign: 'right' }}>Powered by Claude</div>
+                                <div style={{ fontSize: '9px', color: '#9C9488', marginTop: '8px', textAlign: 'right' }}>Powered by Groq</div>
                             </div>
                         ))}
                     </div>
