@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, HardHat, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X, AlertTriangle } from 'lucide-react';
+import { BarChart3, ShoppingCart, Package, Factory, Calculator, DollarSign, Users, CheckCircle, Warehouse, FileText, Truck, Wrench, Building2, HardHat, LayoutDashboard, ChevronRight, LogOut, Bell, Menu, Settings, FileBarChart, X, AlertTriangle, Loader2 } from 'lucide-react';
 import useAuthStore from '../lib/auth';
 import AIInsideButton from '../components/ai/AIInsideButton';
+import api from '../lib/api';
 
 const navGroups = [
     {
@@ -51,36 +52,44 @@ const routeLabels = {
     '/assets': 'Assets', '/statutory': 'Statutory/GST', '/reports': 'Reports',
 };
 
-// Sample notifications (replace with real API later)
-const SAMPLE_NOTIFICATIONS = [
-    { id: 1, title: 'Invoice #INV-0042 overdue', time: '2 hours ago', type: 'warning', link: '/sales?tab=invoices', read: false },
-    { id: 2, title: 'New inquiry received from customer', time: '5 hours ago', type: 'info', link: '/sales?tab=inquiries', read: false },
-    { id: 3, title: 'GRN #GRN-0018 pending IQC', time: '1 day ago', type: 'info', link: '/quality?tab=iqc', read: false },
-    { id: 4, title: 'PO #PO-0031 delivery delayed', time: '2 days ago', type: 'warning', link: '/purchase?tab=orders', read: false },
-    { id: 5, title: 'Voucher #VCH-0125 pending approval', time: '3 hours ago', type: 'info', link: '/finance?tab=vouchers', read: false },
-    { id: 6, title: 'Employee leave request pending', time: '4 hours ago', type: 'info', link: '/hr?tab=leaves', read: false },
-    { id: 7, title: 'Low stock alert: Steel Rods', time: '6 hours ago', type: 'warning', link: '/warehouse?tab=dashboard', read: false },
-    { id: 8, title: 'Shipment #SHP-0089 in transit', time: '1 day ago', type: 'info', link: '/logistics?tab=shipments', read: false },
-    { id: 9, title: 'Machine #M-005 maintenance due', time: '2 days ago', type: 'warning', link: '/maintenance?tab=schedules', read: false },
-    { id: 10, title: 'Asset depreciation report ready', time: '3 days ago', type: 'info', link: '/assets?tab=dashboard', read: false },
-    { id: 11, title: 'GST return filing due this week', time: '1 day ago', type: 'warning', link: '/statutory?tab=gst', read: false },
-];
-
 import useUIStore from '../lib/uiStore';
 
 export default function AppLayout() {
 
-    // Wait, the original Sidebar doesn't have a state here, it uses the local useState.
-    // I need to be careful not to break existing sidebar toggle.
-
-    // Actually, I'll just use the store for aiPanelOpen.
     const aiPanelOpen = useUIStore(state => state.aiPanelOpen);
 
     const [notifOpen, setNotifOpen] = useState(false);
-    const [notifications, setNotifications] = useState(SAMPLE_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState([]);
+    const [notifLoading, setNotifLoading] = useState(false);
+    const [notifError, setNotifError] = useState(null);
+    const pollRef = useRef(null);
+
     const { user, logout, hasPermission, permissions } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
+
+    // ── Fetch notifications from real API ─────────────────────────────────────
+    const fetchNotifications = async () => {
+        try {
+            setNotifError(null);
+            const res = await api.get('/notifications');
+            if (res.data?.success) {
+                setNotifications(res.data.data || []);
+            }
+        } catch (err) {
+            setNotifError('Failed to load notifications');
+        } finally {
+            setNotifLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        setNotifLoading(true);
+        fetchNotifications();
+        // Poll every 60 seconds to pick up new alerts
+        pollRef.current = setInterval(fetchNotifications, 60_000);
+        return () => clearInterval(pollRef.current);
+    }, []);
 
     const isSalesUser = permissions && !permissions.includes('*') && hasPermission('sales.view') && !hasPermission('purchase.view') && !hasPermission('production.view') && !hasPermission('finance.view');
 
@@ -122,12 +131,33 @@ export default function AppLayout() {
         return () => document.removeEventListener('mousedown', handler);
     }, [notifOpen]);
 
-    const dismissNotif = (id) => {
+    const dismissNotif = async (id) => {
+        // Optimistically remove from UI
         setNotifications(prev => prev.filter(n => n.id !== id));
+        try {
+            await api.delete(`/notifications/${encodeURIComponent(id)}`);
+        } catch (err) {
+            // Restore state if API call failed
+            fetchNotifications();
+        }
     };
 
-    const markAsRead = (id) => {
+    const markAsRead = async (id) => {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        try {
+            await api.patch(`/notifications/${encodeURIComponent(id)}/read`);
+        } catch (err) {
+            // Silent fail – UI already updated optimistically
+        }
+    };
+
+    const clearAll = async () => {
+        setNotifications([]);
+        try {
+            await api.post('/notifications/read-all');
+        } catch (err) {
+            fetchNotifications();
+        }
     };
 
     const blurStyle = aiPanelOpen ? {
@@ -140,6 +170,8 @@ export default function AppLayout() {
     };
 
     const [sidebarLocalOpen, setSidebarLocalOpen] = useState(true);
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
         <div className="app-layout">
@@ -189,16 +221,28 @@ export default function AppLayout() {
                     <div className="header-right">
                         {/* Notifications */}
                         <div style={{ position: 'relative' }}>
-                            <button className="btn btn-ghost btn-sm notif-trigger" onClick={() => setNotifOpen(!notifOpen)} style={{ position: 'relative', padding: '8px' }}>
+                            <button
+                                className="btn btn-ghost btn-sm notif-trigger"
+                                onClick={() => setNotifOpen(!notifOpen)}
+                                style={{ position: 'relative', padding: '8px' }}
+                            >
                                 <Bell size={18} strokeWidth={1.5} />
-                                {notifications.some(n => !n.read) && (
+                                {unreadCount > 0 && (
                                     <span style={{
                                         position: 'absolute', top: '4px', right: '4px',
-                                        width: '8px', height: '8px', borderRadius: '50%',
-                                        background: 'var(--red, #DC2626)', border: '2px solid var(--bg-primary, #0F172A)'
-                                    }} />
+                                        minWidth: '16px', height: '16px',
+                                        borderRadius: '999px', padding: '0 3px',
+                                        background: 'var(--red, #DC2626)',
+                                        border: '2px solid var(--bg-primary, #0F172A)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '9px', fontWeight: 700, color: '#fff',
+                                        lineHeight: 1,
+                                    }}>
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </span>
                                 )}
                             </button>
+
                             {notifOpen && (
                                 <>
                                     {/* Blurred backdrop */}
@@ -207,6 +251,7 @@ export default function AppLayout() {
                                         background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)',
                                         zIndex: 1099
                                     }} onClick={() => setNotifOpen(false)} />
+
                                     {/* Notification panel */}
                                     <div className="notif-panel" style={{
                                         position: 'absolute', top: '100%', right: 0, width: '340px',
@@ -214,31 +259,107 @@ export default function AppLayout() {
                                         borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
                                         zIndex: 1100, marginTop: '8px', overflow: 'hidden'
                                     }}>
-                                        <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <strong style={{ fontSize: '14px', color: '#1f2937' }}>Notifications</strong>
-                                            <span style={{ fontSize: '12px', color: '#6b7280', cursor: 'pointer' }} onClick={() => setNotifications([])}>Clear all</span>
+                                        {/* Header */}
+                                        <div style={{
+                                            padding: '14px 16px', borderBottom: '1px solid #e5e7eb',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                        }}>
+                                            <strong style={{ fontSize: '14px', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                Notifications
+                                                {unreadCount > 0 && (
+                                                    <span style={{
+                                                        background: '#DC2626', color: '#fff',
+                                                        borderRadius: '999px', fontSize: '11px',
+                                                        padding: '1px 7px', fontWeight: 600
+                                                    }}>
+                                                        {unreadCount}
+                                                    </span>
+                                                )}
+                                            </strong>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                {notifLoading && (
+                                                    <Loader2 size={13} style={{
+                                                        color: '#9ca3af',
+                                                        animation: 'spin 1s linear infinite'
+                                                    }} />
+                                                )}
+                                                <span
+                                                    style={{ fontSize: '12px', color: '#6b7280', cursor: 'pointer' }}
+                                                    onClick={clearAll}
+                                                >
+                                                    Clear all
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                                            {notifications.length === 0 && (
-                                                <div style={{ padding: '32px 16px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>No notifications</div>
+
+                                        {/* Body */}
+                                        <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                                            {/* Error state */}
+                                            {notifError && (
+                                                <div style={{
+                                                    padding: '16px', textAlign: 'center',
+                                                    color: '#DC2626', fontSize: '12px',
+                                                    display: 'flex', alignItems: 'center',
+                                                    gap: '6px', justifyContent: 'center'
+                                                }}>
+                                                    <AlertTriangle size={14} />
+                                                    {notifError}
+                                                    <span
+                                                        style={{ color: '#6b7280', textDecoration: 'underline', cursor: 'pointer', marginLeft: '4px' }}
+                                                        onClick={fetchNotifications}
+                                                    >
+                                                        Retry
+                                                    </span>
+                                                </div>
                                             )}
+
+                                            {/* Loading state (initial) */}
+                                            {!notifError && notifLoading && notifications.length === 0 && (
+                                                <div style={{ padding: '32px 16px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>
+                                                    Loading…
+                                                </div>
+                                            )}
+
+                                            {/* Empty state */}
+                                            {!notifError && !notifLoading && notifications.length === 0 && (
+                                                <div style={{ padding: '32px 16px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
+                                                    No new notifications
+                                                </div>
+                                            )}
+
+                                            {/* Notification items */}
                                             {notifications.map(n => (
-                                                <div key={n.id} style={{
-                                                    padding: '12px 16px', borderBottom: '1px solid #e5e7eb',
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px',
-                                                    cursor: 'pointer', transition: 'background 0.15s',
-                                                    background: n.read ? '#f9fafb' : '#ffffff',
-                                                    opacity: n.read ? 0.7 : 1,
-                                                }}
+                                                <div
+                                                    key={n.id}
+                                                    style={{
+                                                        padding: '12px 16px', borderBottom: '1px solid #e5e7eb',
+                                                        display: 'flex', justifyContent: 'space-between',
+                                                        alignItems: 'flex-start', gap: '8px',
+                                                        cursor: 'pointer', transition: 'background 0.15s',
+                                                        background: n.read ? '#f9fafb' : '#ffffff',
+                                                        opacity: n.read ? 0.7 : 1,
+                                                    }}
                                                     onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
                                                     onMouseLeave={e => e.currentTarget.style.background = n.read ? '#f9fafb' : '#ffffff'}
-                                                    onClick={() => { markAsRead(n.id); if (n.link) { navigate(n.link); setNotifOpen(false); } }}
+                                                    onClick={() => {
+                                                        markAsRead(n.id);
+                                                        if (n.link) { navigate(n.link); setNotifOpen(false); }
+                                                    }}
                                                 >
-                                                    <div>
-                                                        <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px', color: n.type === 'warning' ? '#D97706' : '#1f2937' }}>{n.title}</div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{
+                                                            fontSize: '13px', fontWeight: 500, marginBottom: '4px',
+                                                            color: n.type === 'warning' ? '#D97706' : '#1f2937'
+                                                        }}>
+                                                            {n.title}
+                                                        </div>
                                                         <div style={{ fontSize: '11px', color: '#9ca3af' }}>{n.time}</div>
                                                     </div>
-                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '2px', minWidth: 'auto', color: '#6b7280' }} onClick={(e) => { e.stopPropagation(); dismissNotif(n.id); }}>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{ padding: '2px', minWidth: 'auto', color: '#6b7280', flexShrink: 0 }}
+                                                        onClick={(e) => { e.stopPropagation(); dismissNotif(n.id); }}
+                                                    >
                                                         <X size={14} />
                                                     </button>
                                                 </div>
@@ -248,6 +369,7 @@ export default function AppLayout() {
                                 </>
                             )}
                         </div>
+
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div className="avatar">{user?.name?.[0] || 'A'}</div>
                             {sidebarLocalOpen && <span style={{ fontSize: '14px', fontWeight: 500 }}>{user?.name}</span>}

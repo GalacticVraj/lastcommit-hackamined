@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\AssetsController;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\NotificationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -516,6 +517,12 @@ Route::prefix('v1')->group(function () {
 
         // ── Dashboard (Global) ────────────────────────────────────────────────
         Route::get('dashboard', [DashboardController::class, 'index']);
+
+        // ── Notifications ─────────────────────────────────────────────────────
+        Route::get('notifications', [NotificationsController::class, 'index']);
+        Route::patch('notifications/{id}/read', [NotificationsController::class, 'markRead']);
+        Route::post('notifications/read-all', [NotificationsController::class, 'markAllRead']);
+        Route::delete('notifications/{id}', [NotificationsController::class, 'dismiss']);
 
         // ── AI ────────────────────────────────────────────────────────────────
         Route::get('ai/insights', [\App\Http\Controllers\AI\AISummaryController::class, 'insights']);
