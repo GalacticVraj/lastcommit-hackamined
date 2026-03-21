@@ -113,10 +113,16 @@ class AISummaryService
             }
         } catch (\Exception $e) {Log::error("AI Insight Error (Production): " . $e->getMessage());}
 
+        // Employee stats for context
+        $employeeCount = DB::table('Employee')->where('isActive', true)->whereNull('deletedAt')->count();
+
         return [
             'critical' => $critical,
             'warning' => $warning,
             'info' => $info,
+            'employee_stats' => [
+                'active_headcount' => $employeeCount
+            ],
             'counts' => [
                 'critical' => count($critical),
                 'warning' => count($warning),
