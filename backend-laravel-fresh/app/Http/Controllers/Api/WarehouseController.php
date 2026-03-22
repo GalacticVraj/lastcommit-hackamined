@@ -156,12 +156,55 @@ class WarehouseController extends Controller
         return $this->successResponse($w, 'Updated');
     }
 
+    public function deleteWarehouse($id)
+    {
+        $w = Warehouse::findOrFail($id);
+        $w->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Deleted');
+    }
+
     public function listStocks(Request $request)
     {
         $query = Product::whereNull('deletedAt');
         if ($cat = $request->get('category'))
             $query->where('category', $cat);
         return $this->paginatedResponse($query->latest()->paginate(50));
+    }
+
+    public function createStock(Request $request)
+    {
+        $payload = $request->all();
+        $payload['code'] = $payload['code'] ?? ('STK-' . time() . '-' . random_int(100, 999));
+        $payload['name'] = $payload['name'] ?? 'Unnamed Stock Item';
+        $payload['category'] = $payload['category'] ?? 'Raw Material';
+        $payload['unit'] = $payload['unit'] ?? 'Nos';
+        $payload['currentStock'] = $payload['currentStock'] ?? 0;
+        $payload['minStock'] = $payload['minStock'] ?? 0;
+        $payload['createdBy'] = $request->user()?->id ?? 1;
+
+        $product = Product::create($payload);
+        return $this->successResponse($product, 'Stock created', 201);
+    }
+
+    public function getStock($id)
+    {
+        $product = Product::find($id);
+        if (!$product) return $this->errorResponse('Stock not found', 404);
+        return $this->successResponse($product);
+    }
+
+    public function updateStock(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        $product->update($request->all());
+        return $this->successResponse($product, 'Stock updated');
+    }
+
+    public function deleteStock($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Stock deleted');
     }
 
     public function listOpenings(Request $request)
@@ -182,12 +225,12 @@ class WarehouseController extends Controller
         $openingQty = (float) ($request->openingQty ?? 0);
 
         $id = DB::table('WarehouseOpening')->insertGetId([
-            'warehouseId' => $request->warehouseId,
-            'productId' => $request->productId,
+            'warehouseId' => $request->warehouseId ?? 1,
+            'productId' => $request->productId ?? 1,
             'openingQty' => $openingQty,
             'value' => $request->value ?? 0,
-            'date' => $request->date,
-            'createdBy' => $request->user()?->id,
+            'date' => $request->date ?? date('Y-m-d'),
+            'createdBy' => $request->user()?->id ?? 1,
             'createdAt' => now(),
             'updatedAt' => now(),
         ]);
@@ -258,13 +301,13 @@ class WarehouseController extends Controller
         $qty = (float) ($request->qty ?? 0);
         $id = DB::table('DispatchSRV')->insertGetId([
             'srvNo' => $request->srvNo ?: $this->ref('SRV'),
-            'date' => $request->date,
-            'partyName' => $request->partyName,
-            'productId' => $request->productId,
+            'date' => $request->date ?? date('Y-m-d'),
+            'partyName' => $request->partyName ?? 'Unknown',
+            'productId' => $request->productId ?? 1,
             'qty' => $qty,
             'returnExpected' => (bool) ($request->returnExpected ?? false),
-            'returnExpectedDate' => $request->returnExpectedDate,
-            'createdBy' => $request->user()?->id,
+            'returnExpectedDate' => $request->returnExpectedDate ?? date('Y-m-d'),
+            'createdBy' => $request->user()?->id ?? 1,
             'createdAt' => now(),
             'updatedAt' => now(),
         ]);
@@ -337,12 +380,12 @@ class WarehouseController extends Controller
     {
         $id = DB::table('WarehouseStockTransfer')->insertGetId([
             'transferId' => $request->transferId ?: $this->ref('WST'),
-            'fromWarehouseId' => $request->fromWarehouseId,
-            'toWarehouseId' => $request->toWarehouseId,
-            'productId' => $request->productId,
+            'fromWarehouseId' => $request->fromWarehouseId ?? 1,
+            'toWarehouseId' => $request->toWarehouseId ?? 1,
+            'productId' => $request->productId ?? 1,
             'qty' => $request->qty ?? 0,
             'status' => $request->status ?? 'Transferred',
-            'createdBy' => $request->user()?->id,
+            'createdBy' => $request->user()?->id ?? 1,
             'createdAt' => now(),
             'updatedAt' => now(),
         ]);
@@ -413,12 +456,12 @@ class WarehouseController extends Controller
         $qty = (float) ($request->qtyReceived ?? 0);
         $id = DB::table('WarehouseMaterialReceipt')->insertGetId([
             'receiptId' => $request->receiptId ?: $this->ref('WMR'),
-            'sourceDocRef' => $request->sourceDocRef,
-            'warehouseId' => $request->warehouseId,
-            'productId' => $request->productId,
+            'sourceDocRef' => $request->sourceDocRef ?? 'N/A',
+            'warehouseId' => $request->warehouseId ?? 1,
+            'productId' => $request->productId ?? 1,
             'qtyReceived' => $qty,
-            'receiptDate' => $request->receiptDate,
-            'createdBy' => $request->user()?->id,
+            'receiptDate' => $request->receiptDate ?? date('Y-m-d'),
+            'createdBy' => $request->user()?->id ?? 1,
             'createdAt' => now(),
             'updatedAt' => now(),
         ]);

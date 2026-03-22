@@ -366,7 +366,14 @@ Route::prefix('v1')->group(function () {
         Route::post('warehouse/warehouses', [WarehouseController::class, 'createWarehouse']);
         Route::get('warehouse/warehouses/{id}', [WarehouseController::class, 'getWarehouse']);
         Route::put('warehouse/warehouses/{id}', [WarehouseController::class, 'updateWarehouse']);
+        Route::delete('warehouse/warehouses/{id}', [WarehouseController::class, 'deleteWarehouse']);
+        
         Route::get('warehouse/stocks', [WarehouseController::class, 'listStocks']);
+        Route::post('warehouse/stocks', [WarehouseController::class, 'createStock']);
+        Route::get('warehouse/stocks/{id}', [WarehouseController::class, 'getStock']);
+        Route::put('warehouse/stocks/{id}', [WarehouseController::class, 'updateStock']);
+        Route::delete('warehouse/stocks/{id}', [WarehouseController::class, 'deleteStock']);
+        
         Route::get('warehouse/openings', [WarehouseController::class, 'listOpenings']);
         Route::post('warehouse/openings', [WarehouseController::class, 'createOpening']);
         Route::get('warehouse/openings/{id}', [WarehouseController::class, 'getOpening']);
@@ -439,8 +446,19 @@ Route::prefix('v1')->group(function () {
         Route::post('logistics/transporters', [LogisticsController::class, 'createTransporter']);
         Route::get('logistics/transporters/{id}', [LogisticsController::class, 'getTransporter']);
         Route::put('logistics/transporters/{id}', [LogisticsController::class, 'updateTransporter']);
+        Route::delete('logistics/transporters/{id}', [LogisticsController::class, 'deleteTransporter']);
+        
         Route::get('logistics/orders', [LogisticsController::class, 'listOrders']);
+        Route::post('logistics/orders', [LogisticsController::class, 'createOrder']);
+        Route::get('logistics/orders/{id}', [LogisticsController::class, 'getOrder']);
+        Route::put('logistics/orders/{id}', [LogisticsController::class, 'updateOrder']);
+        Route::delete('logistics/orders/{id}', [LogisticsController::class, 'deleteOrder']);
+        
         Route::get('logistics/freight-bills', [LogisticsController::class, 'listFreightBills']);
+        Route::post('logistics/freight-bills', [LogisticsController::class, 'createFreightBill']);
+        Route::get('logistics/freight-bills/{id}', [LogisticsController::class, 'getFreightBill']);
+        Route::put('logistics/freight-bills/{id}', [LogisticsController::class, 'updateFreightBill']);
+        Route::delete('logistics/freight-bills/{id}', [LogisticsController::class, 'deleteFreightBill']);
 
         // ── Contractors ───────────────────────────────────────────────────────
         Route::get('contractors/dashboard', [ContractorsController::class, 'dashboard']);

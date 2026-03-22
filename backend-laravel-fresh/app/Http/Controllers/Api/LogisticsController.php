@@ -185,6 +185,12 @@ class LogisticsController extends Controller
         return $this->getTransporter($id);
     }
 
+    public function deleteTransporter($id)
+    {
+        DB::table('Transporter')->where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Transporter deleted');
+    }
+
     public function listOrders(Request $request)
     {
         $query = DB::table('DispatchAdvice as d')
@@ -289,5 +295,111 @@ class LogisticsController extends Controller
         }));
 
         return $this->paginatedResponse($paginator);
+    }
+
+    public function createOrder(Request $request)
+    {
+        $id = DB::table('DispatchAdvice')->insertGetId([
+            'dispatchNo' => $request->dispatchNo ?? ('DA-' . now()->format('YmdHis')),
+            'dispatchDate' => $request->dispatchDate ?? date('Y-m-d'),
+            'saleOrderId' => $request->saleOrderId ?? 1,
+            'transporterId' => $request->transporterId ?? null,
+            'status' => $request->status ?? 'Pending',
+            'createdBy' => $request->user()?->id ?? 1,
+            'createdAt' => now(),
+            'updatedAt' => now(),
+        ]);
+        return $this->getOrder($id);
+    }
+
+    public function getOrder($id)
+    {
+        $row = DB::table('DispatchAdvice as d')
+            ->leftJoin('Transporter as t', 'd.transporterId', '=', 't.id')
+            ->leftJoin('SaleOrder as so', 'd.saleOrderId', '=', 'so.id')
+            ->leftJoin('Customer as c', 'so.customerId', '=', 'c.id')
+            ->where('d.id', $id)
+            ->select('d.*', 'so.soNo as orderNo', 'c.city as destination', 't.name as transporterName')
+            ->first();
+        if (!$row) return $this->errorResponse('Order not found', 404);
+        
+        $row->id = $row->id;
+        $row->orderNo = $row->orderNo ?? ('SO-' . $row->id);
+        $row->destination = $row->destination ?: 'Unspecified';
+        $row->status = $row->status ?: 'Pending';
+        $row->transporter = [
+            'id' => $row->transporterId,
+            'name' => $row->transporterName ?: 'Unassigned',
+        ];
+        return $this->successResponse($row);
+    }
+
+    public function updateOrder(Request $request, $id)
+    {
+        $row = DB::table('DispatchAdvice')->where('id', $id)->first();
+        if (!$row) return $this->errorResponse('Order not found', 404);
+
+        DB::table('DispatchAdvice')->where('id', $id)->update([
+            'dispatchNo' => $request->dispatchNo ?? $row->dispatchNo,
+            'dispatchDate' => $request->dispatchDate ?? $row->dispatchDate,
+            'transporterId' => $request->transporterId ?? $row->transporterId,
+            'status' => $request->status ?? $row->status,
+            'updatedAt' => now(),
+        ]);
+        return $this->getOrder($id);
+    }
+
+    public function deleteOrder($id)
+    {
+        DB::table('DispatchAdvice')->where('id', $id)->update(['deletedAt' => now()]);
+        return $this->successResponse(null, 'Deleted');
+    }
+
+    public function createFreightBill(Request $request)
+    {
+        return $this->createOrder($request);
+    }
+
+    public function getFreightBill($id)
+    {
+        $row = DB::table('DispatchAdvice as d')
+            ->leftJoin('SaleOrder as so', 'd.saleOrderId', '=', 'so.id')
+            ->where('d.id', $id)
+            ->select('d.*', 'so.totalAmount')
+            ->first();
+        if (!$row) return $this->errorResponse('Freight Bill not found', 404);
+
+        $freightAmount = round(((float) ($row->totalAmount ?? 0)) * 0.035, 2);
+        $status = in_array($row->status, ['Delivered', 'Completed'], true) ? 'Billed' : 'Pending';
+
+        $billRow = [
+            'id' => $row->id,
+            'billNo' => 'FB-' . ($row->dispatchNo ?: $row->id),
+            'lrNo' => $row->dispatchNo ?: ('LR-' . $row->id),
+            'freightAmount' => $freightAmount,
+            'status' => $status,
+            'billDate' => $row->dispatchDate,
+        ];
+
+        return $this->successResponse($billRow);
+    }
+
+    public function updateFreightBill(Request $request, $id)
+    {
+        $row = DB::table('DispatchAdvice')->where('id', $id)->first();
+        if (!$row) return $this->errorResponse('Freight Bill not found', 404);
+
+        DB::table('DispatchAdvice')->where('id', $id)->update([
+            'dispatchNo' => $request->lrNo ?? $row->dispatchNo,
+            'dispatchDate' => $request->billDate ?? $row->dispatchDate,
+            'status' => $request->status ?? $row->status,
+            'updatedAt' => now(),
+        ]);
+        return $this->getFreightBill($id);
+    }
+
+    public function deleteFreightBill($id)
+    {
+        return $this->deleteOrder($id);
     }
 }
