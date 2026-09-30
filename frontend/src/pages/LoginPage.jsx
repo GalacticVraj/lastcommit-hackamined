@@ -46,13 +46,6 @@ export default function LoginPage() {
                         {loading ? <Loader2 size={20} className="spin" /> : 'Sign In'}
                     </button>
                 </form>
-                <div style={{ marginTop: '20px', padding: '12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 255, 255, 0.3)', border: '1px solid rgba(0, 0, 0, 0.1)' }}>
-                    <p style={{ fontSize: '12px', color: 'var(--gray-600)', margin: 0 }}>
-                        <strong style={{ color: 'var(--gray-800)' }}>Demo Credentials:</strong><br />
-                        Admin: admin@erp.com / password<br />
-                        Sales: sales@erp.com / password
-                    </p>
-                </div>
             </div>
         </div>
     );
